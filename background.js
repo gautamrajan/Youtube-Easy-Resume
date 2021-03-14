@@ -1,7 +1,9 @@
 //background.js
 console.log("BACKGROUND IS LOADED");
 initStorage();
-chrome.runtime.onConnect.addListener(function(port){
+
+
+/* chrome.runtime.onConnect.addListener(function(port){
     port.onMessage.addListener(function(message,sender,sendResponse){
         if(message.time == -1){
             var storedLinkIndex = checkStoredLinks(message.videolink);
@@ -17,7 +19,36 @@ chrome.runtime.onConnect.addListener(function(port){
             sendResponse({'videolink':message.link, 'time':message.time});
         }        
     });
-  });
+  }); */
+
+/* chrome.runtime.onConnect.addListener(function(port){
+    console.assert(port.name=="ytar-content");
+    port.onMessage.addListener(function(msg){
+        console.log("BACKGROUND.JS RECIEVED: " + msg.message);
+        if(msg.message == "Test send from content to background"){
+            port.postMessage({message: "Test send from background to content"});
+        }
+    })
+}) */
+
+chrome.runtime.onMessage.addListener(function(request,sender,sendResponse){
+    console.log("BACKGROUND.JS RECIEVED: " + request.message);
+    if(request.message == "Test"){
+        sendResponse({message: "Test"});
+    }
+})
+
+
+
+
+
+
+
+
+
+
+
+
 
 function initStorage(){
     var bytesUsed;

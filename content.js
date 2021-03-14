@@ -11,33 +11,29 @@ if (window.location.href.indexOf("watch?") > -1) {
 if(videolink) {
     var video = document.querySelector("video");
     var ct = video.currentTime;
-    /* video.ontimeupdate = function(){
-        ct = video.currentTime;
-        console.log("Current time: " + ct);
-    }; */
     
-    var port = chrome.runtime.connect({name:"ytar-content"});
+    /* var port = chrome.runtime.connect({name:"ytar-content"});
     port.postMessage({videolink: currentURL, time: -1},function(response){
         console.log("SENT: " + currentURL + " , -1");
         console.log("RECIEVED: " + response.videolink +" , " + response.time);
- /*        if(response.time != -1){
-            video.currentTime = response.time;
-        } */
     });
     video.ontimeupdate = function(){
         ct = video.currentTime;
         port.postMessage({videolink: currentURL, time: ct},function(response){
             console.log("SENT: " + currentURL +" , " + ct);
             console.log("RECIEVED: " + response.videolink + " , " + response.time);
-/*             if(response.time == ct){
-                console.log("Successfully logged video " + currentURL + " at " + ct); 
-            } */
         })
-    };
-    /* port.onMessage.addListener(function(message,sender){
-        
-    }); */
-    
+    }; */
+
+    /* var port = chrome.runtime.connect({name:"ytar-content"});
+    port.postMessage({videolink: currentURL, time: -1});
+    port.onMessage.addListener(function(msg){
+        console.log("CONTENT.JS RECIEVED: " + msg.message);
+    }) */
+
+    chrome.runtime.sendMessage({message:"Test"},function(response){
+        console.log("CONTENT.JS RECIEVED: " + response.message);
+    })
 }
 
 
