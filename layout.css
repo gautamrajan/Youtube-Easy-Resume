@@ -1,0 +1,29 @@
+title{
+    text-overflow: ellipsis;
+    text-align: start;
+}
+
+body{
+    min-width: 250px;
+    min-height: 350px;
+    background-color: #181818;
+}
+
+h1{
+    margin-bottom: 5px;
+    color: #ffffff;
+    /* border: 1px solid black; */
+}
+
+.main-list{
+  border-top: 1px solid #aaaaaa;  
+  padding-top: 10px;
+}
+
+.main-list-element{
+    align-items: center;
+    min-width: 200px;
+    min-height: 100px;
+    border: 2px solid #aaaaaa;
+    border-radius: 5px;
+}
