@@ -4,12 +4,12 @@
     "version": "0.1",
     "description": "DEEGUS",
     "short_name": "DEEEGUS",
-    "permissions": ["activeTab", "declarativeContent", "storage", "<all_urls>"],
+    "permissions": ["activeTab", "declarativeContent", "unlimitedStorage", "storage", "<all_urls>"],
 
     "content_scripts":[
         {
             "matches":[
-                "https://www.youtube.com/*"
+                "<all_urls>"
             ],
             "js": [
                 "jquery-3.5.1.min.js",
