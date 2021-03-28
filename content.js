@@ -1,6 +1,14 @@
 //content.js
 
 var currentURL = window.location.href;
+
+$(document).ready(function(){
+    var videoTitle = document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer");
+    var channelName = document.querySelector("yt-formatted-string#text.style-scope.ytd-channel-name");
+    console.log("Video Title: " + videoTitle.textContent);
+    console.log("Channel Name: " + channelName.textContent);
+});
+
 console.log("Current URL: " + currentURL);
 
 var videolink = false;

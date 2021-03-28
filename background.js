@@ -122,13 +122,13 @@ chrome.storage.sync.get("videos",function(data){
 
 function initStorage(){
     var bytesUsed;
-    chrome.storage.sync.getBytesInUse(null, function(bytes){
+    chrome.storage.local.getBytesInUse(null, function(bytes){
         bytesUsed = bytes;
     });
     console.log("BYTES USED: " + bytesUsed);
     if(bytesUsed == 0 || bytesUsed == undefined){
         console.log("BYTES USED ZERO OR undefined");
-        chrome.storage.sync.set(nvarray);  
+        chrome.storage.local.set(nvarray);  
     }
     else{
         console.log("Storage not empty");
@@ -139,7 +139,7 @@ function checkStoredLinks(link){
     var result = -1;
     return new Promise(function(resolve){
 
-        chrome.storage.sync.get("videos",function(data){
+        chrome.storage.local.get("videos",function(data){
             console.log("videos.length at checkStoredLinks: "+ data.videos.length);
             if(data.videos.legnth != 0)
             {
@@ -170,7 +170,7 @@ function checkStoredLinks(link){
 }
 function getStoredLinkTime(index){
     return new Promise(function(resolve){
-        chrome.storage.sync.get("videos",function(data){
+        chrome.storage.local.get("videos",function(data){
             resolve(data.videos[index].time);
         })
     })
@@ -184,10 +184,10 @@ function addNewVideo(link){
             videolink: link,
             time: -1
         }
-        chrome.storage.sync.get("videos", function(data){
+        chrome.storage.local.get("videos", function(data){
             currentVideos = data;
             currentVideos.videos.push(newVideo);
-            chrome.storage.sync.set(currentVideos);
+            chrome.storage.local.set(currentVideos);
         });
         resolve();
     })
@@ -197,7 +197,7 @@ function addNewVideo(link){
 async function setTime(link, time){
     return new Promise(function(resolve){
         var currentVideos = [];
-        chrome.storage.sync.get("videos", function(data){
+        chrome.storage.local.get("videos", function(data){
             currentVideos = data;
             for(i=0;i<currentVideos.videos.length;i++){
                 if(currentVideos.videos[i].videolink == link){
@@ -206,7 +206,7 @@ async function setTime(link, time){
                         time: time
                     };
                     currentVideos.videos[i] = nv;            
-                    chrome.storage.sync.set(currentVideos);
+                    chrome.storage.local.set(currentVideos);
                     break;
                 }
             }
@@ -218,7 +218,7 @@ async function setTime(link, time){
 
 function printDB(){
     console.log("CURRENT VIDEO DB: ");
-    chrome.storage.sync.get("videos", function(data){
+    chrome.storage.local.get("videos", function(data){
         for(i=0;i<data.videos.length;i++){
             console.log(data.videos[i]);
         }
