@@ -6,6 +6,7 @@ title{
 body{
     min-width: 350px;
     min-height: 380px;
+    
     background-color: #181818;
 }
 
@@ -17,18 +18,90 @@ h1{
 
 .main-list{
   border-top: 1px solid #aaaaaa;  
-  padding-top: 10px;
+  padding-top: 2px;
+  max-width:350px;
+  max-height:380px;
+  display:block;
+  overflow: hidden;
+  overflow-y:scroll;
 }
 
 .main-list-element{
-    align-items: center;
+    align-items: flex-start;
+    display:flex;
+    /* text-align:left; */
+    margin-top: 8px;
+    margin-bottom:8px;
     min-width: 200px;
     min-height: 90px;
     max-height: 90px;
     border: 2px solid #aaaaaa;
     border-radius: 5px;
+    /* line-height:3px; */
 }
 .main-list-element img{
-    align-items:flex-start
+    line-height:3px;
+}
 
+.main-list-element info{
+    /* background-color: red; */
+    flex-direction: column;
+    align-items: flex-start;
+
+}
+
+.main-list-element info videoTitle{
+    
+    display: inline-block;
+    
+    vertical-align:top;
+    margin-top:6px;
+    margin-left: 6px;
+    color: #ffffff;
+    font-size: 15px;
+    min-width:210px;
+    max-width:210px;
+    max-height: 19px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+}
+.main-list-element info subtext{
+   
+    display: inline-block;
+    text-decoration: underline;
+    vertical-align:top;
+    margin-top:3px;
+    margin-left: 6px;
+    color: #ffffff;
+    font-size: 11px;
+    max-width:210px;
+    max-height: 19px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.main-list-element info timeInfo{
+    display:flex;
+    justify-content:space-between;
+    margin-left: 6px;
+    margin-right:6px;
+    margin-top:3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 15px;
+    color: #ffffff;
+}
+
+
+.main-list-element info bar{
+    background: red;
+    margin-top:21px;
+    display: inline-block;
+    height:3px;
+    max-width:226px;
+    width:150px;
 }
