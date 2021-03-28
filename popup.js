@@ -1,4 +1,5 @@
 
+new SimpleBar(document.getElementById('main-list'));
 
 
 
@@ -6,8 +7,7 @@
 
 
 
-
-function generateList(link){
+/* function generateList(link){
     var result = -1;
     return new Promise(function(resolve){
 
@@ -23,21 +23,11 @@ function generateList(link){
                         result = i;
                         break;
                     }
-                    /* else{
-                        console.log("link != videolink");
-                    } */
-                    //return -1;
-                    //resolve(-1);
                 }
             }
-            //return -1;
+
             resolve(result);
         });
-        //return -1;
 
-   /*      if(done == false){
-            console.log("third resolve statement: ");
-            resolve(-1);
-        } */
     });
-}
+} */
