@@ -2,7 +2,16 @@
 console.log("BACKGROUND IS LOADED");
 var nvarray = {videos:[]};
 initStorage();
+/* 
+    video:{
+        videolink,
+        time,
+        duration,
+        title,
+        channel,
 
+    }
+*/
 
 
 chrome.runtime.onConnect.addListener(async function(port){
@@ -12,18 +21,20 @@ chrome.runtime.onConnect.addListener(async function(port){
             checkStorePromise.then(function(storedLinkIndex){
                 console.log("STORED LINK INDEX: " + storedLinkIndex);
                 if(storedLinkIndex != -1){
-                    let linktimepromise = getStoredLinkTime(storedLinkIndex);
-                    linktimepromise.then(function(linkTime){
+                    let linktimepromise = getStoredLinkVideo(storedLinkIndex);
+                    linktimepromise.then(function(linkVideo){
                         console.log("sending response");
-                        port.postMessage({videolink:message.videolink , time: linkTime});
+                        port.postMessage({videolink:linkVideo.videolink , time: linkVideo.time,
+                            duration: linkVideo.duration,title:linkVideo.title,channel:linkVideo.channel});
                     })
-
                 }
                 else{
                     /* console.log("sending response"); */
-                    let addVideoPromise = addNewVideo(message.videolink);
+                    let addVideoPromise = addNewVideo({videolink:message.videolink, time:-1,
+                        duration: message.duration, title:message.title, channel:message.channel});
                     addVideoPromise.then(
-                        port.postMessage({videolink:message.videolink, time:-1})
+                        port.postMessage({videolink:message.videolink, time:-1,
+                            duration: message.duration, title:message.title, channel:message.channel})
                     );
                 }
             });
@@ -33,40 +44,10 @@ chrome.runtime.onConnect.addListener(async function(port){
             let promise2 = setTime(message.videolink, message.time);
             promise2.then(console.log("UPDATED VIDEO TIME"));
 
-            //port.postMessage({videolink:message.videolink, time:message.time});
         }        
     });
   });
 
-/* chrome.runtime.onConnect.addListener(function(port){
-    console.assert(port.name=="ytar-content");
-    port.onMessage.addListener(function(msg){
-        console.log("BACKGROUND.JS RECIEVED: " + msg.message);
-        if(msg.message == "Test send from content to background"){
-            port.postMessage({message: "Test send from background to content"});
-        }
-    })
-}) */
-
-/* chrome.runtime.onMessage.addListener(function(request,sender,sendResponse){
-    console.log("BACKGROUND.JS RECIEVED: " + request.videolink + " , " + request.time);
-    if(request.time == -1){
-        var storedLinkIndex = checkStoredLinks(request.videolink);
-        console.log("storedLinkIndex: " + storedLinkIndex);
-        if(storedLinkIndex == -1){
-            addNewVideo(request.videolink);
-            sendResponse({videolink:request.videolink, time:request.time});
-        }
-        else{
-            sendResponse({videolink:request.videolink, time:getStoredLinkTime(storedLinkIndex)})
-        }
-    }
-    else{
-        //console.log("storedLinkIndex: " + storedLinkIndex);
-        setTime(request.videolink,request.time);
-        sendResponse(request.videolink,request.time);
-    }
-}) */
 
 //printDB();
 /* addNewVideo("https://www.youtube.com/watch?v=3dzPcy9VyfQ");
@@ -146,6 +127,7 @@ function checkStoredLinks(link){
                 for(i=0;i<data.videos.length;i++){
                     if(data.videos[i].videolink == link){
                         console.log("link == videolink; INDEX: " + i);
+                        console.log("MATCH FOUND: " + data.videos[i].title + ", " + data.videos[i].channel);
                         //return i;
                         result = i;
                         break;
@@ -168,22 +150,20 @@ function checkStoredLinks(link){
         } */
     });
 }
-function getStoredLinkTime(index){
+function getStoredLinkVideo(index){
     return new Promise(function(resolve){
         chrome.storage.local.get("videos",function(data){
-            resolve(data.videos[index].time);
+            resolve(data.videos[index]);
         })
     })
 
 }
-function addNewVideo(link){
+function addNewVideo(video){
     return new Promise(function(resolve){
-        console.log("ADDING LINK: " + link);
+        console.log("ADDING LINK: " + video.videolink);
         var currentVideos = [];
-        var newVideo = {
-            videolink: link,
-            time: -1
-        }
+        var newVideo = {videolink:video.videolink, time:-1,
+            duration: video.duration, title:video.title, channel:video.channel}
         chrome.storage.local.get("videos", function(data){
             currentVideos = data;
             currentVideos.videos.push(newVideo);
@@ -201,10 +181,12 @@ async function setTime(link, time){
             currentVideos = data;
             for(i=0;i<currentVideos.videos.length;i++){
                 if(currentVideos.videos[i].videolink == link){
-                    var nv = {
+                    /* var nv = {
                         videolink:link,
                         time: time
-                    };
+                    }; */
+                    var nv = currentVideos.videos[i];
+                    nv.time = time;
                     currentVideos.videos[i] = nv;            
                     chrome.storage.local.set(currentVideos);
                     break;
