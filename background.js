@@ -18,7 +18,7 @@ chrome.runtime.onConnect.addListener(async function(port){
 /*     var currentURL = null;
     var sentChangeURL = null; */
     port.onMessage.addListener(async function(message){ 
-        console.log(message.videolink + ", " + message.title);
+        //console.log(message.videolink + ", " + message.title);
         /*  = null;
          = message.videolink; */
 /*         chrome.webNavigation.onHistoryStateUpdated.addListener(async function(details){
@@ -55,11 +55,11 @@ chrome.runtime.onConnect.addListener(async function(port){
             if(message.time == -1){
                 let checkStorePromise = checkStoredLinks(message.videolink);
                 checkStorePromise.then(function(storedLinkIndex){
-                    console.log("STORED LINK INDEX: " + storedLinkIndex);
+                    //console.log("STORED LINK INDEX: " + storedLinkIndex);
                     if(storedLinkIndex != -1){
                         let linktimepromise = getStoredLinkVideo(storedLinkIndex);
                         linktimepromise.then(function(linkVideo){
-                            console.log("sending response");
+                            //console.log("sending response");
                             port.postMessage({videolink:linkVideo.videolink , time: linkVideo.time,
                                 duration: linkVideo.duration,title:linkVideo.title,channel:linkVideo.channel});
                         })
@@ -77,7 +77,6 @@ chrome.runtime.onConnect.addListener(async function(port){
 
             }
             else{
-                console.log("else");
                 let promise2 = setTime(message);
                 promise2.then(/* console.log("UPDATED VIDEO TIME") */);
             }

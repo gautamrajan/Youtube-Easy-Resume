@@ -99,68 +99,21 @@ $(document).ready(async function(){
                     });
                 }
                 else */ if(message.time != -1 && timeCheck == false){
-                    console.log("AT SET TIME");
+                    //console.log("AT SET TIME");
                     video.currentTime = message.time;
-                    console.log("Setting timecheck true");
+                    //console.log("Setting timecheck true");
                     timeCheck = true;
                 }
                 else{
-                    console.log("Setting timecheck true");
+                    //onsole.log("Setting timecheck true");
                     timeCheck = true;
                 }
                 var lastTitle = videoTitle;
                 video.ontimeupdate = function(){
                     //document.addEventListener('yt-navigate-finish', async function() {
-                        console.log("yt-navigate-finish event logged");
-                        //console.log("PAGE NAVIGATION DETECTED! TURNING OFF TIMECHECK.");
-                        //channelName = null;
-                        //videoTitle = null;
-                        //timeCheck = false;
+                        //console.log("yt-navigate-finish event logged");
+        
                         currentURL = window.location.href;
-                        //let gtPromise = grabTitle();
-                        /* gtPromise.then(()=>{
-                            console.log("GRABBED PAGE INFO. SETTING TIMECHECK TO TRUE");
-                            channelName = $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent;
-                            videoTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent;
-                            //console.log("New video title: " + $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent);
-                            //console.log("New channel name: " + $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent); 
-                            video = document.querySelector("video");
-                            //while(Number.isNaN(video.duration)){
-                            //    console.log("duration is NaN waiting to send initial message");
-                            //}
-                            timeCheck = true;   
-                            // port.postMessage({videolink: currentURL, time: -1, duration: video.duration, title:videoTitle, channel: channelName},function(){
-                            //    timeCheck = true;   
-                            //}); 
-                            
-                        }) */
-                    //});
-
-                    /* if(currentURL != window.location.href && timeCheck == true){
-                        console.log("PAGE NAVIGATION DETECTED! TURNING OFF TIMECHECK.");
-                        channelName = null;
-                        videoTitle = null;
-                        timeCheck = false;
-                        currentURL = window.location.href;
-                        if(checkWatchable(window.location.href)){
-                            let gtPromise = grabTitle();
-                            gtPromise.then(()=>{
-                                console.log("GRABBED PAGE INFO. SETTING TIMECHECK TO TRUE");
-                                channelName = $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent;
-                                videoTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent;
-                                console.log("New video title: " + videoTitle);
-                                console.log("New channel name: " + channelName);
-                                video = document.querySelector("video");
-                                //while(Number.isNaN(video.duration)){
-                                //    console.log("duration is NaN waiting to send initial message");
-                                //}
-                                port.postMessage({videolink: currentURL, time: -1, duration: video.duration, title:videoTitle, channel: channelName},function(){
-                                    timeCheck = true;   
-                                });
-                                
-                            })
-                        }
-                    } */
                     
                     if(timeCheck && !Number.isNaN(video.duration) && video.duration!=0 && !(video.currentTime<0)
                      && channelName!=null && videoTitle!=null){

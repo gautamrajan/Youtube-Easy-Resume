@@ -104,6 +104,7 @@ function generateListElement(video){
             cSeconds = cSeconds.toString();
             currentTime.textContent = "Resume at " + cMinutes + ":" + cSeconds;
 
+            //need to account for video over an hour long 
             var duration = document.createElement("duration");
             var dMinutes = Math.round(video.duration);
             var dSeconds = dMinutes%60;
