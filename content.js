@@ -108,12 +108,35 @@ $(document).ready(async function(){
                     console.log("Setting timecheck true");
                     timeCheck = true;
                 }
-                document.addEventListener('yt-navigate-finish', function() {
-                    console.log("yt-page-data-updated event logged");
-                });
-                video.ontimeupdate = async function(){
+                var lastTitle = videoTitle;
+                video.ontimeupdate = function(){
+                    //document.addEventListener('yt-navigate-finish', async function() {
+                        console.log("yt-navigate-finish event logged");
+                        //console.log("PAGE NAVIGATION DETECTED! TURNING OFF TIMECHECK.");
+                        //channelName = null;
+                        //videoTitle = null;
+                        //timeCheck = false;
+                        currentURL = window.location.href;
+                        //let gtPromise = grabTitle();
+                        /* gtPromise.then(()=>{
+                            console.log("GRABBED PAGE INFO. SETTING TIMECHECK TO TRUE");
+                            channelName = $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent;
+                            videoTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent;
+                            //console.log("New video title: " + $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent);
+                            //console.log("New channel name: " + $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent); 
+                            video = document.querySelector("video");
+                            //while(Number.isNaN(video.duration)){
+                            //    console.log("duration is NaN waiting to send initial message");
+                            //}
+                            timeCheck = true;   
+                            // port.postMessage({videolink: currentURL, time: -1, duration: video.duration, title:videoTitle, channel: channelName},function(){
+                            //    timeCheck = true;   
+                            //}); 
+                            
+                        }) */
+                    //});
 
-                    if(currentURL != window.location.href && timeCheck == true){
+                    /* if(currentURL != window.location.href && timeCheck == true){
                         console.log("PAGE NAVIGATION DETECTED! TURNING OFF TIMECHECK.");
                         channelName = null;
                         videoTitle = null;
@@ -128,20 +151,28 @@ $(document).ready(async function(){
                                 console.log("New video title: " + videoTitle);
                                 console.log("New channel name: " + channelName);
                                 video = document.querySelector("video");
-                                /* while(Number.isNaN(video.duration)){
-                                    console.log("duration is NaN waiting to send initial message");
-                                } */
+                                //while(Number.isNaN(video.duration)){
+                                //    console.log("duration is NaN waiting to send initial message");
+                                //}
                                 port.postMessage({videolink: currentURL, time: -1, duration: video.duration, title:videoTitle, channel: channelName},function(){
                                     timeCheck = true;   
                                 });
                                 
                             })
                         }
-                    }
-                    if(timeCheck && !Number.isNaN(video.duration) && channelName!=null && videoTitle!=null){
-                        //console.log("TC - " + video.currentTime + "/" + video.duration);
+                    } */
+                    
+                    if(timeCheck && !Number.isNaN(video.duration) && video.duration!=0 && !(video.currentTime<0)
+                     && channelName!=null && videoTitle!=null){
+                        console.log("TC - " + video.currentTime + "/" + video.duration +", " +  $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent);
                         ct = video.currentTime;
-                        port.postMessage({videolink: currentURL, time: ct, duration: video.duration, title: videoTitle, channel: channelName},()=>{
+                        if($("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent!=lastTitle){
+                            port.postMessage({videolink: window.location.href/* currentURL */, time: -1, duration: video.duration, title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent/* videoTitle */, channel: $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent/* channelName */},()=>{
+                                console.log("SENT: " + currentURL +" , " + ct);
+                                lastTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent;
+                            })
+                        }
+                        port.postMessage({videolink: window.location.href/* currentURL */, time: ct, duration: video.duration, title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent/* videoTitle */, channel: $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent/* channelName */},()=>{
                             console.log("SENT: " + currentURL +" , " + ct);
                         })
                     }

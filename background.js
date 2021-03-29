@@ -17,7 +17,8 @@ initStorage();
 chrome.runtime.onConnect.addListener(async function(port){
 /*     var currentURL = null;
     var sentChangeURL = null; */
-    port.onMessage.addListener(async function(message){
+    port.onMessage.addListener(async function(message){ 
+        console.log(message.videolink + ", " + message.title);
         /*  = null;
          = message.videolink; */
 /*         chrome.webNavigation.onHistoryStateUpdated.addListener(async function(details){
@@ -76,7 +77,8 @@ chrome.runtime.onConnect.addListener(async function(port){
 
             }
             else{
-                let promise2 = setTime(message.videolink, message.time);
+                console.log("else");
+                let promise2 = setTime(message);
                 promise2.then(/* console.log("UPDATED VIDEO TIME") */);
             }
         //}
@@ -225,20 +227,20 @@ function addNewVideo(video){
     
 }
 
-async function setTime(link, time){
+async function setTime(video){
     return new Promise(function(resolve){
         var currentVideos = [];
         chrome.storage.local.get("videos", function(data){
             currentVideos = data;
-            for(i=0;i<currentVideos.videos.length;i++){
-                if(currentVideos.videos[i].videolink == link){
+            for(var i=0;i<currentVideos.videos.length;i++){
+                if(currentVideos.videos[i].videolink == video.videolink){
                     /* var nv = {
                         videolink:link,
                         time: time
                     }; */
-                    var nv = currentVideos.videos[i];
-                    nv.time = time;
-                    currentVideos.videos[i] = nv;            
+                    /* var nv = currentVideos.videos[i];
+                    nv.time = time; */
+                    currentVideos.videos[i] = video;            
                     chrome.storage.local.set(currentVideos);
                     break;
                 }
