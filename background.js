@@ -15,40 +15,91 @@ initStorage();
 
 
 chrome.runtime.onConnect.addListener(async function(port){
+/*     var currentURL = null;
+    var sentChangeURL = null; */
     port.onMessage.addListener(async function(message){
-        if(message.time == -1){
-            let checkStorePromise = checkStoredLinks(message.videolink);
-            checkStorePromise.then(function(storedLinkIndex){
-                console.log("STORED LINK INDEX: " + storedLinkIndex);
-                if(storedLinkIndex != -1){
-                    let linktimepromise = getStoredLinkVideo(storedLinkIndex);
-                    linktimepromise.then(function(linkVideo){
-                        console.log("sending response");
-                        port.postMessage({videolink:linkVideo.videolink , time: linkVideo.time,
-                            duration: linkVideo.duration,title:linkVideo.title,channel:linkVideo.channel});
-                    })
+        /*  = null;
+         = message.videolink; */
+/*         chrome.webNavigation.onHistoryStateUpdated.addListener(async function(details){
+            var urlString = details.url;
+            currentURL = urlString;
+            if((sentChangeURL!=null && sentChangeURL != urlString) || sentChangeURL == null){
+                sentChangeURL = urlString;
+                if(extractWatchID(message.videolink)!=extractWatchID(urlString)){
+                    console.log("PAGE NAVIGATION DETECTED!");
+                    console.log("MESSAGE URL: " + message.videolink);
+                    console.log("UPDATED URL: " + urlString);
+                    let vDBPromise = checkStoredLinks(urlString);
+                    vDBPromise.then(async function(storedLinkIndex){
+                        if(storedLinkIndex != -1){
+                            let ltpromise = getStoredLinkVideo(storedLinkIndex);
+                            ltpromise.then(function(linkVideo){
+                                console.log("sending response");
+                                //sentChangeURL = urlString;
+                                port.postMessage({videolink:linkVideo.videolink , time: linkVideo.time,
+                                    duration: linkVideo.duration,title:linkVideo.title,channel:linkVideo.channel});
+                            })
+                        }
+                        else{
+                            //sentChangeURL = urlString;
+                            port.postMessage({videolink:urlString, time:-1,
+                                duration: 0, title:"", channel:""});
+                        }
+                        
+                    });
                 }
-                else{
-                    /* console.log("sending response"); */
-                    let addVideoPromise = addNewVideo({videolink:message.videolink, time:-1,
-                        duration: message.duration, title:message.title, channel:message.channel});
-                    addVideoPromise.then(
-                        port.postMessage({videolink:message.videolink, time:-1,
-                            duration: message.duration, title:message.title, channel:message.channel})
-                    );
-                }
-            });
+            }
+        }) */
+        //if((currentURL==null)||(currentURL!=null && message.videolink==currentURL)){
+            if(message.time == -1){
+                let checkStorePromise = checkStoredLinks(message.videolink);
+                checkStorePromise.then(function(storedLinkIndex){
+                    console.log("STORED LINK INDEX: " + storedLinkIndex);
+                    if(storedLinkIndex != -1){
+                        let linktimepromise = getStoredLinkVideo(storedLinkIndex);
+                        linktimepromise.then(function(linkVideo){
+                            console.log("sending response");
+                            port.postMessage({videolink:linkVideo.videolink , time: linkVideo.time,
+                                duration: linkVideo.duration,title:linkVideo.title,channel:linkVideo.channel});
+                        })
+                    }
+                    else{
+                        /* console.log("sending response"); */
+                        let addVideoPromise = addNewVideo({videolink:message.videolink, time:-1,
+                            duration: message.duration, title:message.title, channel:message.channel});
+                        addVideoPromise.then(
+                            port.postMessage({videolink:message.videolink, time:-1,
+                                duration: message.duration, title:message.title, channel:message.channel})
+                        );
+                    }
+                });
 
-        }
-        else{
-            let promise2 = setTime(message.videolink, message.time);
-            promise2.then(console.log("UPDATED VIDEO TIME"));
-
-        }        
+            }
+            else{
+                let promise2 = setTime(message.videolink, message.time);
+                promise2.then(/* console.log("UPDATED VIDEO TIME") */);
+            }
+        //}
     });
   });
 
-
+function extractWatchID(link){
+    //console.log("extractWatchID " + link);
+    var start;
+    var end;
+    for(var i=0;i<link.length;i++){
+        if(link[i]=='v' && link[i+1] == '='){
+            start = i+2;
+        }
+        else if(link[i] =='&'){
+            end = i-1;
+        }
+        else if(i==link.length-1){
+            end=i;
+        }
+    }
+    return link.substr(start, end);
+}
 //printDB();
 /* addNewVideo("https://www.youtube.com/watch?v=3dzPcy9VyfQ");
 console.log("FINISHED ADDING LINK");

@@ -4,7 +4,7 @@
     "version": "0.1",
     "description": "DEEGUS",
     "short_name": "DEEEGUS",
-    "permissions": ["activeTab", "declarativeContent", "unlimitedStorage", "storage", "<all_urls>"],
+    "permissions": ["activeTab", "declarativeContent", "unlimitedStorage", "storage", "<all_urls>", "webNavigation"],
 
     "content_scripts":[
         {
