@@ -9,7 +9,7 @@
     "content_scripts":[
         {
             "matches":[
-                "<all_urls>"
+                "*//www.youtube.com/watch?v=*"
             ],
             "js": [
                 "jquery-3.5.1.min.js",

@@ -53,7 +53,7 @@ function initStorage(){
     console.log("BYTES USED: " + bytesUsed);
     if(bytesUsed == 0 || bytesUsed == undefined){
         console.log("BYTES USED ZERO OR undefined");
-        chrome.storage.local.set(nvarray);  
+        chrome.storage.local.set(nvarray,()=>{return;});  
     }
     else{
         console.log("Storage not empty");
@@ -65,10 +65,6 @@ $(document).ready(async function(){
     var currentURL = window.location.href;
     let grabTitlePromise = grabTitle();
     initStorage();
-    /* let cslPromise = checkStoredLinks(window.location.href);
-    cslPromise.then((vid)=>{
-        
-    }) */
     if(checkWatchable(window.location.href)){
         grabTitlePromise.then(async function(videoTitle){
             
@@ -218,7 +214,7 @@ function addNewVideo(video){
         chrome.storage.local.get("videos", function(data){
             currentVideos = data;
             currentVideos.videos.push(newVideo);
-            chrome.storage.local.set(currentVideos);
+            chrome.storage.local.set(currentVideos,()=>{return;});
         });
         resolve();
     })
@@ -239,7 +235,7 @@ function setTime(video){
                     /* var nv = currentVideos.videos[i];
                     nv.time = time; */
                     currentVideos.videos[i] = video;            
-                    chrome.storage.local.set(currentVideos);
+                    chrome.storage.local.set(currentVideos,()=>{return;});
                     break;
                 }
             }
