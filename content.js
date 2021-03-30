@@ -13,17 +13,28 @@
 function grabTitle(){
     var videoTitle;
     //var channelName = $("yt-formatted-string#text.style-scope.ytd-channel-name")[0];
-    return new Promise(function(resolve){
+    return new Promise(function(resolve,reject){
+        if(!checkWatchable(window.location.href)){
+            console.log("rejecting grabTitle. link not watchable");
+            reject();
+        };
         videoTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0];
         //channelName = $("yt-formatted-string#text.style-scope.ytd-channel-name")[0];
-        if(videoTitle==null){
+        if(videoTitle==null || videoTitle==undefined){
             console.log("VIDEO TITLE OR CHANNEL NAME IS NULL. TRYING AGAIN IN ONE SECOND.");
-            setTimeout(()=>{
+            /* setTimeout(()=>{
                 let grabTitlePromise = grabTitle();
                 grabTitlePromise.then(function(videoTitle){
                     resolve(videoTitle);
                 })
-            },1000)
+            },1000) */
+            var interval = setInterval(()=>{
+                videoTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0];
+                if(!(videoTitle==null || videoTitle==undefined)){
+                    resolve(videoTitle);
+                    clearInterval(interval);
+                }
+            },2000)
         }
         else{
             console.log("resolving");
@@ -47,135 +58,104 @@ function checkWatchable(link){
 }
 function initStorage(){
     var bytesUsed;
-    chrome.storage.local.getBytesInUse(null, function(bytes){
+    chrome.storage.local.getBytesInUse("videos", function(bytes){
         bytesUsed = bytes;
+    
+        console.log("BYTES USED: " + bytesUsed);
+        if(bytesUsed == 0 || bytesUsed == undefined){
+            console.log("BYTES USED ZERO OR undefined");
+            chrome.storage.local.set(nvarray,()=>{return;});  
+        }
+        else{
+            console.log("Storage not empty");
+        }
     });
-    console.log("BYTES USED: " + bytesUsed);
-    if(bytesUsed == 0 || bytesUsed == undefined){
-        console.log("BYTES USED ZERO OR undefined");
-        chrome.storage.local.set(nvarray,()=>{return;});  
-    }
-    else{
-        console.log("Storage not empty");
-    }
 }
 
 var nvarray = {videos:[]};
+var initialLinkIsVideo;
+var directLoopDone;
+var ytNavLoop;
 $(document).ready(async function(){
-    var currentURL = window.location.href;
-    let grabTitlePromise = grabTitle();
+    /* chrome.storage.local.clear(()=>{
+        console.log("CLEARED STORAGE: ");
+    }); */
+    console.log("document ready, starting");
+    ytNavLoop = false;
+    if(checkWatchable(window.location.href)){initialLinkIsVideo = true}
+    else{initialLinkIsVideo = false};
     initStorage();
-    if(checkWatchable(window.location.href)){
-        grabTitlePromise.then(async function(videoTitle){
-            
-            var channelName = $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent;
-            var videoTitle = videoTitle.textContent;
-            console.log("Video Title: " + videoTitle);
-            console.log("Channel Name: " + channelName);
-
-
-            console.log("Current URL: " + currentURL);
-            var video = document.querySelector("video");
-            //console.log("Video Duration: " + video.duration); 
-            let cslPromise = checkStoredLinks(window.location.href);
-            cslPromise.then(
-                (vid)=>{
-                    if(vid.time>0){
-                        video.currentTime = vid.time;
-                    }
+    document.addEventListener('yt-navigate-finish',async ()=>{
+        console.log("yt-navigate-finish EVENT DETECTED.")
+        if(initialLinkIsVideo){
+            console.log("SETTING initialLinkIsVideo FALSE AND STARTING mainVideoProcess()");
+            initialLinkIsVideo = false;
+            waitYtNav().then(()=>{
+                console.log("ytnav set. startin mvp process in event listener loop");
+            })
+            .then(async ()=>{
+                mainVideoProcess().then(()=>{
                     return;
-                },
-                ()=>{
-                    var duration;
-                    var currentTime;
-                    if(Number.isNaN(video.duration) || video.duration <0){duration = 0}
-                    else{duration = video.duration};
+                })
+            })
+        }
+        else{
+            console.log("initialLinkIsVideo never triggered. starting mvp");
+            ytNavLoop = true;
+            mainVideoProcess().then(()=>{
+                return;
+            })
+        }
+            
+       
+        //waitYtNav().then(mainVideoProcess().then(()=>{return}));
+    })
 
-                    if(Number.isNaN(video.currentTime) || video.currentTime < 0){currentTime = 0}
-                    else{currentTime = video.currentTime};
-
-                    var newVid = {videolink: window.location.href, time: video.currentTime, duration: duration,
-                        title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
-                        channel: $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent};
-                    addNewVideo(newVid).then(()=>{ return;})
-                }
-            ); 
-            console.log("returning grabTitlePromise");
-            return;
-        })/* .then(()=>{
-
-
-        }) */
-        .then(async ()=>{
-            //var videolink = checkWatchable(window.location.href);
-            //if(videolink) {
-                var video = document.querySelector("video");
-                console.log("starting from videolink");
-                var ct = video.currentTime;
-                //var videoDuration = video.duration;
-                var timeCheck = true;
-                var lastTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent;
-                video.ontimeupdate = function(){        
-                    currentURL = window.location.href;
-                    var videoTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent;
-                    var channelName = $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent;
-                    if(!Number.isNaN(video.duration) && video.duration!=0 && !(video.currentTime<0)
-                        && channelName!=null && videoTitle!=null){
-                        ct = video.currentTime;
-                        if($("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent!=lastTitle){
-                            /* port.postMessage({videolink: window.location.href, time: -1, duration: video.duration,
-                                title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
-                                channel: $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent},()=>{
-                                console.log("SENT: " + currentURL +" , " + ct);
-                                lastTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent;
-                            }) */
-                            lastTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent;
-                            timeCheck=false;
-                            if(checkWatchable(window.location.href)){
-                                console.log("TITLE CHANGE. WATCHABLE. CHECKING DB");
-                                checkStoredLinks(window.location.href).then(
-                                    (vid)=>{
-                                        if(vid.time>0){
-                                            document.querySelector("video").currentTime = vid.time;
-                                        }
-                                        timeCheck=true;
-                                    },
-                                    ()=>{
-                                        console.log("vid not found in db. adding vid");
-                                        addNewVideo({videolink: window.location.href, time: video.currentTime, duration: video.duration,
-                                            title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
-                                            channel: $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent})
-                                        .then(()=>{
-                                            timeCheck=true;
-                                            return;
-                                        })
-                                        
-                                    }
-                                )
-                            }
-                            else{
-                                console.log("TITLE CHANGE. NOT WATCHABLE");
-                            }
-                        }
-                        else if(timeCheck){
-                            console.log("TC - " + video.currentTime + "/" + video.duration +", " +  $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent);
-                            /* port.postMessage({videolink: window.location.href, time: ct, duration: video.duration,
-                            title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
-                            channel: $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent},()=>{
-                            console.log("SENT: " + currentURL +" , " + ct);
-                            }) */
-                            setTime({videolink: window.location.href, time: video.currentTime, duration: video.duration,
-                                title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
-                                channel: $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent})
-                            .then(()=>{return});
-                        }
-                    }
-                };
-
-            //}
-        })
-    }
+        if(initialLinkIsVideo &&  !ytNavLoop){
+            //loopPromise().then(()=>{return;})
+            console.log("RUNNING DIRECT LOOP");
+            mainVideoProcess().then(()=>
+            {
+                console.log("initial link loop complete. setting ytnav true");
+                ytNavLoop = true;
+                return;
+            });
+        }
+        
 });
+function waitYtNav(){
+
+    return new Promise(function(resolve){
+        var ytNavInterval = setInterval(()=>{
+            if(ytNavLoop == true){
+                resolve();
+                clearInterval(ytNavInterval);
+            }
+        },1000)
+    })
+}
+function loopPromise(){
+    return new Promise(function(resolve){
+        console.log("RUNNING DIRECT LOOP");
+        mainVideoProcess()
+            .then(()=>
+            {
+                console.log("FINISHED MAIN VIDEO PROCESS");
+                setTimeout(()=>{
+                    if(initialLinkIsVideo){
+                        console.log("RUNNING AGAIN");
+                        loopPromise().then(()=>{resolve()});
+                    }
+                    else{
+                        console.log("initialLinkIsVideo VALUE CHANGED. RESOLVING");
+                        resolve();
+                    }
+                },1000)
+            })
+
+
+    })
+}
 
 function checkStoredLinks(link){
     var result = -1;
@@ -211,12 +191,12 @@ function addNewVideo(video){
         var currentVideos = [];
         var newVideo = {videolink:video.videolink, time:-1,
             duration: video.duration, title:video.title, channel:video.channel}
-        chrome.storage.local.get("videos", function(data){
+        chrome.storage.local.get("videos", async function(data){
             currentVideos = data;
             currentVideos.videos.push(newVideo);
-            chrome.storage.local.set(currentVideos,()=>{return;});
+            chrome.storage.local.set(currentVideos,()=>{resolve();});
         });
-        resolve();
+        
     })
     
 }
@@ -243,4 +223,169 @@ function setTime(video){
         resolve();
     })
 
+}
+
+async function mainVideoProcess(){
+    return new Promise(async function(resolve){
+        var currentURL = window.location.href;
+        if(checkWatchable(window.location.href)){
+            let grabTitlePromise = grabTitle();
+            //if(checkWatchable(window.location.href)){
+            grabTitlePromise.then(function(videoTitle){
+                if(checkWatchable(window.location.href)){
+                    var channelName = $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent;
+                    var vTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent;
+                    console.log("Video Title: " + vTitle);
+                    console.log("Channel Name: " + channelName);
+
+
+                    console.log("Current URL: " + currentURL);
+                    //console.log("Video Duration: " + video.duration); 
+                    /* let cslPromise = checkStoredLinks(window.location.href);
+                    cslPromise.then(
+                        (vid)=>{
+                            if(vid.time>0){
+                                document.querySelector("video").currentTime = vid.time;
+                            }
+                            console.log("returning from cslPromise")
+
+                            //return;
+                        },
+                        async ()=>{
+                            var duration;
+                            var currentTime;
+                            if(Number.isNaN(video.duration) || video.duration <0){duration = 0}
+                            else{duration = video.duration};
+
+                            if(Number.isNaN(video.currentTime) || video.currentTime < 0){currentTime = 0}
+                            else{currentTime = video.currentTime};
+
+                            var newVid = {videolink: window.location.href, time: currentTime, duration: duration,
+                                title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
+                                channel: $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent};
+                            addNewVideo(newVid).then(()=>{ return;})
+                        }
+                    ) *///.then(()=>{console.log("returning grabTitlePromise"); return;}) 
+                    
+                }
+                //return;
+                return;
+            },()=>{console.log("grabtitlepromise reject")})
+            .then(()=>{
+                return checkStoredLinks(window.location.href);
+            })
+            .then(
+                (vid)=>{
+                    if(vid.time>0){
+                        document.querySelector("video").currentTime = vid.time;
+                    }
+                    console.log("returning from cslPromise")
+
+                    //return;
+                },
+                async ()=>{
+                    var duration;
+                    var currentTime;
+                    var video = document.querySelector("video");
+                    if(Number.isNaN(video.duration) || video.duration <0){duration = 0}
+                    else{duration = video.duration};
+
+                    if(Number.isNaN(video.currentTime) || video.currentTime < 0){currentTime = 0}
+                    else{currentTime = video.currentTime};
+
+                    var newVid = {videolink: window.location.href, time: currentTime, duration: duration,
+                        title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
+                        channel: $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent};
+                    addNewVideo(newVid).then(()=>{ return;})
+                }
+            )
+            
+            .then(async ()=>{
+                //var videolink = checkWatchable(window.location.href);
+                //if(videolink) {
+                    //var video = document.querySelector("video");
+                    console.log("starting from videolink");
+                    //var ct = document.querySelector("video").currentTime;
+                    //var videoDuration = video.duration;
+                    var timeCheck = true;
+                    var lastTitle;
+                    try{
+                        lastTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent;
+                    }catch(err){console.log("caught last title err")}
+                    document.querySelector("video").ontimeupdate = async function(){        
+                        currentURL = window.location.href;
+                        var videoTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent;
+                        var channelName = $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent;
+                        if(!Number.isNaN(document.querySelector("video").duration) && document.querySelector("video").duration!=0 
+                            && !(document.querySelector("video").currentTime<0) && channelName!=null && videoTitle!=null
+                            && (initialLinkIsVideo || ytNavLoop) 
+                            ){
+                            ct = document.querySelector("video").currentTime;
+                            if($("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent!=lastTitle){
+                                lastTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent;
+                                timeCheck=false;
+                                //if(checkWatchable(window.location.href)){
+                                    
+                                    if(initialLinkIsVideo && !ytNavLoop){
+                                        console.log("TITLE CHANGE DURING INITIAL LINK LOOP. RESOLVING.");
+                                        resolve();
+                                    }
+                                    /* checkStoredLinks(window.location.href).then(
+                                        (vid)=>{
+                                            if(vid.time>0){
+                                                document.querySelector("video").currentTime = vid.time;
+                                            }
+                                            timeCheck=true;
+                                        },
+                                        ()=>{
+                                            console.log("vid not found in db. adding vid");
+                                            var duration;
+                                            var currentTime;
+                                            if(Number.isNaN(document.querySelector("video").duration)
+                                            || document.querySelector("video").duration <0) {duration = 0}
+                                            else{duration = document.querySelector("video").duration};
+                                            if(Number.isNaN(document.querySelector("video").currentTime)
+                                            || document.querySelector("video").currentTime < 0) {currentTime = 0}
+                                            else{currentTime = document.querySelector("video").currentTime};
+                                            addNewVideo({videolink: window.location.href, time: currentTime,
+                                                duration: duration,
+                                                title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
+                                                channel: $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent})
+                                            .then(()=>{
+                                                timeCheck=true;
+                                                return;
+                                            })
+                                            
+                                        }
+                                    ) */
+                                //}
+                                //else{
+                                //   console.log("TITLE CHANGE. NOT WATCHABLE");
+                                //}
+                            }
+                            else if(!initialLinkIsVideo && !ytNavLoop){
+                                resolve();
+                            }
+                            else if(timeCheck){
+                                console.log("TC - " + document.querySelector("video").currentTime + "/" + document.querySelector("video").duration +", " +  $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent);
+                                /* port.postMessage({videolink: window.location.href, time: ct, duration: video.duration,
+                                title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
+                                channel: $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent},()=>{
+                                console.log("SENT: " + currentURL +" , " + ct);
+                                }) */
+                                setTime({videolink: window.location.href, time: document.querySelector("video").currentTime,
+                                    duration: document.querySelector("video").duration,
+                                    title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
+                                    channel: $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent})
+                                .then(()=>{return});
+                            }
+                        }
+                        
+                    };
+
+                //}
+            })
+        //}
+        }
+    });
 }
