@@ -127,7 +127,9 @@ function waitYtNav(){
 
     return new Promise(function(resolve){
         var ytNavInterval = setInterval(()=>{
+            console.log("ytnav waiting");
             if(ytNavLoop == true){
+                console.log("ytnav waiting");
                 resolve();
                 clearInterval(ytNavInterval);
             }
@@ -208,13 +210,10 @@ function setTime(video){
             currentVideos = data;
             for(var i=0;i<currentVideos.videos.length;i++){
                 if(currentVideos.videos[i].videolink == video.videolink){
-                    /* var nv = {
-                        videolink:link,
-                        time: time
-                    }; */
-                    /* var nv = currentVideos.videos[i];
-                    nv.time = time; */
-                    currentVideos.videos[i] = video;            
+                    
+                    currentVideos.videos[i] = video;
+                    /* currentVideos.splice(i,1);
+                    currentVideos.push(video);    */         
                     chrome.storage.local.set(currentVideos,()=>{return;});
                     break;
                 }
@@ -330,6 +329,10 @@ async function mainVideoProcess(){
                                         console.log("TITLE CHANGE DURING INITIAL LINK LOOP. RESOLVING.");
                                         resolve();
                                     }
+                                    else if(!initialLinkIsVideo && !ytNavLoop){
+                                        console.log("TITLE CHANGE DURING TRADEOFF.RESOLVING.");
+                                        resolve();
+                                    }
                                     /* checkStoredLinks(window.location.href).then(
                                         (vid)=>{
                                             if(vid.time>0){
@@ -379,6 +382,9 @@ async function mainVideoProcess(){
                                     channel: $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent})
                                 .then(()=>{return});
                             }
+                        }
+                        else if(!initialLinkIsVideo && !ytNavLoop){
+                            resolve();
                         }
                         
                     };

@@ -29,7 +29,7 @@ function generateList(){
             {
                 var fragment = document.createDocumentFragment();
                 //console.log("video DB length: " + data.videos.length);
-                for(var i=0;i<data.videos.length;i++){
+                for(var i=(data.videos.length - 1);!(i<0);i--){
                     console.log("generating item for video: " + i);
                     var newVidButton = generateListElement(data.videos[i]);
                     fragment.append(newVidButton);
@@ -51,6 +51,7 @@ function generateListElement(video){
     videoButton.classList.add('main-list-element');
     videoButton.setAttribute("href",video.videolink);
     videoButton.setAttribute("target","_blank");
+    videoButton.setAttribute("title",video.title);
     var thumbnail = document.createElement('img');
     var imageLink;
     var start;

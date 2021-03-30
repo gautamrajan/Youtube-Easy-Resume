@@ -30,7 +30,7 @@ h1{
     max-height:380px;
     display:block;
     overflow: hidden;
-    overflow-y:scroll;
+    overflow-y:auto;
     /* scrollbar-width: thin; */
     scrollbar-color: var(--thumbBG) var(--scrollbarBG);
 }
@@ -91,13 +91,12 @@ h1{
     margin-left: 6px;
     /* color: #ffffff; */
     font-size: 15px;
-    min-width:210px;
-    max-width:210px;
+    min-width:205px;
+    max-width:205px;
     max-height: 19px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-
 }
 .main-list-element info subtext{
    
