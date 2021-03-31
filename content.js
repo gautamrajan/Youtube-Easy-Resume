@@ -16,6 +16,9 @@ var nvarray = {videos:[]};
 var initialLinkIsVideo;
 var directLoopDone;
 var ytNavLoop;
+var previousURL;
+var previousTitle;
+var previousChannel;
 $(document).ready(async function(){
     /* chrome.storage.local.clear(()=>{
         console.log("CLEARED STORAGE: ");
@@ -24,7 +27,8 @@ $(document).ready(async function(){
     ytNavLoop = false;
     if(checkWatchable(window.location.href)){initialLinkIsVideo = true}
     else{initialLinkIsVideo = false};
-    initStorage();
+
+    initStorage().then(async()=>{
     document.addEventListener('yt-navigate-finish',async ()=>{
         console.log("yt-navigate-finish EVENT DETECTED.")
         if(initialLinkIsVideo){
@@ -61,10 +65,30 @@ $(document).ready(async function(){
                 return;
             });
         }
-        
+    })
 });
+function extractWatchID(link){
+    //console.log("extractWatchID " + link);
+    var start = 0;
+    var end = 0;
+    for(var i=0;i<link.length;i++){
+        if(link[i]=='v' && link[i+1] == '='){
+            start = i+2;
+        }
+        else if(link[i] =='&'){
+            end = i;
+            break;
+        }
+        else if(i==link.length-1){
+            end=i+1;
+        }
+    }
+    var result = link.slice(start,end);
+    return result;
+}
 function grabTitle(){
     var videoTitle;
+    var cN;
     //var channelName = $("yt-formatted-string#text.style-scope.ytd-channel-name")[0];
     return new Promise(function(resolve,reject){
         if(!checkWatchable(window.location.href)){
@@ -83,7 +107,12 @@ function grabTitle(){
             },1000) */
             var interval = setInterval(()=>{
                 videoTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0];
-                if(!(videoTitle==null || videoTitle==undefined)){
+                cN = $("yt-formatted-string#text.style-scope.ytd-channel-name")[0]
+                if(!(videoTitle==null || videoTitle==undefined)
+                    /* && !(cN==null || cN==undefined) */
+                ){
+                    /* if(cN == previousChannel && videoTitle == previousTitle
+                        && extractWatchID(window.location.href)!=extractWatchID() ) */
                     resolve(videoTitle);
                     clearInterval(interval);
                 }
@@ -110,19 +139,24 @@ function checkWatchable(link){
     }
 }
 function initStorage(){
-    var bytesUsed;
-    chrome.storage.local.getBytesInUse("videos", function(bytes){
-        bytesUsed = bytes;
+    return new Promise(function(resolve){
+        var bytesUsed;
+        chrome.storage.local.getBytesInUse("videos", function(bytes){
+            bytesUsed = bytes;
+        
+            console.log("BYTES USED: " + bytesUsed);
+            if(bytesUsed == 0 || bytesUsed == undefined){
+                console.log("BYTES USED ZERO OR undefined");
+                chrome.storage.local.set(nvarray,()=>{return;});  
+            }
+            else{
+                console.log("Storage not empty");
+            }
+            resolve();
+        });
+
+    })
     
-        console.log("BYTES USED: " + bytesUsed);
-        if(bytesUsed == 0 || bytesUsed == undefined){
-            console.log("BYTES USED ZERO OR undefined");
-            chrome.storage.local.set(nvarray,()=>{return;});  
-        }
-        else{
-            console.log("Storage not empty");
-        }
-    });
 }
 
 function waitYtNav(){
@@ -138,28 +172,6 @@ function waitYtNav(){
         },1000)
     })
 }
-function loopPromise(){
-    return new Promise(function(resolve){
-        console.log("RUNNING DIRECT LOOP");
-        mainVideoProcess()
-            .then(()=>
-            {
-                console.log("FINISHED MAIN VIDEO PROCESS");
-                setTimeout(()=>{
-                    if(initialLinkIsVideo){
-                        console.log("RUNNING AGAIN");
-                        loopPromise().then(()=>{resolve()});
-                    }
-                    else{
-                        console.log("initialLinkIsVideo VALUE CHANGED. RESOLVING");
-                        resolve();
-                    }
-                },1000)
-            })
-
-
-    })
-}
 
 function checkStoredLinks(link){
     var result = -1;
@@ -170,7 +182,7 @@ function checkStoredLinks(link){
             if(data.videos.legnth != 0)
             {
                 for(var i=0;i<data.videos.length;i++){
-                    if(data.videos[i].videolink == link){
+                    if(extractWatchID(data.videos[i].videolink) == extractWatchID(link)){
                         console.log("link == videolink; INDEX: " + i);
                         console.log("MATCH FOUND: " + data.videos[i].title + ", " + data.videos[i].channel);
                         result = i;
@@ -211,7 +223,7 @@ function setTime(video){
         chrome.storage.local.get("videos", function(data){
             currentVideos = data;
             for(var i=0;i<currentVideos.videos.length;i++){
-                if(currentVideos.videos[i].videolink == video.videolink){
+                if(extractWatchID(currentVideos.videos[i].videolink) == extractWatchID(video.videolink)){
                     
                     currentVideos.videos[i] = video;
                     /* currentVideos.splice(i,1);
@@ -315,16 +327,17 @@ async function mainVideoProcess(){
                     }catch(err){console.log("caught last title err")}
                     document.querySelector("video").ontimeupdate = async function(){        
                         currentURL = window.location.href;
+                        console.log("ontimeupdate");
                         var videoTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent;
                         var channelName = $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent;
                         if(!Number.isNaN(document.querySelector("video").duration) && document.querySelector("video").duration!=0 
                             && !(document.querySelector("video").currentTime<0) && channelName!=null && videoTitle!=null
-                            && (initialLinkIsVideo || ytNavLoop) 
+                            /* && (initialLinkIsVideo || ytNavLoop) */ 
                             ){
                             ct = document.querySelector("video").currentTime;
                             if($("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent!=lastTitle){
                                 lastTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent;
-                                timeCheck=false;
+                                //timeCheck=false;
                                 //if(checkWatchable(window.location.href)){
                                     
                                     if(initialLinkIsVideo && !ytNavLoop){

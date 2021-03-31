@@ -106,6 +106,27 @@ function secondsToHMS(timeInSeconds){
 
 }
 
+function extractWatchID(link){
+    //console.log("extractWatchID " + link);
+    var start = 0;
+    var end = 0;
+    for(var i=0;i<link.length;i++){
+        if(link[i]=='v' && link[i+1] == '='){
+            start = i+2;
+        }
+        else if(link[i] =='&'){
+            end = i;
+            break;
+        }
+        else if(i==link.length-1){
+            end=i+1;
+        }
+    }
+    var result = link.slice(start,end);
+    console.log("start: " + start + ", end: " + end); 
+    console.log("extractWatchID:  " + result);
+    return result;
+}
 function generateListElement(video){
     var videoButton = document.createElement("a");
     videoButton.classList.add('main-list-element');
@@ -116,19 +137,20 @@ function generateListElement(video){
     var imageLink;
     var start;
     var end;
-    for(var i=0;i<video.videolink.length;i++){
+/*     for(var i=0;i<video.videolink.length;i++){
         if(video.videolink[i]=='v' && video.videolink[i+1] == '='){
             start = i+2;
         }
         else if(video.videolink[i] =='&'){
             end = i-1;
+            break;
         }
         else if(i==video.videolink.length-1){
             end=i;
         }
-    }
-    imageLink = "https://img.youtube.com/vi/" + video.videolink.substr(start,end) + "/default.jpg" ;
-    console.log(imageLink);
+    } */
+    imageLink = "https://img.youtube.com/vi/" + extractWatchID(video.videolink) + "/default.jpg" ;
+    //console.log(imageLink);
     thumbnail.setAttribute("src",imageLink);
     thumbnail.setAttribute("width",120);
     thumbnail.setAttribute("height",90);
@@ -164,7 +186,9 @@ function generateListElement(video){
             else{cSeconds = cSeconds.toString();};
             //cSeconds = cSeconds.toString();
             currentTime.textContent = "Resume at " + cMinutes + ":" + cSeconds; */
-            currentTime.textContent = secondsToHMS(video.time);
+            if(video.time<0){currentTime.textContent = secondsToHMS(0);}
+            else{currentTime.textContent = secondsToHMS(video.time);}
+            
 
             //need to account for video over an hour long 
             var duration = document.createElement("duration");

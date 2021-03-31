@@ -84,22 +84,24 @@ chrome.runtime.onConnect.addListener(async function(port){
     });
   });
 
-function extractWatchID(link){
+  function extractWatchID(link){
     //console.log("extractWatchID " + link);
-    var start;
-    var end;
+    var start = 0;
+    var end = 0;
     for(var i=0;i<link.length;i++){
         if(link[i]=='v' && link[i+1] == '='){
             start = i+2;
         }
         else if(link[i] =='&'){
-            end = i-1;
+            end = i;
+            break;
         }
         else if(i==link.length-1){
-            end=i;
+            end=i+1;
         }
     }
-    return link.substr(start, end);
+    var result = link.slice(start,end);
+    return result;
 }
 //printDB();
 /* addNewVideo("https://www.youtube.com/watch?v=3dzPcy9VyfQ");
