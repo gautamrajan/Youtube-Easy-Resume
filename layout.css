@@ -15,6 +15,25 @@ body{
     background-color: #181818;
 }
 
+div.header-bar{
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+}
+
+div.header-bar button{
+    margin-bottom:5px;
+    border-radius: 10px;
+    border: none;
+    background-color: rgba(99, 99, 99, 0.781);
+    color: #ffffff;
+}
+div.header-bar button:active{
+    background-color: rgba(158, 158, 158, 0.781);
+}
+
 h1{
     margin-bottom: 5px;
     color: #ffffff;

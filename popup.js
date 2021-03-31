@@ -12,16 +12,37 @@ db.then((vdb)=>{
     }
 })
  */
-generateList();
+
 /* var elements = document.getElementsByClassName("main-list-element");
 for(var i=0;i<elements.length;i++){
     
 } */
+generateList().then(()=>{
+    $("button").click(()=>{
+        //console.log("button clicked. requesting confirmation");
+        var confirm = window.confirm("Are you sure you want to clear the database?");
+        if(confirm){
+            chrome.storage.local.remove("videos",()=>{
+                clearList();
+                alert("Video databse cleared");
+            });
+        }
+    })
+})
 
+
+
+
+function clearList(){
+    var mainElements = $("a.main-list-element");
+    for(var i = 0; i<mainElements.length;i++){
+        mainElements[i].remove();
+    }
+}
 
 function generateList(){
     //var db;
-    //return new Promise(function(resolve){
+    return new Promise(function(resolve){
         chrome.storage.local.get("videos",function(data){
             //db = data.videos;
             //resolve(db);
@@ -36,13 +57,52 @@ function generateList(){
                     //document.getElementById("main-list").append(videoButton)
                 }
                 document.getElementById("main-list").append(fragment);
+                resolve();
             }
             /* else{
                 //create no videos message
             } */
         });
-    //})
+    })
     
+
+}
+
+function secondsToHMS(timeInSeconds){
+    /* var seconds = Math.floor(timeInSeconds);
+    var temp = seconds;
+    seconds = seconds % 60;
+    var minutes = (temp - seconds)/60;
+    if(seconds == 60){
+        seconds = 0;
+        minutes = minutes + 1;
+    }
+    temp = minutes;
+    minutes = minutes % 60;
+    var hours = temp/60;
+    if(minutes == 60){
+        minutes = 0;
+        hours = hours +1;
+    } */
+    var inputSeconds = Math.floor(timeInSeconds);
+    var hours = Math.floor(inputSeconds / 3600);
+    var minutes = Math.floor(inputSeconds / 60) % 60;
+    var seconds = inputSeconds % 60;
+    if(hours == 0){
+        minutes = minutes.toString();
+        if(seconds <10){seconds = "0" + seconds.toString();}
+        else{seconds = seconds.toString();};
+        return minutes + ":" + seconds;
+    }
+    else{
+        hours = hours.toString();
+        if(minutes <10){minutes = "0" + minutes.toString();}
+        else{minutes = minutes.toString();};
+
+        if(seconds <10){seconds = "0" + seconds.toString();}
+        else{seconds = seconds.toString();};
+        return hours + ":" + minutes + ":" + seconds;
+    }
 
 }
 
@@ -95,26 +155,29 @@ function generateListElement(video){
         var timeInfo = document.createElement("timeInfo");
 
             var currentTime = document.createElement("currentTime");
-            var cMinutes = Math.round(video.time);
+            /* var cMinutes = Math.round(video.time);
             var cSeconds = cMinutes%60;
             cMinutes = cMinutes-cSeconds;
             cMinutes = cMinutes/60;
             cMinutes = cMinutes.toString();
             if(cSeconds <10){cSeconds = "0" + cSeconds.toString();}
             else{cSeconds = cSeconds.toString();};
-            cSeconds = cSeconds.toString();
-            currentTime.textContent = "Resume at " + cMinutes + ":" + cSeconds;
+            //cSeconds = cSeconds.toString();
+            currentTime.textContent = "Resume at " + cMinutes + ":" + cSeconds; */
+            currentTime.textContent = secondsToHMS(video.time);
 
             //need to account for video over an hour long 
             var duration = document.createElement("duration");
-            var dMinutes = Math.round(video.duration);
+            /* var dMinutes = Math.round(video.duration);
             var dSeconds = dMinutes%60;
             dMinutes = dMinutes-dSeconds;
             dMinutes = dMinutes/60;
             dMinutes = dMinutes.toString();
             if(dSeconds <10){dSeconds = "0" + dSeconds.toString();}
             else{dSeconds = dSeconds.toString();};
-            duration.textContent = dMinutes + ":" + dSeconds;
+            duration.textContent = dMinutes + ":" + dSeconds; */
+            duration.textContent = secondsToHMS(video.duration);
+            
             timeInfo.append(currentTime);
             timeInfo.append(duration);
         info.append(timeInfo);
@@ -131,3 +194,5 @@ function generateListElement(video){
     return videoButton;
     //document.getElementById("main-list").append(videoButton);
 }
+
+

@@ -10,6 +10,59 @@
 
     }
 */
+
+
+var nvarray = {videos:[]};
+var initialLinkIsVideo;
+var directLoopDone;
+var ytNavLoop;
+$(document).ready(async function(){
+    /* chrome.storage.local.clear(()=>{
+        console.log("CLEARED STORAGE: ");
+    }); */
+    console.log("document ready, starting");
+    ytNavLoop = false;
+    if(checkWatchable(window.location.href)){initialLinkIsVideo = true}
+    else{initialLinkIsVideo = false};
+    initStorage();
+    document.addEventListener('yt-navigate-finish',async ()=>{
+        console.log("yt-navigate-finish EVENT DETECTED.")
+        if(initialLinkIsVideo){
+            console.log("SETTING initialLinkIsVideo FALSE AND STARTING mainVideoProcess()");
+            initialLinkIsVideo = false;
+            waitYtNav().then(()=>{
+                console.log("ytnav set. startin mvp process in event listener loop");
+            })
+            .then(async ()=>{
+                mainVideoProcess().then(()=>{
+                    return;
+                })
+            })
+        }
+        else{
+            console.log("initialLinkIsVideo never triggered. starting mvp");
+            ytNavLoop = true;
+            mainVideoProcess().then(()=>{
+                return;
+            })
+        }
+            
+       
+        //waitYtNav().then(mainVideoProcess().then(()=>{return}));
+    })
+
+        if(initialLinkIsVideo &&  !ytNavLoop){
+            //loopPromise().then(()=>{return;})
+            console.log("RUNNING DIRECT LOOP");
+            mainVideoProcess().then(()=>
+            {
+                console.log("initial link loop complete. setting ytnav true");
+                ytNavLoop = true;
+                return;
+            });
+        }
+        
+});
 function grabTitle(){
     var videoTitle;
     //var channelName = $("yt-formatted-string#text.style-scope.ytd-channel-name")[0];
@@ -72,57 +125,6 @@ function initStorage(){
     });
 }
 
-var nvarray = {videos:[]};
-var initialLinkIsVideo;
-var directLoopDone;
-var ytNavLoop;
-$(document).ready(async function(){
-    /* chrome.storage.local.clear(()=>{
-        console.log("CLEARED STORAGE: ");
-    }); */
-    console.log("document ready, starting");
-    ytNavLoop = false;
-    if(checkWatchable(window.location.href)){initialLinkIsVideo = true}
-    else{initialLinkIsVideo = false};
-    initStorage();
-    document.addEventListener('yt-navigate-finish',async ()=>{
-        console.log("yt-navigate-finish EVENT DETECTED.")
-        if(initialLinkIsVideo){
-            console.log("SETTING initialLinkIsVideo FALSE AND STARTING mainVideoProcess()");
-            initialLinkIsVideo = false;
-            waitYtNav().then(()=>{
-                console.log("ytnav set. startin mvp process in event listener loop");
-            })
-            .then(async ()=>{
-                mainVideoProcess().then(()=>{
-                    return;
-                })
-            })
-        }
-        else{
-            console.log("initialLinkIsVideo never triggered. starting mvp");
-            ytNavLoop = true;
-            mainVideoProcess().then(()=>{
-                return;
-            })
-        }
-            
-       
-        //waitYtNav().then(mainVideoProcess().then(()=>{return}));
-    })
-
-        if(initialLinkIsVideo &&  !ytNavLoop){
-            //loopPromise().then(()=>{return;})
-            console.log("RUNNING DIRECT LOOP");
-            mainVideoProcess().then(()=>
-            {
-                console.log("initial link loop complete. setting ytnav true");
-                ytNavLoop = true;
-                return;
-            });
-        }
-        
-});
 function waitYtNav(){
 
     return new Promise(function(resolve){
