@@ -18,6 +18,8 @@ for(var i=0;i<elements.length;i++){
     
 } */
 var maxBarWidth = 226;
+var marginRight = 0;
+var titleWidth = 216;
 //switch maxBarWidth -> 211 if greater than 3 elements
 generateList().then(()=>{
     $("button").click(()=>{
@@ -54,10 +56,13 @@ function generateList(){
                 //console.log("video DB length: " + data.videos.length);
                 if(data.videos.length >=4){
                     maxBarWidth = 211;
+                    marginRight = 7;
+                    titleWidth = 205;
                 }
                 for(var i=(data.videos.length - 1);!(i<0);i--){
                     console.log("generating item for video: " + i);
                     var newVidButton = generateListElement(data.videos[i]);
+                    newVidButton.style.marginRight = marginRight + "px";
                     fragment.append(newVidButton);
                     //document.getElementById("main-list").append(videoButton)
                 }
@@ -173,6 +178,7 @@ function generateListElement(video){
 
         var videoTitle = document.createElement("videoTitle");
         videoTitle.textContent = video.title;
+        videoTitle.style.width = titleWidth + "px"; 
         info.append(videoTitle);
 
         var subtext = document.createElement("subtext");
