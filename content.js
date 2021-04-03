@@ -224,10 +224,9 @@ function setTime(video){
             currentVideos = data;
             for(var i=0;i<currentVideos.videos.length;i++){
                 if(extractWatchID(currentVideos.videos[i].videolink) == extractWatchID(video.videolink)){
-                    
-                    currentVideos.videos[i] = video;
-                    /* currentVideos.splice(i,1);
-                    currentVideos.push(video);    */         
+                    //currentVideos.videos[i] = video;
+                    currentVideos.videos.splice(i,1);
+                    currentVideos.videos.push(video);          
                     chrome.storage.local.set(currentVideos,()=>{return;});
                     break;
                 }
@@ -244,7 +243,9 @@ async function mainVideoProcess(){
         if(checkWatchable(window.location.href)){
             let grabTitlePromise = grabTitle();
             //if(checkWatchable(window.location.href)){
+                if(!initialLinkIsVideo && !ytNavLoop){resolve();}
             grabTitlePromise.then(function(videoTitle){
+                if(!initialLinkIsVideo && !ytNavLoop){resolve();}
                 if(checkWatchable(window.location.href)){
                     var channelName = $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent;
                     var vTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent;
@@ -285,10 +286,16 @@ async function mainVideoProcess(){
                 return;
             },()=>{console.log("grabtitlepromise reject")})
             .then(()=>{
+                if(!initialLinkIsVideo && !ytNavLoop){
+                    resolve();
+                }
                 return checkStoredLinks(window.location.href);
             })
             .then(
                 (vid)=>{
+                    if(!initialLinkIsVideo && !ytNavLoop){
+                        resolve();
+                    }
                     if(vid.time>0){
                         document.querySelector("video").currentTime = vid.time;
                     }
@@ -297,6 +304,9 @@ async function mainVideoProcess(){
                     //return;
                 },
                 async ()=>{
+                    if(!initialLinkIsVideo && !ytNavLoop){
+                            resolve();
+                        }
                     var duration;
                     var currentTime;
                     var video = document.querySelector("video");
@@ -314,6 +324,9 @@ async function mainVideoProcess(){
             )
             
             .then(async ()=>{
+                if(!initialLinkIsVideo && !ytNavLoop){
+                    resolve();
+                }
                 //var videolink = checkWatchable(window.location.href);
                 //if(videolink) {
                     //var video = document.querySelector("video");
@@ -325,7 +338,10 @@ async function mainVideoProcess(){
                     try{
                         lastTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent;
                     }catch(err){console.log("caught last title err")}
-                    document.querySelector("video").ontimeupdate = async function(){        
+                    document.querySelector("video").ontimeupdate = async function(){     
+                        if(!initialLinkIsVideo && !ytNavLoop){
+                            resolve();
+                        }   
                         currentURL = window.location.href;
                         console.log("ontimeupdate");
                         var videoTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent;
@@ -385,7 +401,10 @@ async function mainVideoProcess(){
                                 resolve();
                             }
                             else if(timeCheck){
-                                console.log("TC - " + document.querySelector("video").currentTime + "/" + document.querySelector("video").duration +", " +  $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent);
+                                console.log("TC - " + document.querySelector("video").currentTime + "/" 
+                                + document.querySelector("video").duration +", " 
+                                + $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent + ", "
+                                + $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent);
                                 /* port.postMessage({videolink: window.location.href, time: ct, duration: video.duration,
                                 title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
                                 channel: $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent},()=>{
@@ -407,6 +426,9 @@ async function mainVideoProcess(){
                 //}
             })
         //}
+        }
+        else{
+            console.log("NOT WATCHABLE: RESOLVING");
         }
     });
 }

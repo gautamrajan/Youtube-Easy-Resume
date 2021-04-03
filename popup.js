@@ -17,6 +17,8 @@ db.then((vdb)=>{
 for(var i=0;i<elements.length;i++){
     
 } */
+var maxBarWidth = 226;
+//switch maxBarWidth -> 211 if greater than 3 elements
 generateList().then(()=>{
     $("button").click(()=>{
         //console.log("button clicked. requesting confirmation");
@@ -50,6 +52,9 @@ function generateList(){
             {
                 var fragment = document.createDocumentFragment();
                 //console.log("video DB length: " + data.videos.length);
+                if(data.videos.length >=4){
+                    maxBarWidth = 211;
+                }
                 for(var i=(data.videos.length - 1);!(i<0);i--){
                     console.log("generating item for video: " + i);
                     var newVidButton = generateListElement(data.videos[i]);
@@ -207,7 +212,7 @@ function generateListElement(video){
         info.append(timeInfo);
 
         var bar = document.createElement("bar");
-        var barPx = ((video.time)/(video.duration))*226;
+        var barPx = ((video.time)/(video.duration))*maxBarWidth;
         barPx = Math.round(barPx);
         barPx = "width: " + barPx.toString() + "px"; 
         //bar.style.width =  barPx.toString() + "px";
