@@ -19,7 +19,8 @@ for(var i=0;i<elements.length;i++){
 } */
 var maxBarWidth = 226;
 var marginRight = 0;
-var titleWidth = 216;
+/* var titleWidth = 216; */
+var titleWidth = 188;
 //switch maxBarWidth -> 211 if greater than 3 elements
 generateList().then(()=>{
     $("button").click(()=>{
@@ -58,7 +59,7 @@ function generateList(){
                 if(data.videos.length >=4){
                     maxBarWidth = 211;
                     marginRight = 7;
-                    titleWidth = 205;
+                    //titleWidth = 205;
                 }
                 for(var i=(data.videos.length - 1);!(i<0);i--){
                     console.log("generating item for video: " + i);
@@ -80,21 +81,6 @@ function generateList(){
 }
 
 function secondsToHMS(timeInSeconds){
-    /* var seconds = Math.floor(timeInSeconds);
-    var temp = seconds;
-    seconds = seconds % 60;
-    var minutes = (temp - seconds)/60;
-    if(seconds == 60){
-        seconds = 0;
-        minutes = minutes + 1;
-    }
-    temp = minutes;
-    minutes = minutes % 60;
-    var hours = temp/60;
-    if(minutes == 60){
-        minutes = 0;
-        hours = hours +1;
-    } */
     var inputSeconds = Math.floor(timeInSeconds);
     var hours = Math.floor(inputSeconds / 3600);
     var minutes = Math.floor(inputSeconds / 60) % 60;
@@ -152,18 +138,6 @@ function generateListElement(video){
     thumbnail.setAttribute("width",120);
     thumbnail.setAttribute("height",90);
     videoButton.append(thumbnail);
-    /*  <a class='main-list-element>
-            <image> </image>    
-            <info>
-                <videoTitle>KAKAROT!!!!</videoTitle>
-                <subtext>You stupid  monkey!</subtext>
-                <timeInfo>
-                    <currentTime>0:39</currentTime>
-                    <duration>15:01</duration>
-                </timeInfo>
-                <bar></bar>
-            </info> 
-        </main-list-element>*/
     var elementBody = document.createElement("div");
     elementBody.classList.add('element-body');
 
@@ -177,6 +151,32 @@ function generateListElement(video){
             subtext.textContent = video.channel;
             info.append(subtext);
 
+            /* var timeInfo = document.createElement("timeInfo");
+
+                var currentTime = document.createElement("currentTime");
+                if(video.time<0){currentTime.textContent = secondsToHMS(0);}
+                else{currentTime.textContent = secondsToHMS(video.time);}
+                
+
+                //need to account for video over an hour long 
+                var duration = document.createElement("duration");
+                duration.textContent = secondsToHMS(video.duration);
+                
+                timeInfo.append(currentTime);
+                timeInfo.append(duration);
+            info.append(timeInfo); */
+
+        elementBody.append(info);
+        var bar = document.createElement("bar");
+        var barPx = ((video.time)/(video.duration))*maxBarWidth;
+        barPx = Math.round(barPx);
+        barPx = "width: " + barPx.toString() + "px"; 
+        //bar.style.width =  barPx.toString() + "px";
+        bar.setAttribute("style", barPx);
+        //info.append(bar);
+        
+        var timeDisplay = document.createElement("div");
+        timeDisplay.classList.add("time-display");
             var timeInfo = document.createElement("timeInfo");
 
                 var currentTime = document.createElement("currentTime");
@@ -190,17 +190,11 @@ function generateListElement(video){
                 
                 timeInfo.append(currentTime);
                 timeInfo.append(duration);
-            info.append(timeInfo);
+            timeDisplay.append(timeInfo);
+            timeDisplay.append(bar);
 
-            var bar = document.createElement("bar");
-            var barPx = ((video.time)/(video.duration))*maxBarWidth;
-            barPx = Math.round(barPx);
-            barPx = "width: " + barPx.toString() + "px"; 
-            //bar.style.width =  barPx.toString() + "px";
-            bar.setAttribute("style", barPx);
-            //info.append(bar);
-        elementBody.append(info);
-        elementBody.append(bar);
+        elementBody.append(timeDisplay);
+        //elementBody.append(bar);
     videoButton.append(elementBody);
     //videoButton.append(info);
     return videoButton;
@@ -208,16 +202,21 @@ function generateListElement(video){
 
 
 /*  <a class='main-list-element>
-            <element-body>
-                <image> </image>    
-                <info>
-                    <videoTitle>KAKAROT!!!!</videoTitle>
-                    <subtext>You stupid  monkey!</subtext>
-                    <timeInfo>
+        <image> </image>
+        <element-body>
+        
+            <info>
+                <videoTitle>KAKAROT!!!!</videoTitle>
+                <subtext>You stupid  monkey!</subtext>
+                
+            </info>
+
+            <time-display>
+                <timeInfo>
                         <currentTime>0:39</currentTime>
                         <duration>15:01</duration>
-                    </timeInfo>
-                </info>
+                </timeInfo>
                 <bar></bar> 
-            </element-body>
-        </main-list-element>*/
+            </time-display>
+        </element-body>
+    </main-list-element>*/
