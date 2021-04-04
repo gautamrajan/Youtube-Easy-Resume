@@ -102,12 +102,7 @@ function grabTitle(){
             var interval = setInterval(()=>{
                 videoTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0];
                 cN = $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0]
-                if(!(videoTitle==null || videoTitle==undefined)
-                    /* && !(cN==null || cN==undefined) */
-                    
-                ){
-                    /* if(cN == previousChannel && videoTitle == previousTitle
-                        && extractWatchID(window.location.href)!=extractWatchID() ) */
+                if(!(videoTitle==null || videoTitle==undefined)){
                     resolve(videoTitle);
                     clearInterval(interval);
                 }
