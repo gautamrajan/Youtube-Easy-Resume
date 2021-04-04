@@ -97,19 +97,14 @@ function grabTitle(){
         };
         videoTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0];
         //channelName = $("yt-formatted-string#text.style-scope.ytd-channel-name")[0];
-        if(videoTitle==null || videoTitle==undefined){
+        if(videoTitle==null || videoTitle==undefined || videoTitle.textContent==""){
             console.log("VIDEO TITLE OR CHANNEL NAME IS NULL. TRYING AGAIN IN ONE SECOND.");
-            /* setTimeout(()=>{
-                let grabTitlePromise = grabTitle();
-                grabTitlePromise.then(function(videoTitle){
-                    resolve(videoTitle);
-                })
-            },1000) */
             var interval = setInterval(()=>{
                 videoTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0];
                 cN = $("yt-formatted-string#text.style-scope.ytd-channel-name")[0]
                 if(!(videoTitle==null || videoTitle==undefined)
                     /* && !(cN==null || cN==undefined) */
+                    
                 ){
                     /* if(cN == previousChannel && videoTitle == previousTitle
                         && extractWatchID(window.location.href)!=extractWatchID() ) */
@@ -119,7 +114,7 @@ function grabTitle(){
             },2000)
         }
         else{
-            console.log("resolving");
+            console.log("resolving, videotitle -" + videoTitle.textContent);
             resolve(videoTitle);
         }
     });
@@ -410,6 +405,8 @@ async function mainVideoProcess(){
                                 channel: $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent},()=>{
                                 console.log("SENT: " + currentURL +" , " + ct);
                                 }) */
+                                //NEED TO FIND MORE SPECIFIC SELECTOR TO GRAB CHANNEL NAME
+                                //BUG WHERE PICKS UP TITLE OF LIVESTREAM RECCOMENDATION.
                                 setTime({videolink: window.location.href, time: document.querySelector("video").currentTime,
                                     duration: document.querySelector("video").duration,
                                     title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
