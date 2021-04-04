@@ -101,7 +101,7 @@ function grabTitle(){
             console.log("VIDEO TITLE OR CHANNEL NAME IS NULL. TRYING AGAIN IN ONE SECOND.");
             var interval = setInterval(()=>{
                 videoTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0];
-                cN = $("yt-formatted-string#text.style-scope.ytd-channel-name")[0]
+                cN = $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0]
                 if(!(videoTitle==null || videoTitle==undefined)
                     /* && !(cN==null || cN==undefined) */
                     
@@ -242,40 +242,13 @@ async function mainVideoProcess(){
             grabTitlePromise.then(function(videoTitle){
                 if(!initialLinkIsVideo && !ytNavLoop){resolve();}
                 if(checkWatchable(window.location.href)){
-                    var channelName = $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent;
+                    var channelName = $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent;
                     var vTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent;
                     console.log("Video Title: " + vTitle);
                     console.log("Channel Name: " + channelName);
 
 
                     console.log("Current URL: " + currentURL);
-                    //console.log("Video Duration: " + video.duration); 
-                    /* let cslPromise = checkStoredLinks(window.location.href);
-                    cslPromise.then(
-                        (vid)=>{
-                            if(vid.time>0){
-                                document.querySelector("video").currentTime = vid.time;
-                            }
-                            console.log("returning from cslPromise")
-
-                            //return;
-                        },
-                        async ()=>{
-                            var duration;
-                            var currentTime;
-                            if(Number.isNaN(video.duration) || video.duration <0){duration = 0}
-                            else{duration = video.duration};
-
-                            if(Number.isNaN(video.currentTime) || video.currentTime < 0){currentTime = 0}
-                            else{currentTime = video.currentTime};
-
-                            var newVid = {videolink: window.location.href, time: currentTime, duration: duration,
-                                title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
-                                channel: $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent};
-                            addNewVideo(newVid).then(()=>{ return;})
-                        }
-                    ) *///.then(()=>{console.log("returning grabTitlePromise"); return;}) 
-                    
                 }
                 //return;
                 return;
@@ -322,12 +295,7 @@ async function mainVideoProcess(){
                 if(!initialLinkIsVideo && !ytNavLoop){
                     resolve();
                 }
-                //var videolink = checkWatchable(window.location.href);
-                //if(videolink) {
-                    //var video = document.querySelector("video");
                     console.log("starting from videolink");
-                    //var ct = document.querySelector("video").currentTime;
-                    //var videoDuration = video.duration;
                     var timeCheck = true;
                     var lastTitle;
                     try{
@@ -359,38 +327,6 @@ async function mainVideoProcess(){
                                         console.log("TITLE CHANGE DURING TRADEOFF.RESOLVING.");
                                         resolve();
                                     }
-                                    /* checkStoredLinks(window.location.href).then(
-                                        (vid)=>{
-                                            if(vid.time>0){
-                                                document.querySelector("video").currentTime = vid.time;
-                                            }
-                                            timeCheck=true;
-                                        },
-                                        ()=>{
-                                            console.log("vid not found in db. adding vid");
-                                            var duration;
-                                            var currentTime;
-                                            if(Number.isNaN(document.querySelector("video").duration)
-                                            || document.querySelector("video").duration <0) {duration = 0}
-                                            else{duration = document.querySelector("video").duration};
-                                            if(Number.isNaN(document.querySelector("video").currentTime)
-                                            || document.querySelector("video").currentTime < 0) {currentTime = 0}
-                                            else{currentTime = document.querySelector("video").currentTime};
-                                            addNewVideo({videolink: window.location.href, time: currentTime,
-                                                duration: duration,
-                                                title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
-                                                channel: $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent})
-                                            .then(()=>{
-                                                timeCheck=true;
-                                                return;
-                                            })
-                                            
-                                        }
-                                    ) */
-                                //}
-                                //else{
-                                //   console.log("TITLE CHANGE. NOT WATCHABLE");
-                                //}
                             }
                             else if(!initialLinkIsVideo && !ytNavLoop){
                                 resolve();
@@ -399,18 +335,12 @@ async function mainVideoProcess(){
                                 console.log("TC - " + document.querySelector("video").currentTime + "/" 
                                 + document.querySelector("video").duration +", " 
                                 + $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent + ", "
-                                + $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent);
-                                /* port.postMessage({videolink: window.location.href, time: ct, duration: video.duration,
-                                title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
-                                channel: $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent},()=>{
-                                console.log("SENT: " + currentURL +" , " + ct);
-                                }) */
-                                //NEED TO FIND MORE SPECIFIC SELECTOR TO GRAB CHANNEL NAME
-                                //BUG WHERE PICKS UP TITLE OF LIVESTREAM RECCOMENDATION.
+                                + $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent);
+
                                 setTime({videolink: window.location.href, time: document.querySelector("video").currentTime,
                                     duration: document.querySelector("video").duration,
                                     title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
-                                    channel: $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent})
+                                    channel: $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent})
                                 .then(()=>{return});
                             }
                         }
