@@ -26,7 +26,8 @@ generateList().then(()=>{
         //console.log("button clicked. requesting confirmation");
         var confirm = window.confirm("Are you sure you want to clear the database?");
         if(confirm){
-            chrome.storage.local.remove("videos",()=>{
+            chrome.storage.local.set({videos:[]},()=>{
+            /* chrome.storage.local.remove("videos",()=>{ */
                 clearList();
                 alert("Video databse cleared");
             });
@@ -145,89 +146,78 @@ function generateListElement(video){
     videoButton.setAttribute("title",video.title);
     var thumbnail = document.createElement('img');
     var imageLink;
-    var start;
-    var end;
-/*     for(var i=0;i<video.videolink.length;i++){
-        if(video.videolink[i]=='v' && video.videolink[i+1] == '='){
-            start = i+2;
-        }
-        else if(video.videolink[i] =='&'){
-            end = i-1;
-            break;
-        }
-        else if(i==video.videolink.length-1){
-            end=i;
-        }
-    } */
     imageLink = "https://img.youtube.com/vi/" + extractWatchID(video.videolink) + "/default.jpg" ;
     //console.log(imageLink);
     thumbnail.setAttribute("src",imageLink);
     thumbnail.setAttribute("width",120);
     thumbnail.setAttribute("height",90);
     videoButton.append(thumbnail);
-    /* <info>
+    /*  <a class='main-list-element>
+            <image> </image>    
+            <info>
+                <videoTitle>KAKAROT!!!!</videoTitle>
+                <subtext>You stupid  monkey!</subtext>
+                <timeInfo>
+                    <currentTime>0:39</currentTime>
+                    <duration>15:01</duration>
+                </timeInfo>
+                <bar></bar>
+            </info> 
+        </main-list-element>*/
+    var elementBody = document.createElement("div");
+    elementBody.classList.add('element-body');
+
+        var info = document.createElement("info");
+            var videoTitle = document.createElement("videoTitle");
+            videoTitle.textContent = video.title;
+            videoTitle.style.width = titleWidth + "px"; 
+            info.append(videoTitle);
+
+            var subtext = document.createElement("subtext");
+            subtext.textContent = video.channel;
+            info.append(subtext);
+
+            var timeInfo = document.createElement("timeInfo");
+
+                var currentTime = document.createElement("currentTime");
+                if(video.time<0){currentTime.textContent = secondsToHMS(0);}
+                else{currentTime.textContent = secondsToHMS(video.time);}
+                
+
+                //need to account for video over an hour long 
+                var duration = document.createElement("duration");
+                duration.textContent = secondsToHMS(video.duration);
+                
+                timeInfo.append(currentTime);
+                timeInfo.append(duration);
+            info.append(timeInfo);
+
+            var bar = document.createElement("bar");
+            var barPx = ((video.time)/(video.duration))*maxBarWidth;
+            barPx = Math.round(barPx);
+            barPx = "width: " + barPx.toString() + "px"; 
+            //bar.style.width =  barPx.toString() + "px";
+            bar.setAttribute("style", barPx);
+            //info.append(bar);
+        elementBody.append(info);
+        elementBody.append(bar);
+    videoButton.append(elementBody);
+    //videoButton.append(info);
+    return videoButton;
+}
+
+
+/*  <a class='main-list-element>
+            <element-body>
+                <image> </image>    
+                <info>
                     <videoTitle>KAKAROT!!!!</videoTitle>
                     <subtext>You stupid  monkey!</subtext>
                     <timeInfo>
                         <currentTime>0:39</currentTime>
                         <duration>15:01</duration>
                     </timeInfo>
-                    <bar></bar>
-                </info> */
-    var info = document.createElement("info");
-
-        var videoTitle = document.createElement("videoTitle");
-        videoTitle.textContent = video.title;
-        videoTitle.style.width = titleWidth + "px"; 
-        info.append(videoTitle);
-
-        var subtext = document.createElement("subtext");
-        subtext.textContent = video.channel;
-        info.append(subtext);
-
-        var timeInfo = document.createElement("timeInfo");
-
-            var currentTime = document.createElement("currentTime");
-            /* var cMinutes = Math.round(video.time);
-            var cSeconds = cMinutes%60;
-            cMinutes = cMinutes-cSeconds;
-            cMinutes = cMinutes/60;
-            cMinutes = cMinutes.toString();
-            if(cSeconds <10){cSeconds = "0" + cSeconds.toString();}
-            else{cSeconds = cSeconds.toString();};
-            //cSeconds = cSeconds.toString();
-            currentTime.textContent = "Resume at " + cMinutes + ":" + cSeconds; */
-            if(video.time<0){currentTime.textContent = secondsToHMS(0);}
-            else{currentTime.textContent = secondsToHMS(video.time);}
-            
-
-            //need to account for video over an hour long 
-            var duration = document.createElement("duration");
-            /* var dMinutes = Math.round(video.duration);
-            var dSeconds = dMinutes%60;
-            dMinutes = dMinutes-dSeconds;
-            dMinutes = dMinutes/60;
-            dMinutes = dMinutes.toString();
-            if(dSeconds <10){dSeconds = "0" + dSeconds.toString();}
-            else{dSeconds = dSeconds.toString();};
-            duration.textContent = dMinutes + ":" + dSeconds; */
-            duration.textContent = secondsToHMS(video.duration);
-            
-            timeInfo.append(currentTime);
-            timeInfo.append(duration);
-        info.append(timeInfo);
-
-        var bar = document.createElement("bar");
-        var barPx = ((video.time)/(video.duration))*maxBarWidth;
-        barPx = Math.round(barPx);
-        barPx = "width: " + barPx.toString() + "px"; 
-        //bar.style.width =  barPx.toString() + "px";
-        bar.setAttribute("style", barPx);
-        info.append(bar);
-
-    videoButton.append(info);
-    return videoButton;
-    //document.getElementById("main-list").append(videoButton);
-}
-
-
+                </info>
+                <bar></bar> 
+            </element-body>
+        </main-list-element>*/
