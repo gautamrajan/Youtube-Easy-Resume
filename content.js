@@ -47,13 +47,9 @@ $(document).ready(async function(){
                 return;
             })
         }
-            
-       
-        //waitYtNav().then(mainVideoProcess().then(()=>{return}));
     })
 
         if(initialLinkIsVideo &&  !ytNavLoop){
-            //loopPromise().then(()=>{return;})
             DEBUG && console.log("RUNNING DIRECT LOOP");
             mainVideoProcess().then(()=>
             {
@@ -68,7 +64,6 @@ $(document).ready(async function(){
 
 
 function extractWatchID(link){
-    //DEBUG && console.log("extractWatchID " + link);
     var start = 0;
     var end = 0;
     for(var i=0;i<link.length;i++){
@@ -89,14 +84,12 @@ function extractWatchID(link){
 function grabTitle(){
     var videoTitle;
     var cN;
-    //var channelName = $("yt-formatted-string#text.style-scope.ytd-channel-name")[0];
     return new Promise(function(resolve,reject){
         if(!checkWatchable(window.location.href)){
             DEBUG && console.log("rejecting grabTitle. link not watchable");
             reject();
         };
         videoTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0];
-        //channelName = $("yt-formatted-string#text.style-scope.ytd-channel-name")[0];
         if(videoTitle==null || videoTitle==undefined || videoTitle.textContent==""){
             DEBUG && console.log("VIDEO TITLE OR CHANNEL NAME IS NULL. TRYING AGAIN IN ONE SECOND.");
             var interval = setInterval(()=>{
@@ -148,7 +141,6 @@ function initStorage(){
     })
     
 }
-
 function waitYtNav(){
 
     return new Promise(function(resolve){
@@ -187,7 +179,6 @@ function checkStoredLinks(link){
                 DEBUG && console.log("rejecting checkStoredLinks");
                 reject(-1);
             };
-            //resolve(result);
         });
     });
 }
@@ -214,7 +205,6 @@ function setTime(video){
             currentVideos = data;
             for(var i=0;i<currentVideos.videos.length;i++){
                 if(extractWatchID(currentVideos.videos[i].videolink) == extractWatchID(video.videolink)){
-                    //currentVideos.videos[i] = video;
                     currentVideos.videos.splice(i,1);
                     currentVideos.videos.push(video);          
                     chrome.storage.local.set(currentVideos,()=>{return;});
@@ -232,7 +222,6 @@ async function mainVideoProcess(){
         var currentURL = window.location.href;
         if(checkWatchable(window.location.href)){
             let grabTitlePromise = grabTitle();
-            //if(checkWatchable(window.location.href)){
                 if(!initialLinkIsVideo && !ytNavLoop){resolve();}
             grabTitlePromise.then(function(videoTitle){
                 if(!initialLinkIsVideo && !ytNavLoop){resolve();}
@@ -264,7 +253,6 @@ async function mainVideoProcess(){
                     }
                     DEBUG && console.log("returning from cslPromise")
 
-                    //return;
                 },
                 async ()=>{
                     if(!initialLinkIsVideo && !ytNavLoop){
@@ -306,13 +294,10 @@ async function mainVideoProcess(){
                     var channelName = $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent;
                     if(!Number.isNaN(document.querySelector("video").duration) && document.querySelector("video").duration!=0 
                         && !(document.querySelector("video").currentTime<0) && channelName!=null && videoTitle!=null
-                        /* && (initialLinkIsVideo || ytNavLoop) */ 
                         ){
                         ct = document.querySelector("video").currentTime;
                         if($("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent!=lastTitle){
                             lastTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent;
-                            //timeCheck=false;
-                            //if(checkWatchable(window.location.href)){
                                 
                                 if(initialLinkIsVideo && !ytNavLoop){
                                     DEBUG && console.log("TITLE CHANGE DURING INITIAL LINK LOOP. RESOLVING.");

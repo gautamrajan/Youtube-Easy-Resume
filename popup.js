@@ -1,22 +1,4 @@
 
-/* let db =  getDB();
-db.then((vdb)=>{
-    console.log("DB size: " + vdb.length);
-    var newVidButton;
-    var fragment = document.createDocumentFragment();
-    for(i=0;i<vdb.length;i++){
-        console.log(i);
-        newVidButton = generateListElement(vdb[i]);
-        fragment.appendChild(newVidButton); //
-        console.log("finished generating and appending one element");
-    }
-})
- */
-
-/* var elements = document.getElementsByClassName("main-list-element");
-for(var i=0;i<elements.length;i++){
-    
-} */
 var maxBarWidth = 226;
 var marginRight = 0;
 /* var titleWidth = 216; */
@@ -151,20 +133,7 @@ function generateListElement(video){
             subtext.textContent = video.channel;
             info.append(subtext);
 
-            /* var timeInfo = document.createElement("timeInfo");
-
-                var currentTime = document.createElement("currentTime");
-                if(video.time<0){currentTime.textContent = secondsToHMS(0);}
-                else{currentTime.textContent = secondsToHMS(video.time);}
-                
-
-                //need to account for video over an hour long 
-                var duration = document.createElement("duration");
-                duration.textContent = secondsToHMS(video.duration);
-                
-                timeInfo.append(currentTime);
-                timeInfo.append(duration);
-            info.append(timeInfo); */
+        
 
         elementBody.append(info);
         var bar = document.createElement("bar");
