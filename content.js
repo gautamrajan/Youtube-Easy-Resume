@@ -7,7 +7,7 @@
         duration,
         title,
         channel,
-
+        
     }
 */
 
@@ -64,6 +64,9 @@ $(document).ready(async function(){
         }
     })
 });
+
+
+
 function extractWatchID(link){
     //DEBUG && console.log("extractWatchID " + link);
     var start = 0;
