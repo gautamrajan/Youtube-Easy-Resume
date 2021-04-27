@@ -144,6 +144,16 @@ function initStorage(){
             }
             resolve();
         });
+        chrome.storage.local.getBytesInUse("settings",(bytes)=>{
+            if(bytes == undefined || bytes == 0){
+                chrome.storage.local.set(
+                {
+                    settings:{
+                        pauseResume:false,
+                    }
+                })
+            }
+        })
 
     })
     

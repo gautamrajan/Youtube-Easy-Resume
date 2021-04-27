@@ -23,15 +23,22 @@ div.header-bar{
     justify-content: space-between;
 }
 
-div.header-bar button{
+div.header-bar #ClearListButton{
     margin-bottom:5px;
     border-radius: 10px;
     border: none;
     background-color: rgba(99, 99, 99, 0.781);
     color: #ffffff;
 }
-div.header-bar button:active{
+div.header-bar #ClearListButton:active{
     background-color: rgba(158, 158, 158, 0.781);
+}
+
+#PauseIcon{
+    height:20px;
+    width:20px;
+    background-color:#aaaaaa;
+    border:none;
 }
 
 h1{
