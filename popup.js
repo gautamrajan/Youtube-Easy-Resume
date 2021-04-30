@@ -21,6 +21,19 @@ generateList().then(()=>{
 
 
 
+function initSettingsDB(){
+    chrome.storage.local.getBytesInUse("settings",(bytes)=>{
+        if(bytes == undefined || bytes == 0){
+            chrome.storage.local.set(
+            {
+                settings:{
+                    pauseResume:false,
+                }
+            })
+        }
+    })
+}
+
 function clearList(){
     var mainElements = $("a.main-list-element");
     for(var i = 0; i<mainElements.length;i++){
