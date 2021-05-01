@@ -1,0 +1,50 @@
+{
+  "private": true,
+  "name": "preact-ytautoresume",
+  "version": "0.0.0",
+  "license": "MIT",
+  "scripts": {
+    "build": "rm -rf dist && webpack && npm run copy:dist",
+    "copy:dist": "cp -r ./src/popup.html manifest.json ./src/content.js ./src/components ./src/assets/icons  ./src/jquery-3.5.1.min.js ./dist",
+    "serve": "sirv build --port 8080 --cors --single",
+    "dev": "preact watch",
+    "lint": "eslint src",
+    "test": "jest"
+  },
+  "eslintConfig": {
+    "extends": "preact",
+    "ignorePatterns": [
+      "build/"
+    ]
+  },
+  "devDependencies": {
+    "@babel/core": "^7.14.0",
+    "@babel/plugin-transform-react-jsx": "^7.13.12",
+    "@babel/preset-env": "^7.14.0",
+    "babel-loader": "^8.2.2",
+    "enzyme": "^3.10.0",
+    "enzyme-adapter-preact-pure": "^2.0.0",
+    "eslint": "^6.0.1",
+    "eslint-config-preact": "^1.1.0",
+    "jest": "^24.9.0",
+    "jest-preset-preact": "^1.0.0",
+    "preact-cli": "^3.0.0",
+    "sirv-cli": "1.0.3",
+    "style-loader": "^2.0.0",
+    "webpack": "^5.36.2",
+    "webpack-cli": "^4.6.0"
+  },
+  "dependencies": {
+    "@babel/plugin-transform-react-jsx-source": "^7.12.13",
+    "preact": "^10.3.2",
+    "preact-render-to-string": "^5.1.4",
+    "preact-router": "^3.2.1"
+  },
+  "jest": {
+    "preset": "jest-preset-preact",
+    "setupFiles": [
+      "<rootDir>/tests/__mocks__/browserMocks.js",
+      "<rootDir>/tests/__mocks__/setupTests.js"
+    ]
+  }
+}

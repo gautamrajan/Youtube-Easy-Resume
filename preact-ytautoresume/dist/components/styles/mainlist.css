@@ -1,0 +1,142 @@
+.main-list{
+    /* background:red; */
+    border-top: 1px solid #aaaaaa;  
+    margin-right:0px;
+    padding-top: 2px;
+    max-width:350px;
+    max-height:380px;
+    display:block;
+    overflow: hidden;
+    overflow-y:auto;
+    /* scrollbar-width: thin; */
+    scrollbar-color: var(--thumbBG) var(--scrollbarBG);
+}
+
+.main-list::-webkit-scrollbar {
+    /* background:red; */
+    width:8px;
+    margin-top:10px;
+
+}
+
+.main-list::-webkit-scrollbar-track {
+    background: var(--scrollbarBG);
+    border-radius:3px;
+    margin-top:10px;
+}
+
+.main-list::-webkit-scrollbar-thumb {
+    background-color: var(--thumbBG) ;
+    border-radius: 6px;
+    border: 3px solid var(--scrollbarBG);
+}
+
+.main-list-element{
+    align-items: flex-start;
+    display:flex;
+    margin-top: 8px;
+    margin-bottom:8px;
+    min-width: 200px;
+    height:90px;
+    border: 2px solid #aaaaaa;
+    border-radius: 5px;
+}
+
+.main-list-element img{
+    line-height:3px;
+}
+
+.main-list-element div.element-body{
+    display:flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height:90px;
+    min-width:65.2%;
+}
+
+.main-list-element div.element-body info{
+    flex-direction: column;
+    align-items: flex-start;
+
+}
+
+.main-list-element div.element-body info videoTitle{
+    
+    
+    vertical-align:top;
+    margin-top:6px;
+    margin-left: 6px;
+    font-size: 13px;
+    font-weight:500;
+    max-width:188px; 
+
+
+    display:-webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    -webkit-box-sizing: content-box;
+    box-sizing: content-box;
+    overflow: hidden;
+}
+.main-list-element div.element-body info subtext{
+
+    display: inline-block;
+    text-decoration: underline;
+    vertical-align:top;
+    margin-top:3px;
+    margin-left: 6px;
+    margin-bottom:0px;
+    color: #ffffff;
+    font-size: 11px;
+    max-width:210px;
+    max-height: 19px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.main-list-element div.time-display{
+    display:flex;
+    flex-direction:column;
+    justify-content: flex-end;
+    height:30px;
+    vertical-align:bottom;
+    
+}
+.main-list-element div.element-body timeInfo{
+    display:flex;
+    justify-content:space-between;
+    margin-left: 6px;
+    margin-right:6px;
+    padding-right: 6px;
+    margin-top:3px;
+    margin-bottom: 0px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 13px;
+    color: #ffffff;                        
+}
+.main-list a{
+    text-decoration: none;
+    color: #ffffff;
+}
+.main-list a:visited{
+    text-decoration:none;
+}
+.main-list a:hover{
+    color: #cfcfcf;
+}
+.main-list a:active{
+    color: #8d8d8d;
+}
+
+.main-list-element div.element-body bar{
+    background: red;
+
+    margin-top:4px;
+    display: inline-block;
+    height:3px;
+    max-width:226px;
+
+}
