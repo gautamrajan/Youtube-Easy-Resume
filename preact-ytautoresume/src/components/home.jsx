@@ -12,7 +12,7 @@ export default class Home extends Component{
             ()=>{
                 chrome.storage.local.get("settings",(data)=>{
                     this.state={
-                        paused:data.settings.pauseResume,
+                        paused: data.settings.pauseResume,
                         settingsPage:false
                     }
                 });
@@ -21,23 +21,32 @@ export default class Home extends Component{
 
     }
     handlePause = ()=>{
-        let setPause = new Promise((resolve)=>{
+        var newState;
+        if(this.state.paused == false){
+            newState = true;
+        }else{newState = false}
+        //let setPause = new Promise((resolve)=>{
             chrome.storage.local.set(
                 {
                     settings:{
-                        pauseResume: this.state.paused ? false:true
+                        pauseResume: newState
                     }
                 }
+            ,()=>{
+                this.setState({
+                paused:newState
+            })}
             );
-        });
-        setPause.then(
+        //});
+        /* setPause.then(()=>{ 
             this.setState({
-                paused:this.state.paused ? false:true
+                paused:newState
             })
-        );
+            }
+        ); */
 
     }
-    render(){
+    render({},{paused}){
         return(
             <div className="HomeContainer">
                 <div className="header-bar">
@@ -46,7 +55,7 @@ export default class Home extends Component{
                         {/* <i id="PauseIcon" className="fa fa-pause-circle">
                             <div></div>
                         </i> */}
-                        {this.state.paused ? "Pause" : "Unpause"}
+                        {paused ? "Pause" : "Unpause"}
                     </button>
                     <button type="button" id="ClearListButton"> Clear List </button>
                 </div>

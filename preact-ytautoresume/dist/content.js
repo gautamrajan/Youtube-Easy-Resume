@@ -22,9 +22,10 @@ var previousChannel;
 $(document).ready(async function(){
     var paused = false;
     checkPaused().then((pausestate)=>{
+        DEBUG && console.log("CHECK PAUSED RESULT: " + pausestate);
         paused = pausestate;  
     
-    if(paused){
+    if(!paused){
         DEBUG && console.log("document ready, starting");
         ytNavLoop = false;
         if(checkWatchable(window.location.href)){initialLinkIsVideo = true}
@@ -68,25 +69,29 @@ $(document).ready(async function(){
     else{
         console.log("paused");
     }
-    })
+    });
 }
 );
 
 function checkPaused(){
+    DEBUG && console.log("CHECK PAUSED");
     return new Promise((resolve)=>{
         chrome.storage.local.getBytesInUse("settings",(bytes)=>{
+            DEBUG && console.log("GET BYTES");
             if(bytes == undefined || bytes == 0){
+                DEBUG && console.log("BYTES UNDEFIEND OR 0");
                 chrome.storage.local.set(
                 {
                     settings:{
                         pauseResume:false,
                     }
                 
-                },()=>{resolve(false);});
+                },()=>{DEBUG && console.log("IN CALLBACK");resolve(false);});
             }
             else{
                 chrome.storage.local.get("settings",(data)=>{
-                    resolve(settings.data.pauseResume);
+                    DEBUG && console.log("IN GET");
+                    resolve(data.settings.pauseResume);
                 })
             }
         })
