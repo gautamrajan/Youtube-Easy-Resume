@@ -69,7 +69,7 @@ export default class Home extends Component{
                 return(
                     <div className="HomeContainer">
                         <div className="header-bar">
-                            <h1>Videos in progress</h1>
+                            <h1>Currently watching</h1>
                             <div className="button-container">
                                 <button id="Pause" onClick={this.handlePause}>
                                     {pauseButtonText}

@@ -31,16 +31,22 @@ export default class SettingsPage extends Component{
                     </div>
                     <form className="SettingsPanel">
                         <div className="Setting MinVideoLength">
-                            <label for="MinVideoLengthInput">Only resume videos longer than: </label>
+                            <label for="MinVideoLengthInput" className="SettingLabel">Only resume videos longer than: </label>
                             <div className="MinVideoLength InputContainer">
-                                <input type="number" name="MinVideoLengthInput" id="MinVideoLengthInput"/> minutes
+                                <input type="number" className="NumInput" name="MinVideoLengthInput" id="MinVideoLengthInput"/> minutes
                             </div>
-                            
+                        </div>
+                        <div className="Setting MinWatchTime">
+                            <label for="MinWatchTimeInput" className="SettingLabel">Only resume videos I watch for longer than: </label>
+                            <div className="MinWatchTime InputContainer">
+                                <input type="number" className="NumInput" name="MinWatchTimeInput" id="MinWatchTimeInput"/> minutes
+                            </div>
                         </div>
                     </form>
                     <style jsx>{`
                         .fa-chevron-left{
                             color:#ffffff;
+                            margin-bottom: 5px;
                         }
                         .SettingsContainer{
                             display:block;
@@ -79,24 +85,45 @@ export default class SettingsPage extends Component{
                             margin-top:10px;
                         }
                         .Setting {
+                            margin-top:8px;
                             display: flex;
-                            flex-direction:row;
-                            justify-content:space-between;
-                            align-items:center;
-                            color: #ffffff;
-                            font-size:15px;
+                            flex-direction:column;
+                            justify-content:start;
+                            align-items:start;
+                            color: #ffffff
+                        }
+                        .SettingLabel{
+                            font-weight:bold;
+                            font-size:17px;
                         }
                         .InputContainer{
                             display:inline-flex;
-                            justify-content:flex-end;
-                            align-items:center;
+                            justify-content:flex-start;
+                            align-items:start;
                             flex-direction:row;
                             max-width:50%;
+                            border-radius:5px;
+                            margin-top:8px;
+                            font-size:15px;
                         }
-                        #MinVideoLengthInput{
-                            width:40%;
+                        .NumInput{
+                            width:30%;
                             height:50%;
                             margin-right:3px;
+                            border:none;
+                            background-color:rgba(255, 255, 255, 0.123);
+                            color:#ffffff;
+                            text-align:center;
+                            font-weight:bold;
+                            outline:none;
+                            border-bottom:1px solid #ffffff;
+                            -webkit-appearance: textfield;
+                            -moz-appearance: textfield;
+                            appearance: textfield;
+                        }
+                        .NumInput::-webkit-inner-spin-button, 
+                        .NumInput::-webkit-outer-spin-button { 
+                        -webkit-appearance: none;
                         }
                     `}
                     </style>
