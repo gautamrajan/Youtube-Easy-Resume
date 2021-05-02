@@ -7,10 +7,18 @@
         duration,
         title,
         channel,
-        
+        complete:boolean,
+        doNotResume:boolean,
     }
 */
-
+/* 
+    settings:{
+        pauseResume: boolean,
+        minWatchTime: value in seconds,
+        minVideoLength: value in seconds,
+        markPlayedTime: value in seconds,
+    }
+*/
 const DEBUG = true;
 var nvarray = {videos:[]};
 var initialLinkIsVideo;
@@ -19,86 +27,120 @@ var ytNavLoop;
 var previousURL;
 var previousTitle;
 var previousChannel;
+var userSettings;
 $(document).ready(async function(){
-    var paused = false;
-    checkPaused().then((pausestate)=>{
-        DEBUG && console.log("CHECK PAUSED RESULT: " + pausestate);
-        paused = pausestate;  
-    
-    if(!paused){
-        DEBUG && console.log("document ready, starting");
-        ytNavLoop = false;
-        if(checkWatchable(window.location.href)){initialLinkIsVideo = true}
-        else{initialLinkIsVideo = false};
-    
-        initStorage().then(async()=>{   
-        document.addEventListener('yt-navigate-finish',async ()=>{
-            DEBUG && console.log("yt-navigate-finish EVENT DETECTED.")
-            if(initialLinkIsVideo){
-                DEBUG && console.log("SETTING initialLinkIsVideo FALSE AND STARTING mainVideoProcess()");
-                initialLinkIsVideo = false;
-                waitYtNav().then(()=>{
-                    DEBUG && console.log("ytnav set. startin mvp process in event listener loop");
-                })
-                .then(async ()=>{
+    initStorage()
+    .then(()=>getUserSettings())
+    .then((usettings)=>{userSettings = usettings})
+    .then(()=>{
+        DEBUG && console.log("CHECK PAUSED SETTING" + userSettings.pauseResume);
+        DEBUG && console.log("CHECK MIN WATCH TIME SETTING" + userSettings.minWatchTime);
+        DEBUG && console.log("CHECK MIN VID LENGTH SETTING" + userSettings.minVideoLength);
+        if(/* !paused */!userSettings.pauseResume){
+            DEBUG && console.log("document ready, starting");
+            ytNavLoop = false;
+            if(checkWatchable(window.location.href)){initialLinkIsVideo = true}
+            else{initialLinkIsVideo = false};
+        
+            //initStorage().then(async()=>{   
+            document.addEventListener('yt-navigate-finish',async ()=>{
+                DEBUG && console.log("yt-navigate-finish EVENT DETECTED.")
+                if(initialLinkIsVideo){
+                    DEBUG && console.log("SETTING initialLinkIsVideo FALSE AND STARTING mainVideoProcess()");
+                    initialLinkIsVideo = false;
+                    waitYtNav().then(()=>{
+                        DEBUG && console.log("ytnav set. startin mvp process in event listener loop");
+                    })
+                    .then(async ()=>{
+                        mainVideoProcess().then(()=>{
+                            return;
+                        })
+                    })
+                }
+                else{
+                    DEBUG && console.log("initialLinkIsVideo never triggered. starting mvp");
+                    ytNavLoop = true;
                     mainVideoProcess().then(()=>{
                         return;
                     })
-                })
-            }
-            else{
-                DEBUG && console.log("initialLinkIsVideo never triggered. starting mvp");
-                ytNavLoop = true;
-                mainVideoProcess().then(()=>{
-                    return;
-                })
-            }
-        })
-    
-            if(initialLinkIsVideo &&  !ytNavLoop){
-                DEBUG && console.log("RUNNING DIRECT LOOP");
-                mainVideoProcess().then(()=>
-                {
-                    DEBUG && console.log("initial link loop complete. setting ytnav true");
-                    ytNavLoop = true;
-                    return;
-                });
-            }
-        })
-    }
-    else{
-        console.log("paused");
-    }
+                }
+            })
+        
+                if(initialLinkIsVideo &&  !ytNavLoop){
+                    DEBUG && console.log("RUNNING DIRECT LOOP");
+                    mainVideoProcess().then(()=>
+                    {
+                        DEBUG && console.log("initial link loop complete. setting ytnav true");
+                        ytNavLoop = true;
+                        return;
+                    });
+                }
+            //})
+        }
+        else{
+            console.log("paused");
+        }
     });
+    //});
 }
 );
-
-function checkPaused(){
-    DEBUG && console.log("CHECK PAUSED");
+function getUserSettings(){
+    return new Promise((resolve)=>{
+        chrome.storage.local.get("settings",(data)=>{
+            resolve(data.settings);
+        })
+    })
+}
+function initStorage(){
+    return new Promise(function(resolve){
+        Promise.all([initDB(),initSettings()]).then((values)=>{
+            resolve();
+        });
+    })
+    
+}
+function initDB(){
+    return new Promise((resolve)=>{
+        var bytesUsed;
+        chrome.storage.local.getBytesInUse("videos", function(bytes){
+            bytesUsed = bytes;
+        
+            DEBUG && console.log("BYTES USED: " + bytesUsed);
+            if(bytesUsed == 0 || bytesUsed == undefined){
+                DEBUG && console.log("BYTES USED ZERO OR undefined");
+                chrome.storage.local.set(nvarray,()=>{resolve();});  
+            }
+            else{
+                DEBUG && console.log("Storage not empty");
+                resolve();
+            }
+            
+        });
+    })
+   
+}
+function initSettings(){
     return new Promise((resolve)=>{
         chrome.storage.local.getBytesInUse("settings",(bytes)=>{
-            DEBUG && console.log("GET BYTES");
             if(bytes == undefined || bytes == 0){
-                DEBUG && console.log("BYTES UNDEFIEND OR 0");
                 chrome.storage.local.set(
                 {
                     settings:{
                         pauseResume:false,
+                        minWatchTime:60,
+                        minVideoLength:480,
+                        markPlayedTime:60,
                     }
-                
-                },()=>{DEBUG && console.log("IN CALLBACK");resolve(false);});
+                },()=>{resolve();})
             }
             else{
-                chrome.storage.local.get("settings",(data)=>{
-                    DEBUG && console.log("IN GET");
-                    resolve(data.settings.pauseResume);
-                })
+                resolve();
             }
+            
         })
-        
     })
+    
 }
-
 function extractWatchID(link){
     var start = 0;
     var end = 0;
@@ -157,36 +199,7 @@ function checkWatchable(link){
         return false;
     }
 }
-function initStorage(){
-    return new Promise(function(resolve){
-        var bytesUsed;
-        chrome.storage.local.getBytesInUse("videos", function(bytes){
-            bytesUsed = bytes;
-        
-            DEBUG && console.log("BYTES USED: " + bytesUsed);
-            if(bytesUsed == 0 || bytesUsed == undefined){
-                DEBUG && console.log("BYTES USED ZERO OR undefined");
-                chrome.storage.local.set(nvarray,()=>{return;});  
-            }
-            else{
-                DEBUG && console.log("Storage not empty");
-            }
-            resolve();
-        });
-        chrome.storage.local.getBytesInUse("settings",(bytes)=>{
-            if(bytes == undefined || bytes == 0){
-                chrome.storage.local.set(
-                {
-                    settings:{
-                        pauseResume:false,
-                    }
-                })
-            }
-        })
 
-    })
-    
-}
 function waitYtNav(){
 
     return new Promise(function(resolve){
