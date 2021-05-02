@@ -23,7 +23,8 @@ class App extends Component{
                         /* min-width: 350px; */
                         margin-top:0;   
                         width:350px;
-                        min-height: 380px;
+                        /*min-height: 380px;*/
+                        min-height:430px;
                         background-color: #181818;
                     }
                 `}  

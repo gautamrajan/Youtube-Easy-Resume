@@ -1,24 +1,33 @@
 import { h, Component } from 'preact';
 import './styles/home.css';
 import MainList from "./mainlist";
+import SettingsPage from "./settings"
 export default class Home extends Component{
     constructor(){
         super();
-        /* this.state = {
+        this.state = {
+            dataReady:false,
             settingsPage: false,
             paused: false,
-        } */
+        }
+    }
+    moveToSettingsPage = ()=>{
+        this.setState({
+            settingsPage:true
+        });
+    }
+    componentDidMount(){
         initSettingsDB().then(
             ()=>{
                 chrome.storage.local.get("settings",(data)=>{
-                    this.state={
+                    console.log("in constructor, data.settings.pauseResume = " + data.settings.pauseResume);
+                    this.setState({
                         paused: data.settings.pauseResume,
-                        settingsPage:false
-                    }
+                        dataReady:true,
+                    });
                 });
             }
-        )
-
+        );
     }
     handlePause = ()=>{
         var newState;
@@ -46,56 +55,59 @@ export default class Home extends Component{
         ); */
 
     }
-    render({},{paused}){
-        return(
-            <div className="HomeContainer">
-                <div className="header-bar">
-                    <h1>Videos in progress</h1>
-                    <button id="Pause" onClick={this.handlePause}>
-                        {/* <i id="PauseIcon" className="fa fa-pause-circle">
-                            <div></div>
-                        </i> */}
-                        {paused ? "Pause" : "Unpause"}
-                    </button>
-                    <button type="button" id="ClearListButton"> Clear List </button>
-                </div>
-                <MainList/>
-                <style jsx>{`
-                    {/* #Pause{
-                        display:flex;
-                        flex-direction:column;
-                        justify-content:center;
-                        align-items:center;
-                        background:none;
-                        background-color:transparent;
-                        border:none;
-                        height:25px;
-                        width:25px;
-                        margin-bottom:3px;
-                        font-size:20px;
-                        color:rgba(99, 99, 99, 0.781);
-                    }   
-                    #Pause:active{
-                        color:rgba(158, 158, 158, 0.781)
-                    } */}
-                `}  
-                </style>
-            </div>
-        )
+    render(/* {},{paused} */){
+        let paused = this.state.paused;
+        let settingsPage = this.state.settingsPage;
+        var pauseButtonText = "";
+        console.log(paused);
+        if(paused){pauseButtonText = "Unpause"}else{pauseButtonText = "Pause"};
+        if(this.state.dataReady){
+            if(settingsPage){
+                return(<SettingsPage/>)
+            }
+            else{
+                return(
+                    <div className="HomeContainer">
+                        <div className="header-bar">
+                            <h1>Videos in progress</h1>
+                            <div className="button-container">
+                                <button id="Pause" onClick={this.handlePause}>
+                                    {pauseButtonText}
+                                </button>
+                                {/* <button type="button" id="ClearListButton"> Clear List </button> */}
+                                <button type="button" id="Settings" onClick={this.moveToSettingsPage}>Settings</button>
+                            </div>
+                        </div>
+                        <MainList/>
+
+                    </div>
+                )
+            }
+        }
+        else{
+            //loading...
+            return(null);
+        }
     }
 }
 function initSettingsDB(){
     return new Promise((resolve)=>{
         chrome.storage.local.getBytesInUse("settings",(bytes)=>{
+            console.log("INIT SETTINGS DB");
             if(bytes == undefined || bytes == 0){
+                console.log("BYTES==0 OR UNDEFINED");
                 chrome.storage.local.set(
                 {
                     settings:{
                         pauseResume:false,
                     }
-                })
+                },()=>{resolve();})
             }
-            resolve();
+            else{
+                console.log("BYTES!=0");
+               resolve(); 
+            }
+            
         })
     })
 }

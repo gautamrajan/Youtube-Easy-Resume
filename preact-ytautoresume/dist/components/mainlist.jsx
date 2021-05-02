@@ -12,31 +12,45 @@ export default class MainList extends Component {
         }
     }
     componentDidMount() {
-        this.generateList();
+        this.generateList().then(
+            (elementList)=>{
+            this.setState({
+                listReady:true,
+                listElements: elementList
+            }/* ,()=>{resolve();} */);
+
+        })
     }
     generateList = () => {
         var elementList = [];
-        //return new Promise((resolve)=>{
+        return new Promise((resolve)=>{
             chrome.storage.local.get("videos",(data)=>{
                 console.log("HERE");
                 if(data.videos!=undefined && data.videos.length!=0){
                     if(data.videos.length >=4){
+                        console.log("videos length greater than 4");
                         this.setState({
                             maxBarWidth:211,
                             marginRight:7
+                        },()=>{
+                            for(var i=(data.videos.length - 1);!(i<0);i--){
+                                //generateVideoElement
+                                elementList.push(this.generateListElement(data.videos[i]));
+                            }
+                            resolve(elementList);
                         })
                     }
-                    for(var i=(data.videos.length - 1);!(i<0);i--){
-                        //generateVideoElement
-                        elementList.push(this.generateListElement(data.videos[i]));
+                    else{
+                        for(var i=(data.videos.length - 1);!(i<0);i--){
+                            //generateVideoElement
+                            elementList.push(this.generateListElement(data.videos[i]));
+                        }
+                        resolve(elementList);
                     }
                 }
-                this.setState({
-                    listReady:true,
-                    listElements: elementList
-                }/* ,()=>{resolve();} */);
+                
             })
-        //})
+        })
     }
     returnList = () =>{
         return (
@@ -46,8 +60,10 @@ export default class MainList extends Component {
         )
     }
     generateListElement = (video)=>{
+        console.log("MARGIN-RIGHT:" + this.state.marginRight);
         return(
-            <a className="main-list-element" href={video.videolink} target="_blank" title={video.title}>
+            <a className="main-list-element" href={video.videolink} target="_blank" title={video.title}
+            style={`margin-right: ${this.state.marginRight}px;`}>
             <img src={`https://img.youtube.com/vi/${extractWatchID(video.videolink)}/default.jpg`} width="120" height="90"/>
             <div className="element-body">
                 <info>
@@ -65,6 +81,7 @@ export default class MainList extends Component {
                     </timeInfo>
                     <bar style={`width:${Math.round((video.time/video.duration)*this.state.maxBarWidth)}px`}></bar>
                 </div>
+                
             </div>
         </a>
         )

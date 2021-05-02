@@ -8,7 +8,7 @@
     display:block;
     overflow: hidden;
     overflow-y:auto;
-    /* scrollbar-width: thin; */
+    /* scrollbar-width: thin;*/
     scrollbar-color: var(--thumbBG) var(--scrollbarBG);
 }
 
@@ -16,7 +16,6 @@
     /* background:red; */
     width:8px;
     margin-top:10px;
-
 }
 
 .main-list::-webkit-scrollbar-track {
