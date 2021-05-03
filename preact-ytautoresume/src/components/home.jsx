@@ -1,4 +1,6 @@
 import { h, Component } from 'preact';
+import Switch from 'preact-material-components/Switch';
+import './styles/materialswitch.css';
 import './styles/home.css';
 import MainList from "./mainlist";
 import SettingsPage from "./settings"
@@ -29,8 +31,20 @@ export default class Home extends Component{
             }
         );
     }
-    handlePause = ()=>{
+    handlePause = (event)=>{
         var newState;
+        {this.state.paused ? newState=false:newState=true}
+        chrome.storage.local.get("settings",(data)=>{
+            var tempSettings = data.settings;
+            tempSettings.pauseResume = newState;
+            chrome.storage.local.set({
+                settings:tempSettings
+            },()=>{
+                this.setState({paused:newState});
+                console.log("newState")
+            })
+        })
+        /* var newState;
         if(this.state.paused == false){
             newState = true;
         }else{newState = false}
@@ -45,7 +59,7 @@ export default class Home extends Component{
                 this.setState({
                 paused:newState
             })}
-            );
+            ); */
         //});
         /* setPause.then(()=>{ 
             this.setState({
@@ -71,15 +85,24 @@ export default class Home extends Component{
                         <div className="header-bar">
                             <h1>Currently watching</h1>
                             <div className="button-container">
-                                <button id="Pause" onClick={this.handlePause}>
+                                {/* <button id="Pause" onClick={this.handlePause}>
                                     {pauseButtonText}
-                                </button>
+                                </button> */}
+                                <div className="AR SwitchContainer">
+                                    <label for="AutoResumeToggle">
+                                        <span id="AutoRedSwitchLabel">Auto</span>
+                                        Resume
+                                    </label>
+                                    <Switch name="AutoResumeToggle" checked={!paused} ref={pauseSwitch=>{this.switch=pauseSwitch;}}
+                                            onChange={(event)=>{this.handlePause(event)}}/>
+                                </div>
                                 {/* <button type="button" id="ClearListButton"> Clear List </button> */}
                                 <button type="button" id="SettingsButton" onClick={this.moveToSettingsPage}>
                                     {/* Settings */}
                                     <i class="fas fa-cog"></i>
                                 </button>
                             </div>
+                            
                         </div>
                         <MainList/>
 

@@ -33,10 +33,10 @@ $(document).ready(async function(){
     .then(()=>getUserSettings())
     .then((usettings)=>{userSettings = usettings})
     .then(()=>{
-        DEBUG && console.log("CHECK PAUSED SETTING" + userSettings.pauseResume);
-        DEBUG && console.log("CHECK MIN WATCH TIME SETTING" + userSettings.minWatchTime);
-        DEBUG && console.log("CHECK MIN VID LENGTH SETTING" + userSettings.minVideoLength);
-        if(/* !paused */!userSettings.pauseResume){
+        DEBUG && console.log("CHECK PAUSED SETTING: " + userSettings.pauseResume);
+        DEBUG && console.log("CHECK MIN WATCH TIME SETTING: " + userSettings.minWatchTime);
+        DEBUG && console.log("CHECK MIN VID LENGTH SETTING: " + userSettings.minVideoLength);
+        if(!userSettings.pauseResume){
             DEBUG && console.log("document ready, starting");
             ytNavLoop = false;
             if(checkWatchable(window.location.href)){initialLinkIsVideo = true}
@@ -260,26 +260,42 @@ function addNewVideo(video){
 function setTime(video){
     return new Promise(function(resolve){
         var currentVideos = [];
-        chrome.storage.local.get("videos", function(data){
+        var videoFound = false;
+        chrome.storage.local.get("videos", (data)=>{
             currentVideos = data;
             for(var i=0;i<currentVideos.videos.length;i++){
                 if(extractWatchID(currentVideos.videos[i].videolink) == extractWatchID(video.videolink)){
                     currentVideos.videos.splice(i,1);
                     currentVideos.videos.push(video);          
                     chrome.storage.local.set(currentVideos,()=>{return;});
+                    videoFound = true;
                     break;
                 }
             }
+            if(!videoFound){
+                addNewVideo(video);
+            }
+            resolve();
         });
-        resolve();
+        
     })
 
 }
-
+function checkDuration(){
+    const video = document.querySelector("video");
+    if(video.duration < userSettings.minVideoLength){
+        DEBUG && console.log("Video does not meet user's minVideoLength setting");
+        return false;
+    }
+    else{
+        DEBUG && console.log("Video meets user's minVideoLength setting");
+        return true;
+    }
+}
 async function mainVideoProcess(){
     return new Promise(async function(resolve){
         var currentURL = window.location.href;
-        if(checkWatchable(window.location.href)){
+        if(checkWatchable(window.location.href) && checkDuration()){
             let grabTitlePromise = grabTitle();
                 if(!initialLinkIsVideo && !ytNavLoop){resolve();}
             grabTitlePromise.then(function(videoTitle){
@@ -307,8 +323,11 @@ async function mainVideoProcess(){
                     if(!initialLinkIsVideo && !ytNavLoop){
                         resolve();
                     }
-                    if(vid.time>0){
+                    if(vid.time>userSettings.minWatchTime && !vid.complete){
                         document.querySelector("video").currentTime = vid.time;
+                    }
+                    else{
+                        console.log("Video does not meet user's minWatchTime or video is complete. Not Auto Resuming.");
                     }
                     DEBUG && console.log("returning from cslPromise")
 
@@ -329,7 +348,8 @@ async function mainVideoProcess(){
                     var newVid = {videolink: window.location.href, time: currentTime, duration: duration,
                         title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
                         channel: $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent};
-                    addNewVideo(newVid).then(()=>{ return;})
+                    //addNewVideo(newVid).then(()=>{ return;})
+                    return;
                 }
             )
             
@@ -371,16 +391,28 @@ async function mainVideoProcess(){
                             resolve();
                         }
                         else if(timeCheck){
+                            var video = document.querySelector("video");
+                            var markPlayed = false;
+                            var timeRemaining = video.duration - video.currentTime;
+                            if(timeRemaining < userSettings.markPlayedTime){
+                                markPlayed=true;
+                                DEBUG && console.log("marking played");
+                            }
+                            else{
+                                markPlayed=false;
+                            }
                             DEBUG && console.log("TC - " + document.querySelector("video").currentTime + "/" 
                             + document.querySelector("video").duration +", " 
                             + $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent + ", "
                             + $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent);
-
-                            setTime({videolink: window.location.href, time: document.querySelector("video").currentTime,
+                            if(document.querySelector("video").currentTime > userSettings.minWatchTime){
+                                setTime({videolink: window.location.href, time: document.querySelector("video").currentTime,
                                 duration: document.querySelector("video").duration,
                                 title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
-                                channel: $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent})
-                            .then(()=>{return});
+                                channel: $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent,
+                                complete:markPlayed, doNotResume:false})
+                                .then(()=>{return});
+                            }
                         }
                     }
                     else if(!initialLinkIsVideo && !ytNavLoop){
@@ -391,7 +423,7 @@ async function mainVideoProcess(){
             })
         }
         else{
-            DEBUG && console.log("NOT WATCHABLE: RESOLVING");
+            DEBUG && console.log("NOT WATCHABLE OR DOES NOT MEET USER CRITERIA: RESOLVING");
         }
     });
 }

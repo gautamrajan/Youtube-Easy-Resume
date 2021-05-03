@@ -2,6 +2,8 @@ import { h, Component } from 'preact';
 import Snackbar from 'preact-material-components/Snackbar';
 import 'preact-material-components/Snackbar/style.css';
 import Home from './home';
+
+//TODO: Input validation for settings
 export default class SettingsPage extends Component{
     constructor(){
         super();
@@ -130,8 +132,6 @@ export default class SettingsPage extends Component{
                         </button>
                     </div>
                     <div id="MainPanel">
-
-                    
                         <form className="SettingsPanel">
                             <div className="Setting MinVideoLength">
                                 <label for="MinVideoLengthInput" className="SettingLabel">Only resume videos longer than: </label>
@@ -213,7 +213,7 @@ export default class SettingsPage extends Component{
                             background-color: rgba(158, 158, 158, 0.781);
                         }
                         h1{
-                            margin-top:10px;
+                            margin-top:5px;
                             /*margin-bottom: 5px;*/
                             color: #ffffff;
                             /* border: 1px solid black; */

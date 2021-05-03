@@ -35,7 +35,9 @@ export default class MainList extends Component {
                         },()=>{
                             for(var i=(data.videos.length - 1);!(i<0);i--){
                                 //generateVideoElement
-                                elementList.push(this.generateListElement(data.videos[i]));
+                                if(!data.videos[i].complete){
+                                    elementList.push(this.generateListElement(data.videos[i]));
+                                }
                             }
                             resolve(elementList);
                         })
@@ -43,7 +45,9 @@ export default class MainList extends Component {
                     else{
                         for(var i=(data.videos.length - 1);!(i<0);i--){
                             //generateVideoElement
-                            elementList.push(this.generateListElement(data.videos[i]));
+                            if(!data.videos[i].complete){
+                                elementList.push(this.generateListElement(data.videos[i]));
+                            }
                         }
                         resolve(elementList);
                     }
