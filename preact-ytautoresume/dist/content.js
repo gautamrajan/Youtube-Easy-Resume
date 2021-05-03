@@ -28,6 +28,8 @@ var previousURL;
 var previousTitle;
 var previousChannel;
 var userSettings;
+var doNotResume = false;
+var blacklist = false;
 $(document).ready(async function(){
     initStorage()
     .then(()=>getUserSettings())
@@ -39,7 +41,20 @@ $(document).ready(async function(){
         if(!userSettings.pauseResume){
             DEBUG && console.log("document ready, starting");
             ytNavLoop = false;
-            if(checkWatchable(window.location.href)){initialLinkIsVideo = true}
+            if(checkWatchable(window.location.href)){
+                initialLinkIsVideo = true;
+                injectPlayerButton();
+                $("div#YTAutoResumeToggle.ytp-autonav-toggle-button").click(()=>{
+                    var checkbox=$("#YTAutoResumeToggle");
+                    if(checkbox.attr("aria-checked") == "true"){
+                        checkbox.attr("aria-checked","false");
+                    }
+                    else{
+                        checkbox.attr("aria-checked","true");
+                    }
+                    DEBUG && console.log("switch toggle");
+                })
+            }
             else{initialLinkIsVideo = false};
         
             //initStorage().then(async()=>{   
@@ -66,15 +81,15 @@ $(document).ready(async function(){
                 }
             })
         
-                if(initialLinkIsVideo &&  !ytNavLoop){
-                    DEBUG && console.log("RUNNING DIRECT LOOP");
-                    mainVideoProcess().then(()=>
-                    {
-                        DEBUG && console.log("initial link loop complete. setting ytnav true");
-                        ytNavLoop = true;
-                        return;
-                    });
-                }
+            if(initialLinkIsVideo &&  !ytNavLoop){
+                DEBUG && console.log("RUNNING DIRECT LOOP");
+                mainVideoProcess().then(()=>
+                {
+                    DEBUG && console.log("initial link loop complete. setting ytnav true");
+                    ytNavLoop = true;
+                    return;
+                });
+            }
             //})
         }
         else{
@@ -84,6 +99,33 @@ $(document).ready(async function(){
     //});
 }
 );
+function injectPlayerButton(){
+    var button = document.createElement("button");
+    button.classList.add("ytp-button");
+    button.setAttribute("name","YTAutoResumeSwitch");
+    button.id = "YTAutoResumeSwitch";
+    /* button.onclick=handleBlacklistClick(); */
+
+    var toggleButtonContainer = document.createElement("div");
+    toggleButtonContainer.classList.add("ytp-autonav-toggle-button-container");
+
+    var toggleButton = document.createElement("div");
+    toggleButton.classList.add("ytp-autonav-toggle-button");
+    toggleButton.id = "YTAutoResumeToggle";
+    toggleButton.setAttribute("aria-checked", "true");
+
+    toggleButtonContainer.append(toggleButton);
+    button.append(toggleButtonContainer);
+    
+    //button.style.backgroundImage=chrome.runtime.getURL("./icons/switchthumb.svg");
+    console.log(chrome.runtime.getURL("icons/redcircle.svg"));
+    var style = "url(" + chrome.runtime.getURL("/icons/redcircle.svg") + ");";
+    /* button.setAttribute("style",style); */
+    $("div.ytp-right-controls").append(button);
+    $("div#YTAutoResumeToggle.ytp-autonav-toggle-button::after").css("background-image",style);
+}
+
+
 function getUserSettings(){
     return new Promise((resolve)=>{
         chrome.storage.local.get("settings",(data)=>{
@@ -123,6 +165,7 @@ function initSettings(){
     return new Promise((resolve)=>{
         chrome.storage.local.getBytesInUse("settings",(bytes)=>{
             if(bytes == undefined || bytes == 0){
+                DEBUG && console.log("Settings BYTES USED ZERO OR undefined");
                 chrome.storage.local.set(
                 {
                     settings:{
@@ -134,6 +177,7 @@ function initSettings(){
                 },()=>{resolve();})
             }
             else{
+                DEBUG && console.log("Settings storage not empty");
                 resolve();
             }
             
@@ -292,10 +336,26 @@ function checkDuration(){
         return true;
     }
 }
+function checkBlacklist(link){
+    return new Promise((resolve)=>{
+        chrome.storage.local.get("videos",(data)=>{
+            for(var i=0;i<data.videos.length;i++){
+                if(data.videos[i].videolink==link &&
+                data.videos[i].doNotResume!=undefined &&
+                data.videos.doNotResume==true){
+                    DEBUG && console.log("VIDEO BLACKLISTED");
+                    resolve(true);
+                }
+            }
+            DEBUG && console.log("VIDEO NOT BLACKLISTED");
+            resolve(false);
+        })
+    })
+}
 async function mainVideoProcess(){
     return new Promise(async function(resolve){
         var currentURL = window.location.href;
-        if(checkWatchable(window.location.href) && checkDuration()){
+        if(checkWatchable(window.location.href) && checkDuration()/*  && (checkBlacklist(window.location.href)==false) */){
             let grabTitlePromise = grabTitle();
                 if(!initialLinkIsVideo && !ytNavLoop){resolve();}
             grabTitlePromise.then(function(videoTitle){
@@ -327,12 +387,19 @@ async function mainVideoProcess(){
                         document.querySelector("video").currentTime = vid.time;
                     }
                     else{
-                        console.log("Video does not meet user's minWatchTime or video is complete. Not Auto Resuming.");
+                        DEBUG && console.log("Video does not meet user's minWatchTime or video is complete. Not Auto Resuming.");
+                    }
+
+                    if(vid.doNotResume){
+                        blacklist=true;
+                        DEBUG && console.log("Video is blacklisted");
                     }
                     DEBUG && console.log("returning from cslPromise")
 
                 },
                 async ()=>{
+                    DEBUG && console.log("New video, setting blacklist to false by default");
+                    blacklist = false;
                     if(!initialLinkIsVideo && !ytNavLoop){
                             resolve();
                         }
@@ -345,14 +412,13 @@ async function mainVideoProcess(){
                     if(Number.isNaN(video.currentTime) || video.currentTime < 0){currentTime = 0}
                     else{currentTime = video.currentTime};
 
-                    var newVid = {videolink: window.location.href, time: currentTime, duration: duration,
+                    /* var newVid = {videolink: window.location.href, time: currentTime, duration: duration,
                         title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
                         channel: $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent};
-                    //addNewVideo(newVid).then(()=>{ return;})
+                    addNewVideo(newVid).then(()=>{ return;}) */
                     return;
                 }
             )
-            
             .then(async ()=>{
                 if(!initialLinkIsVideo && !ytNavLoop){
                     resolve();
@@ -410,7 +476,7 @@ async function mainVideoProcess(){
                                 duration: document.querySelector("video").duration,
                                 title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
                                 channel: $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent,
-                                complete:markPlayed, doNotResume:false})
+                                complete:markPlayed, doNotResume:blacklist})
                                 .then(()=>{return});
                             }
                         }
