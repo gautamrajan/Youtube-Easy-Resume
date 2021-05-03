@@ -75,7 +75,10 @@ export default class Home extends Component{
                                     {pauseButtonText}
                                 </button>
                                 {/* <button type="button" id="ClearListButton"> Clear List </button> */}
-                                <button type="button" id="Settings" onClick={this.moveToSettingsPage}>Settings</button>
+                                <button type="button" id="SettingsButton" onClick={this.moveToSettingsPage}>
+                                    {/* Settings */}
+                                    <i class="fas fa-cog"></i>
+                                </button>
                             </div>
                         </div>
                         <MainList/>

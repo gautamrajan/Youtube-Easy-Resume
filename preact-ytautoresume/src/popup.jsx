@@ -12,6 +12,7 @@ class App extends Component{
                     html{
                         --scrollbarBG: /* #CFD8DC */transparent;
                         --thumbBG: /* #90A4AE */#d3d3d3; 
+                        height:435px;
                     }
 
                     title{

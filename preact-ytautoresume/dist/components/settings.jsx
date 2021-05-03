@@ -1,4 +1,6 @@
 import { h, Component } from 'preact';
+import Snackbar from 'preact-material-components/Snackbar';
+import 'preact-material-components/Snackbar/style.css';
 import Home from './home';
 export default class SettingsPage extends Component{
     constructor(){
@@ -8,24 +10,95 @@ export default class SettingsPage extends Component{
             goBack: false,
             settingsChanged:false,
             settings:{},
+            newSettings:{},
+            savedSnackbar:false,
         }
     }
-    settingsChangedHandler = () =>{
-        if(this.state.dataReady && !this.state.settingsChanged){
-            this.setState({settingsChanged:true});
-        }
-    }
-    secondsToMinutes = (seconds) => {
-        if(seconds<60){
-            return seconds;
+    settingsChangedHandler = (e,setting,minutes) =>{
+        console.log("At settingsChangedHandler: " + setting);
+        var modifiedSettings = {};
+        modifiedSettings = Object.assign(modifiedSettings, this.state.newSettings);
+        if(minutes){
+            console.log("minutes case, setting name: " + setting);
+            console.log("minutes case, value: " + e.target.value);
+            modifiedSettings[setting] = minutesToSeconds(e.target.value);
+            
         }
         else{
-            return Math.round(seconds/60);
+            modifiedSettings[setting] = e.target.value;
         }
+
+        this.setState({newSettings:modifiedSettings},()=>{
+            this.settingsChangedChecker();
+        })
+        /* if(modifiedSettings[setting]!=this.state.newSettings[setting]){
+            
+        } */
+        
+        /* else if(this.state.settings[setting]!=this.state.newSettings[setting]){
+    
+            console.log("settings changed case");
+            this.setState({settingsChanged:true,newSettings:modifiedSettings});
+        }
+        else{
+            this.setState({
+                settingsChanged:false
+            })
+        } */
+        /* this.setState({
+            newSettings:modifiedSettings,
+        },()=>{
+            if(this.state.settings[setting]!=this.state.newSettings[setting]){
+                console.log("settings changed case");
+                this.setState({settingsChanged:true,newSettings:modifiedSettings});
+            }
+            else{
+                this.setState({
+                    settingsChanged:false
+                })
+            }
+        }); */
+        
+
     }
+    settingsChangedChecker = () =>{
+        var noSettingsChanged = true;
+        for(let key of Object.keys(this.state.settings)){
+            if(this.state.settings[key] !== this.state.newSettings[key]){
+                noSettingsChanged = false;
+                this.setState({
+                    settingsChanged: true
+                },()=>{return;})
+            }
+        }
+        if(noSettingsChanged && this.state.settingsChanged){
+            this.setState({
+                settingsChanged:false,
+            })
+        }
+
+    }
+    saveSettings = () =>{
+        chrome.storage.local.set(
+            {
+                settings:this.state.newSettings
+            },()=>{
+                console.log("SETTINGS CHANGED IN STORAGE");
+                this.setState({
+                    settings: this.state.newSettings,
+                    settingsChanged:false,
+                },()=>{
+                    this.bar.MDComponent.show({
+                        message:"Settings saved successfully"
+                    })
+                })
+            }
+        )
+    }
+    
     componentDidMount(){
         chrome.storage.local.get("settings",(data)=>{
-            this.setState({settings: data.settings, dataReady:true},);
+            this.setState({settings: data.settings, newSettings:data.settings, dataReady:true},);
         })
     }
     goBack = ()=>{
@@ -37,9 +110,9 @@ export default class SettingsPage extends Component{
     render(){
         let goBack = this.state.goBack;
         let dataReady = this.state.dataReady;
-        var initMVL = this.state.settings.minVideoLength;
-        var initMWT = this.state.settings.minWatchTime;
-        var initMPT = this.state.settings.markPlayedTime;
+        var initMVL = this.state.newSettings.minVideoLength;
+        var initMWT = this.state.newSettings.minWatchTime;
+        var initMPT = this.state.newSettings.markPlayedTime;
         let settingsChanged = this.state.settingsChanged;
         if(goBack){
             return(
@@ -47,10 +120,11 @@ export default class SettingsPage extends Component{
             )
         }
         if(dataReady){
+            console.log("DATA READY: " + dataReady);
             return(
                 <div className="SettingsContainer">
                     <div className="header-bar">
-                    <h1>Settings</h1>
+                        <h1>Settings</h1>
                         <button id="backButton" onClick={this.goBack}>
                             <i class="fa fa-chevron-left"></i>
                         </button>
@@ -63,33 +137,35 @@ export default class SettingsPage extends Component{
                                 <label for="MinVideoLengthInput" className="SettingLabel">Only resume videos longer than: </label>
                                 <div className="MinVideoLength InputContainer">
                                     <input type="number" className="NumInput" name="MinVideoLengthInput" id="MinVideoLengthInput"
-                                    value={this.secondsToMinutes(initMVL)}
-                                    onChange={()=>{this.settingsChangedHandler()}}/> minutes
+                                    value={secondsToMinutes(initMVL)}
+                                    onInput={(event)=>{this.settingsChangedHandler(event,"minVideoLength",true)}}/> minute(s)
                                 </div>
                             </div>
                             <div className="Setting MinWatchTime">
                                 <label for="MinWatchTimeInput" className="SettingLabel">Only resume videos I watch for at least: </label>
                                 <div className="MinWatchTime InputContainer">
                                     <input type="number" className="NumInput" name="MinWatchTimeInput" id="MinWatchTimeInput"
-                                    value={this.secondsToMinutes(initMWT)}
-                                    onChange={this.settingsChangedHandler}/> minutes
+                                    value={secondsToMinutes(initMWT)}
+                                    onInput={(event)=>{this.settingsChangedHandler(event,"minWatchTime",true)}}/> minute(s)
                                 </div>
                             </div>
                             <div className="Setting ConsiderComplete">
                                 <label for="ConsiderCompleteInput" className="SettingLabel">Mark as video as played: </label>
                                 <div className="ConsiderComplete InputContainer">
                                     <input type="number" className="NumInput" name="ConsiderCompleteInput" id="ConsiderCompleteInput"
-                                    value={this.secondsToMinutes(initMPT)}
-                                    onChange={this.settingsChangedHandler}/> 
+                                    value={secondsToMinutes(initMPT)}
+                                    onInput={(event)=>{this.settingsChangedHandler(event,"markPlayedTime",true)}}/> 
                                     <select className="TimeUnitSelector" name="ConsiderCompleteUnits" id="ConsiderCompleteUnits">
-                                        <option value="minutes">minutes</option>
-                                        <option value="seconds">seconds</option>
+                                        <option value="minutes">minute(s)</option>
+                                        <option value="seconds">second(s)</option>
                                     </select>
                                     away from the end.
                                 </div>
                             </div>
                         </form>
-                        {settingsChanged?<button type="button" id="SaveButton">Save Settings</button>:null}
+                        {settingsChanged?<button type="button" id="SaveButton" onClick={()=>this.saveSettings()}>Save Settings</button>
+                        :null}
+                        <Snackbar ref={bar=>{this.bar=bar;}}/>
                     </div>
                     {/* <div id="bottomContainer">
                         
@@ -103,7 +179,7 @@ export default class SettingsPage extends Component{
                         }
                         .fa-chevron-left{
                             color:#ffffff;
-                            margin-bottom: 5px;
+                            /* margin-bottom: 5px; */
                         }
                         .SettingsContainer{
                             display:flex;
@@ -129,6 +205,8 @@ export default class SettingsPage extends Component{
                             border: none;
                             color: #ffffff;
                             background-color: transparent;
+                            text-align: center;
+                            vertical-align: middle;
                             {/* background-color: rgba(99, 99, 99, 0.781); */}
                         }
                         div.header-bar button:active{
@@ -221,6 +299,9 @@ export default class SettingsPage extends Component{
                             align-self:center;
                             background-color:red;
                         }
+                        #SaveButton:active{
+                            background-color:#c20000;
+                        }
                         
                     `}
                     </style>
@@ -231,5 +312,21 @@ export default class SettingsPage extends Component{
         else{
             return (null);
         }
+    }
+}
+function secondsToMinutes(seconds){
+    if(seconds<60){
+        return seconds;
+    }
+    else{
+        return Math.round(seconds/60);
+    }
+}
+function minutesToSeconds(minutes){
+    if(minutes == 0){
+        return 0;
+    }
+    else{
+        return minutes*60;
     }
 }

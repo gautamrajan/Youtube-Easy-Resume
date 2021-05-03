@@ -29,6 +29,7 @@
     "jest": "^24.9.0",
     "jest-preset-preact": "^1.0.0",
     "preact-cli": "^3.0.0",
+    "preact-material-components": "^1.6.1",
     "sirv-cli": "1.0.3",
     "style-loader": "^2.0.0",
     "webpack": "^5.36.2",
