@@ -30,6 +30,7 @@ var previousChannel;
 var userSettings;
 var doNotResume = false;
 var blacklist = false;
+var grabTitleComplete = false;
 $(document).ready(async function(){
     initStorage()
     .then(()=>getUserSettings())
@@ -43,21 +44,64 @@ $(document).ready(async function(){
             ytNavLoop = false;
             if(checkWatchable(window.location.href)){
                 initialLinkIsVideo = true;
-                injectPlayerButton();
-                $("div#YTAutoResumeToggle.ytp-autonav-toggle-button").click(()=>{
-                    var checkbox=$("#YTAutoResumeToggle");
-                    if(checkbox.attr("aria-checked") == "true"){
-                        checkbox.attr("aria-checked","false");
-                    }
-                    else{
-                        checkbox.attr("aria-checked","true");
-                    }
-                    DEBUG && console.log("switch toggle");
+                injectPlayerButton()
+                .then(()=>{
+                    if(!grabTitleComplete){
+                        grabTitle().then(()=>{
+                            return;
+                        })
+                    } else{return;}
                 })
+                .then(()=>{
+                    $("#YTAutoResumePlayerSwitch").click(()=>{
+                        var icon =  $("#YTAutoResumeSwitchIcon");
+                        var button = $("#YTAutoResumePlayerSwitch");
+                        DEBUG && console.log("button.prop: " + $(button).prop("checked"));
+                        var video = document.querySelector("video");
+                        var markPlayed = false;
+                            var timeRemaining = video.duration - video.currentTime;
+                            if(timeRemaining < userSettings.markPlayedTime){
+                                markPlayed=true;
+                                DEBUG && console.log("marking played");
+                            }
+                            else{
+                                markPlayed=false;
+                            }
+                        if($(button).prop("checked")){
+                            blacklist = true;
+                            $(button).prop("checked",false);
+                            $(icon).attr("src", chrome.runtime.getURL("icons/playericon_inactive.svg"));
+                            $("#YTAutoResumePlayerSwitch").attr("title","Video will not auto-resume");
+                            setTime({videolink: window.location.href, time: document.querySelector("video").currentTime,
+                                duration: document.querySelector("video").duration,
+                                title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
+                                channel: $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent,
+                                complete:markPlayed, doNotResume:true})
+                                .then(()=>{
+                                    DEBUG && console.log("Video blacklisted successfully");
+                                });
+                        }
+                        else{
+                            blacklist = false;
+                            $(button).prop("checked",true);
+                            $(icon).attr("src",chrome.runtime.getURL("icons/playericon.svg"));
+                            $("#YTAutoResumePlayerSwitch").attr("title","Video will auto-resume");
+                            setTime({videolink: window.location.href, time: document.querySelector("video").currentTime,
+                                duration: document.querySelector("video").duration,
+                                title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
+                                channel: $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent,
+                                complete:markPlayed, doNotResume:false})
+                                .then(()=>{
+                                    DEBUG && console.log("Video removecd from blacklist successfully");
+                                });
+                            
+                        }
+                        
+                    })
+                });
             }
             else{initialLinkIsVideo = false};
         
-            //initStorage().then(async()=>{   
             document.addEventListener('yt-navigate-finish',async ()=>{
                 DEBUG && console.log("yt-navigate-finish EVENT DETECTED.")
                 if(initialLinkIsVideo){
@@ -90,39 +134,35 @@ $(document).ready(async function(){
                     return;
                 });
             }
-            //})
         }
         else{
-            console.log("paused");
+            DEBUG && console.log("paused");
         }
     });
-    //});
 }
 );
 function injectPlayerButton(){
-    var button = document.createElement("button");
-    button.classList.add("ytp-button");
-    button.setAttribute("name","YTAutoResumeSwitch");
-    button.id = "YTAutoResumeSwitch";
-    /* button.onclick=handleBlacklistClick(); */
-
-    var toggleButtonContainer = document.createElement("div");
-    toggleButtonContainer.classList.add("ytp-autonav-toggle-button-container");
-
-    var toggleButton = document.createElement("div");
-    toggleButton.classList.add("ytp-autonav-toggle-button");
-    toggleButton.id = "YTAutoResumeToggle";
-    toggleButton.setAttribute("aria-checked", "true");
-
-    toggleButtonContainer.append(toggleButton);
-    button.append(toggleButtonContainer);
+    //TODO implement setting override feature for switch. 
+    //TODO ie. flipping the switch on a video that does not meet the user settings forces auto-resume anyway
+    return new Promise((resolve)=>{
+        checkBlacklist(window.location.href).then((blacklisted)=>{
+            var imgSrc;
+            {blacklisted?imgSrc = chrome.runtime.getURL("icons/playericon.svg")
+                        :imgSrc = chrome.runtime.getURL("icons/playericon_inactive.svg")};
+            DEBUG && console.log("starting image src:" + imgSrc);
+            var button = $(
+                `<button class="ytp-button YTAutoResume" name="YTAutoResumeSwitch" id="YTAutoResumePlayerSwitch" title="Video will auto-resume"
+                aria-label="Video will auto-resume" style="vertical-align: top;">
+                    <img id="YTAutoResumeSwitchIcon" src="${imgSrc}"
+                     style="height: 84%; display: block; margin: auto;">
+                </button>`
+            );
+            $(button).prop("checked",!blacklisted);
+            $("div.ytp-right-controls").prepend(button);
+            resolve();
+        })
+    })
     
-    //button.style.backgroundImage=chrome.runtime.getURL("./icons/switchthumb.svg");
-    console.log(chrome.runtime.getURL("icons/redcircle.svg"));
-    var style = "url(" + chrome.runtime.getURL("/icons/redcircle.svg") + ");";
-    /* button.setAttribute("style",style); */
-    $("div.ytp-right-controls").append(button);
-    $("div#YTAutoResumeToggle.ytp-autonav-toggle-button::after").css("background-image",style);
 }
 
 
@@ -216,8 +256,9 @@ function grabTitle(){
             DEBUG && console.log("VIDEO TITLE OR CHANNEL NAME IS NULL. TRYING AGAIN IN ONE SECOND.");
             var interval = setInterval(()=>{
                 videoTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0];
-                cN = $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0]
+                cN = $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0];
                 if(!(videoTitle==null || videoTitle==undefined)){
+                    grabTitleComplete = true;
                     resolve(videoTitle);
                     clearInterval(interval);
                 }
@@ -225,6 +266,7 @@ function grabTitle(){
         }
         else{
             DEBUG && console.log("resolving, videotitle -" + videoTitle.textContent);
+            grabTitleComplete=true;
             resolve(videoTitle);
         }
     });
@@ -343,30 +385,30 @@ function checkBlacklist(link){
                 if(data.videos[i].videolink==link &&
                 data.videos[i].doNotResume!=undefined &&
                 data.videos.doNotResume==true){
-                    DEBUG && console.log("VIDEO BLACKLISTED");
+                    DEBUG && console.log("VIDEO IS BLACKLISTED");
                     resolve(true);
                 }
             }
-            DEBUG && console.log("VIDEO NOT BLACKLISTED");
+            DEBUG && console.log("VIDEO IS NOT BLACKLISTED");
             resolve(false);
-        })
+        });
     })
 }
 async function mainVideoProcess(){
+    grabTitleComplete = false;
     return new Promise(async function(resolve){
         var currentURL = window.location.href;
         if(checkWatchable(window.location.href) && checkDuration()/*  && (checkBlacklist(window.location.href)==false) */){
             let grabTitlePromise = grabTitle();
                 if(!initialLinkIsVideo && !ytNavLoop){resolve();}
             grabTitlePromise.then(function(videoTitle){
+                grabTitleComplete = true;
                 if(!initialLinkIsVideo && !ytNavLoop){resolve();}
                 if(checkWatchable(window.location.href)){
                     var channelName = $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent;
                     var vTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent;
                     DEBUG && console.log("Video Title: " + vTitle);
                     DEBUG && console.log("Channel Name: " + channelName);
-
-
                     DEBUG && console.log("Current URL: " + currentURL);
                 }
                 //return;
@@ -383,7 +425,7 @@ async function mainVideoProcess(){
                     if(!initialLinkIsVideo && !ytNavLoop){
                         resolve();
                     }
-                    if(vid.time>userSettings.minWatchTime && !vid.complete){
+                    if(vid.time>userSettings.minWatchTime && !vid.complete && !vid.doNotResume){
                         document.querySelector("video").currentTime = vid.time;
                     }
                     else{
@@ -456,7 +498,7 @@ async function mainVideoProcess(){
                         else if(!initialLinkIsVideo && !ytNavLoop){
                             resolve();
                         }
-                        else if(timeCheck){
+                        else if(timeCheck && !blacklist){
                             var video = document.querySelector("video");
                             var markPlayed = false;
                             var timeRemaining = video.duration - video.currentTime;
@@ -471,14 +513,14 @@ async function mainVideoProcess(){
                             + document.querySelector("video").duration +", " 
                             + $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent + ", "
                             + $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent);
-                            if(document.querySelector("video").currentTime > userSettings.minWatchTime){
+                            //if(document.querySelector("video").currentTime > userSettings.minWatchTime){
                                 setTime({videolink: window.location.href, time: document.querySelector("video").currentTime,
                                 duration: document.querySelector("video").duration,
                                 title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
                                 channel: $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent,
-                                complete:markPlayed, doNotResume:blacklist})
+                                complete:markPlayed, doNotResume:false})
                                 .then(()=>{return});
-                            }
+                            //}
                         }
                     }
                     else if(!initialLinkIsVideo && !ytNavLoop){

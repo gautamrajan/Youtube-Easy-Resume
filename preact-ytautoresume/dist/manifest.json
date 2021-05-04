@@ -32,6 +32,8 @@
       }
     },
     "web_accessible_resources": [
-        "icons/redcircle.svg"
+        "icons/redcircle.svg",
+        "icons/playericon.svg",
+        "icons/playericon_inactive.svg"
       ]
    }

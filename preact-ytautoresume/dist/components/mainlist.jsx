@@ -9,17 +9,61 @@ export default class MainList extends Component {
             maxBarWidth:226,
             marginRight:0,
             titleWidth:188,
+            settings:{}
         }
     }
     componentDidMount() {
-        this.generateList().then(
+        this.getSettings()
+        .then(()=>{return this.generateList()})
+        .then((elementList)=>{
+            this.setState({
+                listReady:true,
+                listElements: elementList
+            });
+        })
+        /* this.generateList().then(
             (elementList)=>{
             this.setState({
                 listReady:true,
                 listElements: elementList
-            }/* ,()=>{resolve();} */);
+            });
 
-        })
+        }) */
+    }
+    getSettings = ()=>{
+        return new Promise((resolve)=>{
+            chrome.storage.local.get("settings",(data)=>{
+                if(data.settings != undefined){
+                    this.setState({settings: data.settings, newSettings:data.settings, dataReady:true},
+                        ()=>{resolve();});
+                }
+                else{
+                    chrome.storage.local.set({
+                        settings:{
+                            pauseResume:false,
+                            minWatchTime:60,
+                            minVideoLength:480,
+                            markPlayedTime:60,
+                        }
+                    },()=>{this.setState({settings: data.settings, newSettings:data.settings, dataReady:true},
+                        ()=>{resolve();});});
+                }
+            });
+        });
+    }
+    checkCriteria = (video)=>{
+        if(video.doNotResume){
+            return false;
+        }
+        else if(video.complete){
+            return false;
+        }
+        else if(video.time < this.state.settings.minWatchTime){
+            return false;
+        }
+        else{
+            return true;
+        }
     }
     generateList = () => {
         var elementList = [];
@@ -35,7 +79,8 @@ export default class MainList extends Component {
                         },()=>{
                             for(var i=(data.videos.length - 1);!(i<0);i--){
                                 //generateVideoElement
-                                if(!data.videos[i].complete){
+                                // if(!data.videos[i].complete && !data.videos[i].doNotResume){
+                                if(this.checkCriteria(data.videos[i])){
                                     elementList.push(this.generateListElement(data.videos[i]));
                                 }
                             }
@@ -45,7 +90,8 @@ export default class MainList extends Component {
                     else{
                         for(var i=(data.videos.length - 1);!(i<0);i--){
                             //generateVideoElement
-                            if(!data.videos[i].complete){
+                            // if(!data.videos[i].complete && !data.videos[i].doNotResume){
+                            if(this.checkCriteria(data.videos[i])){
                                 elementList.push(this.generateListElement(data.videos[i]));
                             }
                         }

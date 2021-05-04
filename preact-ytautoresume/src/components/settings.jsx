@@ -24,12 +24,12 @@ export default class SettingsPage extends Component{
             console.log("minutes case, setting name: " + setting);
             console.log("minutes case, value: " + e.target.value);
             modifiedSettings[setting] = minutesToSeconds(e.target.value);
-            
         }
         else{
             modifiedSettings[setting] = e.target.value;
         }
 
+        
         this.setState({newSettings:modifiedSettings},()=>{
             this.settingsChangedChecker();
         })
@@ -100,7 +100,19 @@ export default class SettingsPage extends Component{
     
     componentDidMount(){
         chrome.storage.local.get("settings",(data)=>{
-            this.setState({settings: data.settings, newSettings:data.settings, dataReady:true},);
+            if(data.settings != undefined){
+                this.setState({settings: data.settings, newSettings:data.settings, dataReady:true});
+            }
+            else{
+                chrome.storage.local.set({
+                    settings:{
+                        pauseResume:false,
+                        minWatchTime:60,
+                        minVideoLength:480,
+                        markPlayedTime:60,
+                    }
+                },()=>{this.setState({settings: data.settings, newSettings:data.settings, dataReady:true});});
+            }
         })
     }
     goBack = ()=>{
@@ -167,16 +179,11 @@ export default class SettingsPage extends Component{
                         :null}
                         <Snackbar ref={bar=>{this.bar=bar;}}/>
                     </div>
-                    {/* <div id="bottomContainer">
-                        
-                    </div> */}
+                    
                     
 
 
                     <style jsx>{`
-                        body{
-                            margin-bottom:0px;
-                        }
                         .fa-chevron-left{
                             color:#ffffff;
                             /* margin-bottom: 5px; */
@@ -185,7 +192,7 @@ export default class SettingsPage extends Component{
                             display:flex;
                             flex-direction:column;
                             max-width:350px;
-                            min-height:430px;
+                            min-height:435px;
                             /*background-color:green;*/
                         }
                         div.header-bar{
@@ -227,7 +234,6 @@ export default class SettingsPage extends Component{
                             justify-content:space-between;
                         }
                         .SettingsPanel{
-                            margin-top:5px;
                             max-height:100%;
                         }
                         .Setting {
