@@ -169,7 +169,7 @@ export default class SettingsPage extends Component{
                                     onInput={(event)=>{this.settingsChangedHandler(event,"markPlayedTime",true)}}/> 
                                     <select className="TimeUnitSelector" name="ConsiderCompleteUnits" id="ConsiderCompleteUnits">
                                         <option value="minutes">minute(s)</option>
-                                        <option value="seconds">second(s)</option>
+                                        {/* <option value="seconds">second(s)</option> */}
                                     </select>
                                     away from the end.
                                 </div>
