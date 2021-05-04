@@ -45,7 +45,8 @@ $(document).ready(async function(){
             if(checkWatchable(window.location.href)){
                 initialLinkIsVideo = true;
                 injectPlayerButton()
-                .then(()=>{
+                .then(()=>{startPlayerButtonListener()});
+                /* .then(()=>{
                     if(!grabTitleComplete){
                         grabTitle().then(()=>{
                             return;
@@ -98,17 +99,22 @@ $(document).ready(async function(){
                         }
                         
                     })
-                });
+                }); */
             }
             else{initialLinkIsVideo = false};
         
             document.addEventListener('yt-navigate-finish',async ()=>{
+                grabTitleComplete = false;
                 DEBUG && console.log("yt-navigate-finish EVENT DETECTED.")
                 if(initialLinkIsVideo){
                     DEBUG && console.log("SETTING initialLinkIsVideo FALSE AND STARTING mainVideoProcess()");
                     initialLinkIsVideo = false;
                     waitYtNav().then(()=>{
                         DEBUG && console.log("ytnav set. startin mvp process in event listener loop");
+                        resetButton().then(()=>{
+                            $("#YTAutoResumePlayerSwitch").unbind("click");
+                            startPlayerButtonListener();
+                        });
                     })
                     .then(async ()=>{
                         mainVideoProcess().then(()=>{
@@ -118,13 +124,16 @@ $(document).ready(async function(){
                 }
                 else{
                     DEBUG && console.log("initialLinkIsVideo never triggered. starting mvp");
+                    resetButton().then(()=>{
+                        $("#YTAutoResumePlayerSwitch").unbind("click");
+                        startPlayerButtonListener();
+                    });
                     ytNavLoop = true;
                     mainVideoProcess().then(()=>{
                         return;
                     })
                 }
             })
-        
             if(initialLinkIsVideo &&  !ytNavLoop){
                 DEBUG && console.log("RUNNING DIRECT LOOP");
                 mainVideoProcess().then(()=>
@@ -145,6 +154,7 @@ function injectPlayerButton(){
     //TODO implement setting override feature for switch. 
     //TODO ie. flipping the switch on a video that does not meet the user settings forces auto-resume anyway
     return new Promise((resolve)=>{
+        DEBUG && console.log("checking blacklist for: " + window.location.href);
         checkBlacklist(window.location.href).then((blacklisted)=>{
             var imgSrc;
             /* {blacklisted?imgSrc = chrome.runtime.getURL("icons/playericon.svg")
@@ -170,8 +180,91 @@ function injectPlayerButton(){
     })
     
 }
-
-
+function startPlayerButtonListener(){
+    let grabTitlePromise = new Promise((resolve)=>{
+        if(!grabTitleComplete){
+            grabTitle().then(()=>{
+                resolve();
+            })
+        } else{resolve();}  
+    })
+    grabTitlePromise.then(()=>{
+        $("#YTAutoResumePlayerSwitch").click(()=>{
+            var icon =  $("#YTAutoResumeSwitchIcon");
+            var button = $("#YTAutoResumePlayerSwitch");
+            DEBUG && console.log("button.prop: " + $(button).prop("checked"));
+            var video = document.querySelector("video");
+            var markPlayed = false;
+                var timeRemaining = video.duration - video.currentTime;
+                if(timeRemaining < userSettings.markPlayedTime){
+                    markPlayed=true;
+                    DEBUG && console.log("marking played");
+                }
+                else{
+                    markPlayed=false;
+                }
+            if($(button).prop("checked")){
+                blacklist = true;
+                $(button).prop("checked",false);
+                $(icon).attr("src", chrome.runtime.getURL("icons/playericon_inactive.svg"));
+                $("#YTAutoResumePlayerSwitch").attr("title","Video will not auto-resume");
+                setTime({videolink: window.location.href, time: document.querySelector("video").currentTime,
+                    duration: document.querySelector("video").duration,
+                    title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
+                    channel: $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent,
+                    complete:markPlayed, doNotResume:true})
+                    .then(()=>{
+                        DEBUG && console.log("Video blacklisted successfully");
+                    });
+            }
+            else{
+                blacklist = false;
+                $(button).prop("checked",true);
+                $(icon).attr("src",chrome.runtime.getURL("icons/playericon.svg"));
+                $("#YTAutoResumePlayerSwitch").attr("title","Video will auto-resume");
+                setTime({videolink: window.location.href, time: document.querySelector("video").currentTime,
+                    duration: document.querySelector("video").duration,
+                    title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
+                    channel: $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent,
+                    complete:markPlayed, doNotResume:false})
+                    .then(()=>{
+                        DEBUG && console.log("Video removecd from blacklist successfully");
+                    });
+                
+            }
+            
+        });
+    });
+                
+}
+function resetButton(){
+    return new Promise ((resolve) =>{
+        if($("#YTAutoResumePlayerSwitch").length){
+            DEBUG && console.log("resetting button");
+            checkBlacklist(window.location.href).then((blacklisted)=>{
+                var imgSrc;
+                if(blacklisted){
+                    blacklist=true;
+                    imgSrc = chrome.runtime.getURL("icons/playericon_inactive.svg");
+                }
+                else{
+                    blacklist=false;
+                    imgSrc = chrome.runtime.getURL("icons/playericon.svg");
+                }
+                DEBUG && console.log("starting image src:" + imgSrc);
+                $("#YTAutoResumePlayerSwitch").prop("checked",!blacklisted);
+                $("#YTAutoResumeSwitchIcon").attr("src",imgSrc);
+                resolve();
+            })
+        }
+        else{
+            DEBUG && console.log("button does not exist. injecting button");
+            injectPlayerButton().then(()=>{
+                resolve();
+            })
+        }
+    })
+}
 function getUserSettings(){
     return new Promise((resolve)=>{
         chrome.storage.local.get("settings",(data)=>{
@@ -264,7 +357,6 @@ function grabTitle(){
                 videoTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0];
                 cN = $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0];
                 if(!(videoTitle==null || videoTitle==undefined)){
-                    grabTitleComplete = true;
                     resolve(videoTitle);
                     clearInterval(interval);
                 }
@@ -272,7 +364,6 @@ function grabTitle(){
         }
         else{
             DEBUG && console.log("resolving, videotitle -" + videoTitle.textContent);
-            grabTitleComplete=true;
             resolve(videoTitle);
         }
     });
@@ -386,17 +477,23 @@ function checkDuration(){
 }
 function checkBlacklist(link){
     return new Promise((resolve)=>{
+        var vidNotFound = true;
         chrome.storage.local.get("videos",(data)=>{
             for(var i=0;i<data.videos.length;i++){
-                if(data.videos[i].videolink==link &&
-                data.videos[i].doNotResume!=undefined &&
-                data.videos.doNotResume==true){
-                    DEBUG && console.log("VIDEO IS BLACKLISTED");
-                    resolve(true);
+                if(extractWatchID(link) == extractWatchID(data.videos[i].videolink)){
+                    DEBUG && console.log("checkBlackList match found");
+                    if(data.videos[i].doNotResume){
+                        DEBUG && console.log("VIDEO IS BLACKLISTED");
+                        vidNotFound = false;
+                        resolve(true);
+                    }
+                    
                 }
             }
-            DEBUG && console.log("VIDEO IS NOT BLACKLISTED");
-            resolve(false);
+            if(vidNotFound){
+                DEBUG && console.log(link + " VIDEO IS NOT BLACKLISTED");
+                resolve(false);
+            }
         });
     })
 }
