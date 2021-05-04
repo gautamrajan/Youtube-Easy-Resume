@@ -184,7 +184,6 @@ export default class SettingsPage extends Component{
 
 
                     <style jsx>{`
-                        
                         .fa-chevron-left{
                             color:#ffffff;
                             /* margin-bottom: 5px; */

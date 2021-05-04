@@ -147,8 +147,14 @@ function injectPlayerButton(){
     return new Promise((resolve)=>{
         checkBlacklist(window.location.href).then((blacklisted)=>{
             var imgSrc;
-            {blacklisted?imgSrc = chrome.runtime.getURL("icons/playericon.svg")
-                        :imgSrc = chrome.runtime.getURL("icons/playericon_inactive.svg")};
+            /* {blacklisted?imgSrc = chrome.runtime.getURL("icons/playericon.svg")
+                        :imgSrc = chrome.runtime.getURL("icons/playericon_inactive.svg")}; */
+            if(blacklisted){
+                imgSrc = chrome.runtime.getURL("icons/playericon_inactive.svg");
+            }
+            else{
+                imgSrc = imgSrc = chrome.runtime.getURL("icons/playericon.svg");
+            }
             DEBUG && console.log("starting image src:" + imgSrc);
             var button = $(
                 `<button class="ytp-button YTAutoResume" name="YTAutoResumeSwitch" id="YTAutoResumePlayerSwitch" title="Video will auto-resume"
