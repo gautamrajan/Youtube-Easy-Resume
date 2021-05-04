@@ -1,37 +1,14 @@
 //content.js
+const DEBUG = false;
+var initialLinkIsVideo; //Sets whether or not the user's entry point is a video link (not the youtube homepage, etc.)
+var directLoopDone; //Handles hand-off from direct link process and yt-nav process
+var ytNavLoop;     //Set to true when the main process runs as a result of a yt-navigation event
+var userSettings;  //Holds the user's settings
+var blacklist = false; //Holds the current video's blacklist status.
+var grabTitleComplete = false;  
 
-/* 
-    video:{
-        videolink,
-        time,
-        duration,
-        title,
-        channel,
-        complete:boolean,
-        doNotResume:boolean,
-    }
-*/
-/* 
-    settings:{
-        pauseResume: boolean,
-        minWatchTime: value in seconds,
-        minVideoLength: value in seconds,
-        markPlayedTime: value in seconds,
-    }
-*/
-const DEBUG = true;
-var nvarray = {videos:[]};
-var initialLinkIsVideo;
-var directLoopDone;
-var ytNavLoop;
-var previousURL;
-var previousTitle;
-var previousChannel;
-var userSettings;
-var doNotResume = false;
-var blacklist = false;
-var grabTitleComplete = false;
 $(document).ready(async function(){
+    //Initialize storage -> Grab user settings -> Begin main process
     initStorage()
     .then(()=>getUserSettings())
     .then((usettings)=>{userSettings = usettings})
@@ -39,84 +16,40 @@ $(document).ready(async function(){
         DEBUG && console.log("CHECK PAUSED SETTING: " + userSettings.pauseResume);
         DEBUG && console.log("CHECK MIN WATCH TIME SETTING: " + userSettings.minWatchTime);
         DEBUG && console.log("CHECK MIN VID LENGTH SETTING: " + userSettings.minVideoLength);
+        //If the user has paused all resuming, no need to continue.
         if(!userSettings.pauseResume){
             DEBUG && console.log("document ready, starting");
+            //To begin initialize ytNavLoop to false.
             ytNavLoop = false;
             if(checkWatchable(window.location.href)){
+                //if this link is watchable, that means we can go directly to the main process.
                 initialLinkIsVideo = true;
+                //If it's watchable, we can add the button to the video player now.
                 injectPlayerButton()
                 .then(()=>{startPlayerButtonListener()});
-                /* .then(()=>{
-                    if(!grabTitleComplete){
-                        grabTitle().then(()=>{
-                            return;
-                        })
-                    } else{return;}
-                })
-                .then(()=>{
-                    $("#YTAutoResumePlayerSwitch").click(()=>{
-                        var icon =  $("#YTAutoResumeSwitchIcon");
-                        var button = $("#YTAutoResumePlayerSwitch");
-                        DEBUG && console.log("button.prop: " + $(button).prop("checked"));
-                        var video = document.querySelector("video");
-                        var markPlayed = false;
-                            var timeRemaining = video.duration - video.currentTime;
-                            if(timeRemaining < userSettings.markPlayedTime){
-                                markPlayed=true;
-                                DEBUG && console.log("marking played");
-                            }
-                            else{
-                                markPlayed=false;
-                            }
-                        if($(button).prop("checked")){
-                            blacklist = true;
-                            $(button).prop("checked",false);
-                            $(icon).attr("src", chrome.runtime.getURL("icons/playericon_inactive.svg"));
-                            $("#YTAutoResumePlayerSwitch").attr("title","Video will not auto-resume");
-                            setTime({videolink: window.location.href, time: document.querySelector("video").currentTime,
-                                duration: document.querySelector("video").duration,
-                                title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
-                                channel: $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent,
-                                complete:markPlayed, doNotResume:true})
-                                .then(()=>{
-                                    DEBUG && console.log("Video blacklisted successfully");
-                                });
-                        }
-                        else{
-                            blacklist = false;
-                            $(button).prop("checked",true);
-                            $(icon).attr("src",chrome.runtime.getURL("icons/playericon.svg"));
-                            $("#YTAutoResumePlayerSwitch").attr("title","Video will auto-resume");
-                            setTime({videolink: window.location.href, time: document.querySelector("video").currentTime,
-                                duration: document.querySelector("video").duration,
-                                title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
-                                channel: $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent,
-                                complete:markPlayed, doNotResume:false})
-                                .then(()=>{
-                                    DEBUG && console.log("Video removecd from blacklist successfully");
-                                });
-                            
-                        }
-                        
-                    })
-                }); */
             }
             else{initialLinkIsVideo = false};
-        
+            //This listens to events fired by YouTube when a user navigates within the website.
             document.addEventListener('yt-navigate-finish',async ()=>{
                 grabTitleComplete = false;
                 DEBUG && console.log("yt-navigate-finish EVENT DETECTED.")
+                //If at this point initialLinkIsVideo is true, that means a user entered the website
+                //through a direct link, and then went to another video from within. 
                 if(initialLinkIsVideo){
                     DEBUG && console.log("SETTING initialLinkIsVideo FALSE AND STARTING mainVideoProcess()");
                     initialLinkIsVideo = false;
+                    //The main video process loops using onTimeUpdate. We have to wait for it to hit 
+                    //a statement that checks ytNavLoop and initialLinkIsVideo in order for it to resolve. 
                     waitYtNav().then(()=>{
                         DEBUG && console.log("ytnav set. startin mvp process in event listener loop");
+                        //The button state was set to according to the previous video, we have to reset it here.
                         resetButton().then(()=>{
                             $("#YTAutoResumePlayerSwitch").unbind("click");
                             startPlayerButtonListener();
                         });
                     })
                     .then(async ()=>{
+                        //Now we can start the mainVideoProcess.
                         mainVideoProcess().then(()=>{
                             return;
                         })
@@ -124,20 +57,27 @@ $(document).ready(async function(){
                 }
                 else{
                     DEBUG && console.log("initialLinkIsVideo never triggered. starting mvp");
+                    //In this case, the user navigated to youtube through an unwatchable link, like the homepage,
+                    //or through another video. This means the initial loop is never triggered.
+                    //As a result, we go straight to the ytNavLoop after resetting the button.
                     resetButton().then(()=>{
                         $("#YTAutoResumePlayerSwitch").unbind("click");
                         startPlayerButtonListener();
                     });
+                    //We set ytNavLoop true here to indicate the state.
                     ytNavLoop = true;
                     mainVideoProcess().then(()=>{
                         return;
                     })
                 }
             })
+            //If initialLinkIsVideo==true and ytNavLoop is false, that means we went straight to a video link.
             if(initialLinkIsVideo &&  !ytNavLoop){
                 DEBUG && console.log("RUNNING DIRECT LOOP");
                 mainVideoProcess().then(()=>
                 {
+                    //If the main video process is resolving, that means that it's handing 
+                    //off to ytNavLoop.
                     DEBUG && console.log("initial link loop complete. setting ytnav true");
                     ytNavLoop = true;
                     return;
@@ -151,24 +91,24 @@ $(document).ready(async function(){
 }
 );
 function injectPlayerButton(){
-    //TODO implement setting override feature for switch. 
-    //TODO ie. flipping the switch on a video that does not meet the user settings forces auto-resume anyway
     return new Promise((resolve)=>{
         DEBUG && console.log("checking blacklist for: " + window.location.href);
+        //Check if video is blacklisted so that the initial state of the button is set properly.
         checkBlacklist(window.location.href).then((blacklisted)=>{
             var imgSrc;
-            /* {blacklisted?imgSrc = chrome.runtime.getURL("icons/playericon.svg")
-                        :imgSrc = chrome.runtime.getURL("icons/playericon_inactive.svg")}; */
+            var tooltip;
             if(blacklisted){
                 imgSrc = chrome.runtime.getURL("icons/playericon_inactive.svg");
+                tooltip = "Video will not auto-resume";
             }
             else{
-                imgSrc = imgSrc = chrome.runtime.getURL("icons/playericon.svg");
+                imgSrc = chrome.runtime.getURL("icons/playericon.svg");
+                tooltip = "Video will auto-resume";
             }
             DEBUG && console.log("starting image src:" + imgSrc);
             var button = $(
-                `<button class="ytp-button YTAutoResume" name="YTAutoResumeSwitch" id="YTAutoResumePlayerSwitch" title="Video will auto-resume"
-                aria-label="Video will auto-resume" style="vertical-align: top;">
+                `<button class="ytp-button YTAutoResume" name="YTAutoResumeSwitch" id="YTAutoResumePlayerSwitch" title="${tooltip}"
+                aria-label="${tooltip}" style="vertical-align: top;">
                     <img id="YTAutoResumeSwitchIcon" src="${imgSrc}"
                      style="height: 84%; display: block; margin: auto;">
                 </button>`
@@ -180,7 +120,11 @@ function injectPlayerButton(){
     })
     
 }
+//This function starts up click listener for the injected player button
 function startPlayerButtonListener(){
+    //This calls a promise that blocks until it's able to grab the title and channel name.
+    //This is necessary in practice due to cases where the video loads and starts playing
+    //before all the information is available.
     let grabTitlePromise = new Promise((resolve)=>{
         if(!grabTitleComplete){
             grabTitle().then(()=>{
@@ -189,6 +133,8 @@ function startPlayerButtonListener(){
         } else{resolve();}  
     })
     grabTitlePromise.then(()=>{
+        //This listens for clicks on the button, sets the button icon appropriately,
+        //and sets the video's doNotResume status appropriately in the DB.
         $("#YTAutoResumePlayerSwitch").click(()=>{
             var icon =  $("#YTAutoResumeSwitchIcon");
             var button = $("#YTAutoResumePlayerSwitch");
@@ -237,6 +183,8 @@ function startPlayerButtonListener(){
     });
                 
 }
+//This function resets the button if the element is present, if element doesn't exist on page,
+//the button is added.
 function resetButton(){
     return new Promise ((resolve) =>{
         if($("#YTAutoResumePlayerSwitch").length){
@@ -265,6 +213,7 @@ function resetButton(){
         }
     })
 }
+//Grabs user's settings from storage.
 function getUserSettings(){
     return new Promise((resolve)=>{
         chrome.storage.local.get("settings",(data)=>{
@@ -280,6 +229,8 @@ function initStorage(){
     })
     
 }
+//This function checks if the video db exists,
+//if it doesn't then it stores an empty array.
 function initDB(){
     return new Promise((resolve)=>{
         var bytesUsed;
@@ -289,7 +240,7 @@ function initDB(){
             DEBUG && console.log("BYTES USED: " + bytesUsed);
             if(bytesUsed == 0 || bytesUsed == undefined){
                 DEBUG && console.log("BYTES USED ZERO OR undefined");
-                chrome.storage.local.set(nvarray,()=>{resolve();});  
+                chrome.storage.local.set({videos:[]},()=>{resolve();});  
             }
             else{
                 DEBUG && console.log("Storage not empty");
@@ -300,6 +251,7 @@ function initDB(){
     })
    
 }
+//Same as initDB(), but for settings.
 function initSettings(){
     return new Promise((resolve)=>{
         chrome.storage.local.getBytesInUse("settings",(bytes)=>{
@@ -324,6 +276,8 @@ function initSettings(){
     })
     
 }
+//The same video can have multiple types of links, but always has the same watchID
+//This function extracts just the watchID from the link.
 function extractWatchID(link){
     var start = 0;
     var end = 0;
@@ -342,6 +296,8 @@ function extractWatchID(link){
     var result = link.slice(start,end);
     return result;
 }
+//Promise that tries to get the channel name and title from the site. If they aren't loaded yet,
+//it tries again every 2 seconds, and then returns.
 function grabTitle(){
     var videoTitle;
     var cN;
@@ -368,6 +324,7 @@ function grabTitle(){
         }
     });
 }
+//Check's if a link is watchable and NOT a timestamped link.
 function checkWatchable(link){
     if(window.location.href.indexOf("watch?") > -1 && window.location.href.indexOf("?t=")>-1){
         DEBUG && console.log("IGNORING TIMESTAMPED LINK");
@@ -382,9 +339,8 @@ function checkWatchable(link){
         return false;
     }
 }
-
+//Wait's for the ytNav loop to complete.
 function waitYtNav(){
-
     return new Promise(function(resolve){
         var ytNavInterval = setInterval(()=>{
             DEBUG && console.log("ytnav waiting");
@@ -396,7 +352,7 @@ function waitYtNav(){
         },1000)
     })
 }
-
+//Checks if a video exists in the DB with the same link as the one provided.
 function checkStoredLinks(link){
     var result = -1;
     var resultFound = false;
@@ -424,6 +380,7 @@ function checkStoredLinks(link){
         });
     });
 }
+//Adds a new video to the database. 
 function addNewVideo(video){
     return new Promise(function(resolve){
         DEBUG && console.log("ADDING LINK: " + video.videolink);
@@ -439,7 +396,7 @@ function addNewVideo(video){
     })
     
 }
-
+//Attempts to set the time on a video, if the video doesn't exist then it is added.
 function setTime(video){
     return new Promise(function(resolve){
         var currentVideos = [];
@@ -459,11 +416,10 @@ function setTime(video){
                 addNewVideo(video);
             }
             resolve();
-        });
-        
+        });  
     })
-
 }
+//Checks if the video meets the user's criteria for minimum duration. 
 function checkDuration(){
     const video = document.querySelector("video");
     if(video.duration < userSettings.minVideoLength){
@@ -475,6 +431,7 @@ function checkDuration(){
         return true;
     }
 }
+//Checks if the video is set to not resume.
 function checkBlacklist(link){
     return new Promise((resolve)=>{
         var vidNotFound = true;
@@ -497,6 +454,8 @@ function checkBlacklist(link){
         });
     })
 }
+//The mainVideoProcess handles keeping track of the current time and storing it in the db.
+//It also handles resuming the video if it exists in the database. 
 async function mainVideoProcess(){
     grabTitleComplete = false;
     return new Promise(async function(resolve){
@@ -504,8 +463,9 @@ async function mainVideoProcess(){
         if(checkWatchable(window.location.href) && checkDuration()/*  && (checkBlacklist(window.location.href)==false) */){
             let grabTitlePromise = grabTitle();
                 if(!initialLinkIsVideo && !ytNavLoop){resolve();}
-            grabTitlePromise.then(function(videoTitle){
+            grabTitlePromise.then((videoTitle)=>{
                 grabTitleComplete = true;
+                //Handoff condition
                 if(!initialLinkIsVideo && !ytNavLoop){resolve();}
                 if(checkWatchable(window.location.href)){
                     var channelName = $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent;
@@ -514,7 +474,6 @@ async function mainVideoProcess(){
                     DEBUG && console.log("Channel Name: " + channelName);
                     DEBUG && console.log("Current URL: " + currentURL);
                 }
-                //return;
                 return;
             },()=>{DEBUG && console.log("grabtitlepromise reject")})
             .then(()=>{
@@ -548,19 +507,6 @@ async function mainVideoProcess(){
                     if(!initialLinkIsVideo && !ytNavLoop){
                             resolve();
                         }
-                    var duration;
-                    var currentTime;
-                    var video = document.querySelector("video");
-                    if(Number.isNaN(video.duration) || video.duration <0){duration = 0}
-                    else{duration = video.duration};
-
-                    if(Number.isNaN(video.currentTime) || video.currentTime < 0){currentTime = 0}
-                    else{currentTime = video.currentTime};
-
-                    /* var newVid = {videolink: window.location.href, time: currentTime, duration: duration,
-                        title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
-                        channel: $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent};
-                    addNewVideo(newVid).then(()=>{ return;}) */
                     return;
                 }
             )
@@ -569,11 +515,11 @@ async function mainVideoProcess(){
                     resolve();
                 }
                 DEBUG && console.log("starting from videolink");
-                var timeCheck = true;
                 var lastTitle;
                 try{
                     lastTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent;
                 }catch(err){DEBUG && console.log("caught last title err")}
+                //ontimeupdate function triggers when the time changes for the video.
                 document.querySelector("video").ontimeupdate = async function(){     
                     if(!initialLinkIsVideo && !ytNavLoop){
                         resolve();
@@ -588,7 +534,7 @@ async function mainVideoProcess(){
                         ct = document.querySelector("video").currentTime;
                         if($("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent!=lastTitle){
                             lastTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent;
-                                
+                                //Detecting a title change means that the loop should reset.
                                 if(initialLinkIsVideo && !ytNavLoop){
                                     DEBUG && console.log("TITLE CHANGE DURING INITIAL LINK LOOP. RESOLVING.");
                                     resolve();
@@ -601,7 +547,8 @@ async function mainVideoProcess(){
                         else if(!initialLinkIsVideo && !ytNavLoop){
                             resolve();
                         }
-                        else if(timeCheck && !blacklist){
+                        //If the video is not blacklisted, then proceeed with storing the video time. 
+                        else if(!blacklist){
                             var video = document.querySelector("video");
                             var markPlayed = false;
                             var timeRemaining = video.duration - video.currentTime;
@@ -616,14 +563,13 @@ async function mainVideoProcess(){
                             + document.querySelector("video").duration +", " 
                             + $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent + ", "
                             + $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent);
-                            //if(document.querySelector("video").currentTime > userSettings.minWatchTime){
-                                setTime({videolink: window.location.href, time: document.querySelector("video").currentTime,
-                                duration: document.querySelector("video").duration,
-                                title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
-                                channel: $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent,
-                                complete:markPlayed, doNotResume:false})
-                                .then(()=>{return});
-                            //}
+
+                            setTime({videolink: window.location.href, time: document.querySelector("video").currentTime,
+                            duration: document.querySelector("video").duration,
+                            title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
+                            channel: $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent,
+                            complete:markPlayed, doNotResume:false})
+                            .then(()=>{return});
                         }
                     }
                     else if(!initialLinkIsVideo && !ytNavLoop){
