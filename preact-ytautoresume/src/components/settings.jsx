@@ -1,6 +1,7 @@
 import { h, Component } from 'preact';
 import Snackbar from 'preact-material-components/Snackbar';
 import 'preact-material-components/Snackbar/style.css';
+import './styles/settings.css';
 import Home from './home';
 
 //TODO: Input validation for settings
@@ -32,36 +33,7 @@ export default class SettingsPage extends Component{
         
         this.setState({newSettings:modifiedSettings},()=>{
             this.settingsChangedChecker();
-        })
-        /* if(modifiedSettings[setting]!=this.state.newSettings[setting]){
-            
-        } */
-        
-        /* else if(this.state.settings[setting]!=this.state.newSettings[setting]){
-    
-            console.log("settings changed case");
-            this.setState({settingsChanged:true,newSettings:modifiedSettings});
-        }
-        else{
-            this.setState({
-                settingsChanged:false
-            })
-        } */
-        /* this.setState({
-            newSettings:modifiedSettings,
-        },()=>{
-            if(this.state.settings[setting]!=this.state.newSettings[setting]){
-                console.log("settings changed case");
-                this.setState({settingsChanged:true,newSettings:modifiedSettings});
-            }
-            else{
-                this.setState({
-                    settingsChanged:false
-                })
-            }
-        }); */
-        
-
+        })       
     }
     settingsChangedChecker = () =>{
         var noSettingsChanged = true;
@@ -179,139 +151,6 @@ export default class SettingsPage extends Component{
                         :null}
                         <Snackbar ref={bar=>{this.bar=bar;}}/>
                     </div>
-                    
-                    
-
-
-                    <style jsx>{`
-                        .fa-chevron-left{
-                            color:#ffffff;
-                            /* margin-bottom: 5px; */
-                        }
-                        .SettingsContainer{
-                            display:flex;
-                            flex-direction:column;
-                            max-width:350px;
-                            min-height:435px;
-                            /*background-color:green;*/
-                        }
-                        div.header-bar{
-                            display: flex;
-                            flex-direction: row;
-                            align-items: flex-end;
-                            flex-wrap: nowrap;
-                            justify-content: space-between;
-                            border-bottom: 1px solid #aaaaaa;  
-                            vertical-align: middle;
-                            text-align: center;
-                        }
-                        div.header-bar button{
-                            font-size:20px;
-                            margin-bottom:5px;
-                            border-radius: 10px;
-                            border: none;
-                            color: #ffffff;
-                            background-color: transparent;
-                            text-align: center;
-                            vertical-align: middle;
-                            {/* background-color: rgba(99, 99, 99, 0.781); */}
-                        }
-                        div.header-bar button:active{
-                            background-color: rgba(158, 158, 158, 0.781);
-                        }
-                        h1{
-                            margin-top:5px;
-                            /*margin-bottom: 5px;*/
-                            color: #ffffff;
-                            /* border: 1px solid black; */
-                        }
-                        #MainPanel{
-                            max-height:100%;
-                            /*background-color:blue;*/
-                            display:flex;
-                            flex-grow:1;
-                            flex-direction:column;
-                            justify-content:space-between;
-                        }
-                        .SettingsPanel{
-                            max-height:100%;
-                        }
-                        .Setting {
-                            margin-top:8px;
-                            display: flex;
-                            flex-direction:column;
-                            justify-content:start;
-                            align-items:start;
-                            color: #ffffff
-                        }
-                        .SettingLabel{
-                            font-weight:bold;
-                            font-size:17px;
-                        }
-                        .InputContainer{
-                            display:inline-flex;
-                            justify-content:flex-start;
-                            align-items:start;
-                            flex-direction:row;
-                            max-width:50%;
-                            border-radius:5px;
-                            margin-top:8px;
-                            font-size:15px;
-                        }
-                        .ConsiderComplete.InputContainer{
-                            max-width:80%;
-                        }
-                        .ConsiderComplete .NumInput{
-                            max-width:54px;
-                        }
-                        .ConsiderComplete select{
-                            margin-top:3px;
-                            margin-right:4px;
-                            border:none;
-                            border-radius:10px;
-                            background:rgba(255, 255, 255, 0.568);
-                            outline:none;
-
-                        }
-                        .NumInput{
-                            width:30%;
-                            height:50%;
-                            margin-right:3px;
-                            border:none;
-                            background-color:rgba(255, 255, 255, 0.123);
-                            color:#ffffff;
-                            text-align:center;
-                            font-weight:bold;
-                            outline:none;
-                            border-bottom:1px solid #ffffff;
-                            -webkit-appearance: textfield;
-                            -moz-appearance: textfield;
-                            appearance: textfield;
-                        }
-                        .NumInput::-webkit-inner-spin-button, 
-                        .NumInput::-webkit-outer-spin-button { 
-                        -webkit-appearance: none;
-                        }
-                        
-                        #SaveButton{
-                            border-top-left-radius: 22px;
-                            border-top-right-radius: 22px;
-                            border:none;
-                            font-weight:600;
-                            font-size:17px;
-                            color:#ffffff;
-                            width:110%;
-                            height:40px;
-                            align-self:center;
-                            background-color:red;
-                        }
-                        #SaveButton:active{
-                            background-color:#c20000;
-                        }
-                        
-                    `}
-                    </style>
-
                 </div>
             )   
         }

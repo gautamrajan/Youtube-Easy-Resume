@@ -21,14 +21,6 @@ export default class MainList extends Component {
                 listElements: elementList
             });
         })
-        /* this.generateList().then(
-            (elementList)=>{
-            this.setState({
-                listReady:true,
-                listElements: elementList
-            });
-
-        }) */
     }
     getSettings = ()=>{
         return new Promise((resolve)=>{
@@ -78,8 +70,6 @@ export default class MainList extends Component {
                             marginRight:7
                         },()=>{
                             for(var i=(data.videos.length - 1);!(i<0);i--){
-                                //generateVideoElement
-                                // if(!data.videos[i].complete && !data.videos[i].doNotResume){
                                 if(this.checkCriteria(data.videos[i])){
                                     elementList.push(this.generateListElement(data.videos[i]));
                                 }
@@ -89,8 +79,6 @@ export default class MainList extends Component {
                     }
                     else{
                         for(var i=(data.videos.length - 1);!(i<0);i--){
-                            //generateVideoElement
-                            // if(!data.videos[i].complete && !data.videos[i].doNotResume){
                             if(this.checkCriteria(data.videos[i])){
                                 elementList.push(this.generateListElement(data.videos[i]));
                             }
@@ -181,7 +169,6 @@ function secondsToHMS(timeInSeconds){
 }
 
 function extractWatchID(link){
-    //console.log("extractWatchID " + link);
     var start = 0;
     var end = 0;
     for(var i=0;i<link.length;i++){

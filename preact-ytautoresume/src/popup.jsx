@@ -10,8 +10,8 @@ class App extends Component{
                <Home/> 
                 <style jsx>{`
                     html{
-                        --scrollbarBG: /* #CFD8DC */transparent;
-                        --thumbBG: /* #90A4AE */#d3d3d3; 
+                        --scrollbarBG: transparent;
+                        --thumbBG: #d3d3d3; 
                         height:435px;
                     }
 
@@ -21,10 +21,8 @@ class App extends Component{
                     }
 
                     body{
-                        /* min-width: 350px; */
                         margin-top:0;   
                         width:350px;
-                        /*min-height: 380px;*/
                         min-height:430px;
                         background-color: #181818;
                     }
@@ -35,5 +33,4 @@ class App extends Component{
         )
     }
 }
-/* render(<title>Videos in progress <style jsx>{`title{text-overflow:ellipsis; text-align:start;}`}</style></title>,document.head); */
 render(<App />, document.body);

@@ -44,32 +44,8 @@ export default class Home extends Component{
                 console.log("newState")
             })
         })
-        /* var newState;
-        if(this.state.paused == false){
-            newState = true;
-        }else{newState = false}
-        //let setPause = new Promise((resolve)=>{
-            chrome.storage.local.set(
-                {
-                    settings:{
-                        pauseResume: newState
-                    }
-                }
-            ,()=>{
-                this.setState({
-                paused:newState
-            })}
-            ); */
-        //});
-        /* setPause.then(()=>{ 
-            this.setState({
-                paused:newState
-            })
-            }
-        ); */
-
     }
-    render(/* {},{paused} */){
+    render(){
         let paused = this.state.paused;
         let settingsPage = this.state.settingsPage;
         var pauseButtonText = "";
@@ -85,9 +61,6 @@ export default class Home extends Component{
                         <div className="header-bar">
                             <h1>Currently watching</h1>
                             <div className="button-container">
-                                {/* <button id="Pause" onClick={this.handlePause}>
-                                    {pauseButtonText}
-                                </button> */}
                                 <div className="AR SwitchContainer">
                                     <label for="AutoResumeToggle">
                                         <span id="AutoRedSwitchLabel">Auto</span>
@@ -96,16 +69,12 @@ export default class Home extends Component{
                                     <Switch name="AutoResumeToggle" checked={!paused} ref={pauseSwitch=>{this.switch=pauseSwitch;}}
                                             onChange={(event)=>{this.handlePause(event)}}/>
                                 </div>
-                                {/* <button type="button" id="ClearListButton"> Clear List </button> */}
                                 <button type="button" id="SettingsButton" onClick={this.moveToSettingsPage}>
-                                    {/* Settings */}
                                     <i class="fas fa-cog"></i>
                                 </button>
                             </div>
-                            
                         </div>
                         <MainList/>
-
                     </div>
                 )
             }
