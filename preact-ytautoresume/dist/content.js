@@ -191,15 +191,20 @@ function resetButton(){
             DEBUG && console.log("resetting button");
             checkBlacklist(window.location.href).then((blacklisted)=>{
                 var imgSrc;
+                var tooltip;
                 if(blacklisted){
                     blacklist=true;
                     imgSrc = chrome.runtime.getURL("icons/playericon_inactive.svg");
+                    tooltip = "Video will not auto-resume";
                 }
                 else{
                     blacklist=false;
                     imgSrc = chrome.runtime.getURL("icons/playericon.svg");
+                    tooltip = "Video will auto-resume";
                 }
                 DEBUG && console.log("starting image src:" + imgSrc);
+                $("#YTAutoResumePlayerSwitch").attr("title",tooltip);
+                $("#YTAutoResumePlayerSwitch").attr("aria-label",tooltip);
                 $("#YTAutoResumePlayerSwitch").prop("checked",!blacklisted);
                 $("#YTAutoResumeSwitchIcon").attr("src",imgSrc);
                 resolve();
