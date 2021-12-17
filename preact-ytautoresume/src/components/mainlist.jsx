@@ -1,85 +1,73 @@
 import { h,Fragment, Component } from 'preact';
 import './styles/mainlist.css';
 export default class MainList extends Component {
-    constructor(){
-        super();
-        this.state = {
-            listReady:false,
-            listElements:[],
-            maxBarWidth:226,
-            marginRight:0,
-            titleWidth:188,
-            settings:{}
-        }
+    constructor(props) {
+        super(props);
+        /* this.state = {
+            listReady: false,
+            listElements: [],
+            maxBarWidth: 226,
+            marginRight: 0,
+            titleWidth: 188,
+            settings: {},
+            editMode: this.props.edit,
+        } */
     }
-    componentDidMount() {
+/*     componentDidMount() {
         this.getSettings()
-        .then(()=>{return this.generateList()})
-        .then((elementList)=>{
-            this.setState({
-                listReady:true,
-                listElements: elementList
-            });
+            .then(() => { return this.generateList() })
+            .then((elementList) => {
+                this.setState({
+                    listReady: true,
+                    listElements: elementList
+                });
+            })
+    } */
+/*     componentWillReceiveProps(nextProps) {
+        this.setState({
+            edit: nextProps.edit
+        }, () => {
+            console.log("updated state from props");
         })
-    }
-    getSettings = ()=>{
-        return new Promise((resolve)=>{
-            chrome.storage.local.get("settings",(data)=>{
-                if(data.settings != undefined){
-                    this.setState({settings: data.settings, newSettings:data.settings, dataReady:true},
-                        ()=>{resolve();});
-                }
-                else{
-                    chrome.storage.local.set({
-                        settings:{
-                            pauseResume:false,
-                            minWatchTime:60,
-                            minVideoLength:480,
-                            markPlayedTime:60,
-                        }
-                    },()=>{this.setState({settings: data.settings, newSettings:data.settings, dataReady:true},
-                        ()=>{resolve();});});
-                }
-            });
-        });
-    }
-    checkCriteria = (video)=>{
-        if(video.doNotResume){
+    } */
+/* ƒ */
+    checkCriteria = (video) => {
+        if (video.doNotResume) {
             return false;
         }
-        else if(video.complete){
+        else if (video.complete) {
             return false;
         }
-        else if(video.time < this.state.settings.minWatchTime){
+        else if (video.time < this.props.settings.minWatchTime) {
             return false;
         }
-        else{
+        else {
             return true;
         }
     }
     generateList = () => {
         var elementList = [];
-        return new Promise((resolve)=>{
-            chrome.storage.local.get("videos",(data)=>{
+        return new Promise((resolve) => {
+            chrome.storage.local.get("videos", (data) => {
                 console.log("HERE");
-                if(data.videos!=undefined && data.videos.length!=0){
-                    if(data.videos.length >=4){
+                if (data.videos != undefined && data.videos.length != 0) {
+                    if (data.videos.length >= 4) {
                         console.log("videos length greater than 4");
-                        this.setState({
-                            maxBarWidth:211,
-                            marginRight:7
-                        },()=>{
-                            for(var i=(data.videos.length - 1);!(i<0);i--){
-                                if(this.checkCriteria(data.videos[i])){
+                        this.setprops({
+                            maxBarWidth: 211,
+                            marginRight: 7
+                        }, () => {
+                            for (var i = (data.videos.length - 1); !(i < 0); i--) {
+                                if (this.checkCriteria(data.videos[i])) {
                                     elementList.push(this.generateListElement(data.videos[i]));
                                 }
                             }
                             resolve(elementList);
                         })
                     }
-                    else{
-                        for(var i=(data.videos.length - 1);!(i<0);i--){
-                            if(this.checkCriteria(data.videos[i])){
+                    else {
+                        for (var i = (data.videos.length - 1); !(i < 0); i--) {
+                            if (this.checkCriteria(data.videos[i])) {
                                 elementList.push(this.generateListElement(data.videos[i]));
                             }
                         }
@@ -90,22 +78,40 @@ export default class MainList extends Component {
             })
         })
     }
-    returnList = () =>{
+    returnList = () => {
         return (
             <Fragment>
-            {this.state.listElements}
+                {this.props.listElements}
             </Fragment>
         )
     }
+
+    getLink = (video) => {
+        if (this.props.edit) {
+            //alert("NO VIDEO 4 U!");
+            return null;
+        }
+        else {
+            return video.videolink;
+        }
+    }
+    /* editChange = () => {
+        this.setState({
+            edit: !this.state.edit
+        })
+    } */
+    getLink = (video) => {
+    }
     generateListElement = (video)=>{
-        console.log("MARGIN-RIGHT:" + this.state.marginRight);
-        return(
-            <a className="main-list-element" href={video.videolink} target="_blank" title={video.title}
-            style={`margin-right: ${this.state.marginRight}px;`}>
+        console.log("MARGIN-RIGHT:" + this.props.marginRight);
+        return (
+            //TODO: Changed the following element to div; need to change CSS to match.
+            <a className="main-list-element" href={(this.props.edit ? "NO_LINK" : video.videolink)} target="_blank" title={video.title}
+                style={`margin-right: ${this.props.marginRight}px;`}>
             <img src={`https://img.youtube.com/vi/${extractWatchID(video.videolink)}/default.jpg`} width="120" height="90"/>
             <div className="element-body">
                 <info>
-                    <videoTitle width={`${this.state.titleWidth}px`}>
+                    <videoTitle width={`${this.props.titleWidth}px`}>
                         {video.title}
                     </videoTitle>
                     <subtext>
@@ -117,21 +123,33 @@ export default class MainList extends Component {
                         {video.time<0 ? <currentTime>0:00</currentTime>:<currentTime>{secondsToHMS(video.time)}</currentTime>}
                         <duration>{secondsToHMS(video.duration)}</duration>
                     </timeInfo>
-                    <bar style={`width:${Math.round((video.time/video.duration)*this.state.maxBarWidth)}px`}></bar>
+                    <bar style={`width:${Math.round((video.time/video.duration)*this.props.maxBarWidth)}px`}></bar>
                 </div>
                 
             </div>
         </a>
         )
     }
-    render(){
-        if(this.state.listReady){
-            return(
-                <div className="main-list" id="main-list">
-                    {this.returnList()}
+    render() {
+        console.log("LIST AT MAINLIST RENDER:")
+        console.log(this.props.listElements);
+        let list = this.props.listElements;
+        <div className="main-list" id="main-list">
+            {list}
                     <style jsx>{`
                         .main-list-element{
-                            margin-right:${this.state.marginRight}
+                            margin-right:${this.props.marginRight}
+                        }  
+                    `}
+                    </style>
+        </div>
+        /* if(this.props.listReady){
+            return(
+                <div className="main-list" id="main-list">
+                    {this.props.listElements}
+                    <style jsx>{`
+                        .main-list-element{
+                            margin-right:${this.props.marginRight}
                         }  
                     `}
                     </style>
@@ -141,7 +159,7 @@ export default class MainList extends Component {
         else{
             //loading indicator
             <div>LOADING...</div>
-        }
+        } */
     }
 }
 
