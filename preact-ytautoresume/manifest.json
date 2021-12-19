@@ -1,9 +1,9 @@
 {
     "manifest_version": 2,
-    "name": "PreactYTAutoResume",
+    "name": "YTAutoResume",
     "version": "0.1",
-    "description": "PreactYTAutoResume",
-    "short_name": "PreactYTAutoResume",
+    "description": "YTAutoResume",
+    "short_name": "YTAutoResume",
     "permissions": ["activeTab", "declarativeContent", "unlimitedStorage", "storage", "<all_urls>", "webNavigation"],
 
     "content_scripts":[

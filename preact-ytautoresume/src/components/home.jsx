@@ -110,8 +110,9 @@ export default class Home extends Component{
                         selectedVideos: []
                     }, () => {
                         //this.mainList.editChange();
+                        //TODO: fix view doesn't immediately update when deleting last video from list
                         this.bar.MDComponent.show({
-                            message:`${delete_counter} ${delete_counter> 1 ? "videos":"video"} removed`
+                            message:`${delete_counter} ${delete_counter > 1 ? "videos":"video"} removed`
                         })
                         console.log("Edit mode: " + (this.state.edit ? "on" : "off"));
                         this.setList();
@@ -380,7 +381,10 @@ function initSettingsDB(){
                 chrome.storage.local.set(
                 {
                     settings:{
-                        pauseResume:false,
+                        pauseResume: false,
+                        minVideoLength: 600,
+                        minWatchTime: 60,
+                        markPlayedTime:60
                     }
                 },()=>{resolve();})
             }
@@ -396,7 +400,7 @@ function extractWatchID(link){
     var start = 0;
     var end = 0;
     for(var i=0;i<link.length;i++){
-        if(link[i]=='v' && link[i+1] == '='){
+        if(link[i]== 'v' && link[i+1] == '='){
             start = i+2;
         }
         else if(link[i] =='&'){
