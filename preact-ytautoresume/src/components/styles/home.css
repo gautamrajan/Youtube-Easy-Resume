@@ -44,6 +44,25 @@ div.header-bar /* #ClearListButton */button{
     outline:none;
     color: #d8d6d6;
 }
+.button.editmode {
+     margin-bottom:2px; 
+    margin-left:5px;
+    flex-grow:0;
+    display:flex;
+    flex-direction:row;
+    justify-content: center;
+    align-items: center;
+    text-align:center;
+    vertical-align:center;
+    line-height:51%;
+    font-size:22px;
+    width:32px;
+    height:32px;
+    background:none;
+    border-radius:50%;
+    outline:none;
+    color: #d8d6d6;
+}
 /* div.header-bar button:active{
     background-color: rgba(158, 158, 158, 0.781);
 }  */

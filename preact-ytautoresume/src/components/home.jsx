@@ -5,6 +5,7 @@ import './styles/home.css';
 import './styles/mainlist.css';
 import MainList from "./mainlist";
 import SettingsPage from "./settings"
+import Snackbar from 'preact-material-components/Snackbar';
 export default class Home extends Component{
     constructor(){
         super();
@@ -32,13 +33,25 @@ export default class Home extends Component{
         });
     }
     setedit = () => {
-        this.setState({
-            edit: !this.state.edit
-        }, () => {
-            //this.mainList.editChange();
-            console.log("Edit mode: " + (this.state.edit ? "on" : "off"));
-            this.setList();
-        });
+        if (this.state.edit) {
+            this.setState({
+                edit: !this.state.edit,
+                selectedVideos: []
+            }, () => {
+                //this.mainList.editChange();
+                console.log("Edit mode: " + (this.state.edit ? "on" : "off"));
+                this.setList();
+            });
+        }
+        else {
+            this.setState({
+                edit: !this.state.edit
+            }, () => {
+                //this.mainList.editChange();
+                console.log("Edit mode: " + (this.state.edit ? "on" : "off"));
+                this.setList();
+            });
+        }
     }
     componentDidMount(){
         initSettingsDB().then(
@@ -64,7 +77,6 @@ export default class Home extends Component{
             }) */
         })
     }
- /* ß */
     handlePause = (event)=>{
         var newState;
         {this.state.paused ? newState=false:newState=true}
@@ -79,6 +91,87 @@ export default class Home extends Component{
             })
         })
     }
+    deleteSelected = () => {
+        //alert("Selected Videos Deleted");
+        let delete_counter = this.state.selectedVideos.length;
+        if (this.state.selectedVideos.length > 0) {
+            chrome.storage.local.get("videos", (data) => {
+                let newList = data;
+                for (let i = 0; i<data.videos.length; i++) {
+                    if (this.state.selectedVideos.includes(data.videos[i].videolink)){
+                        newList.videos.splice(i, 1);
+                    }
+                }
+                chrome.storage.local.set(newList, () => {
+                    console.log("Selected videos deleted");
+                    //this.setedit;
+                    this.setState({
+                        edit: !this.state.edit,
+                        selectedVideos: []
+                    }, () => {
+                        //this.mainList.editChange();
+                        this.bar.MDComponent.show({
+                            message:`${delete_counter} ${delete_counter> 1 ? "videos":"video"} removed`
+                        })
+                        console.log("Edit mode: " + (this.state.edit ? "on" : "off"));
+                        this.setList();
+                    });
+                })
+            })
+        }
+        else {
+            this.setState({
+                edit: !this.state.edit,
+                selectedVideos: []
+            }, () => {
+                //this.mainList.editChange();
+                this.bar.MDComponent.show({
+                    message:"No videos removed"
+                })
+                console.log("Edit mode: " + (this.state.edit ? "on" : "off"));
+                this.setList();
+            });
+        }
+    }
+
+    buttonBar = () => {
+        let paused = this.state.paused;
+        var pauseButtonText = "";
+        console.log(paused);
+        if(paused){pauseButtonText = "Unpause"}else{pauseButtonText = "Pause"};
+        if (!this.state.edit) {
+            return(
+                <div className="button-container">
+                    <button type="button" id="EditButton" onClick={this.setedit}>
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <div className="AR SwitchContainer">
+                        <label for="AutoResumeToggle">
+                            <span id="AutoRedSwitchLabel">Auto</span>
+                            Resume
+                        </label>
+                        <Switch name="AutoResumeToggle" checked={!paused} ref={pauseSwitch=>{this.switch=pauseSwitch;}}
+                                onChange={(event)=>{this.handlePause(event)}}/>
+                    </div>
+                    <button type="button" id="SettingsButton" onClick={this.moveToSettingsPage}>
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            )
+        }
+        else{
+            return (
+                <div className="button-container">
+                    <button className = "button editmode" type="button" id="ConfirmDeleteButton" onClick={this.deleteSelected}>
+                        <i class="fas fa-check"></i>
+                    </button>
+                    <button className = "button editmode" type="button" id="ExitEditButton" onClick={this.setedit}>
+                        <i class="fa fa-times" aria-hidden="true"></i>
+                    </button>
+                </div>
+            )
+        }
+    }
     render(){
         let paused = this.state.paused;
         let settingsPage = this.state.settingsPage;
@@ -89,27 +182,13 @@ export default class Home extends Component{
             if(settingsPage){
                 return(<SettingsPage/>)
             }
-            else{
+            else {
+                let buttonBar = this.buttonBar();
                 return(
                     <div className="HomeContainer">
                         <div className="header-bar">
                             <h1>Currently watching</h1>
-                            <div className="button-container">
-                                <button type="button" id="EditButton" onClick={this.setedit}>
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <div className="AR SwitchContainer">
-                                    <label for="AutoResumeToggle">
-                                        <span id="AutoRedSwitchLabel">Auto</span>
-                                        Resume
-                                    </label>
-                                    <Switch name="AutoResumeToggle" checked={!paused} ref={pauseSwitch=>{this.switch=pauseSwitch;}}
-                                            onChange={(event)=>{this.handlePause(event)}}/>
-                                </div>
-                                <button type="button" id="SettingsButton" onClick={this.moveToSettingsPage}>
-                                    <i class="fas fa-cog"></i>
-                                </button>
-                            </div>
+                            {buttonBar}
                         </div>
                         {/* <MainList {...this.state} listReady={true} listElements={this.returnList()}
                             maxBarWidth={this.maxBarWidth} marginRight={this.marginRight}
@@ -123,6 +202,7 @@ export default class Home extends Component{
                             `}
                             </style>
                         </div>
+                        <Snackbar ref={bar=>{this.bar=bar;}}/>
                     </div>
                 )
             }
@@ -153,12 +233,10 @@ export default class Home extends Component{
         var elementList = [];
         return new Promise((resolve) => {
             chrome.storage.local.get("videos", (data) => {
-                console.log("HERE");
+                //console.log("HERE");
                 if (data.videos != undefined && data.videos.length != 0) {
                     if (data.videos.length >= 4) {
-                        console.log("videos length greater than 4");
-                        //TODO: This is causing a setState loop. Changed state variables to regular variables
-                        //TODO: Need to remove setState function
+                        //console.log("videos length greater than 4");
                         this.maxBarWidth = 211;
                         this.marginRight = 7;
                         for (var i = (data.videos.length - 1); !(i < 0); i--) {
@@ -167,17 +245,6 @@ export default class Home extends Component{
                             }
                         }
                         resolve(elementList);
-                        /* this.setState({
-                            maxBarWidth: 211,
-                            marginRight: 7
-                        }, () => {
-                            for (var i = (data.videos.length - 1); !(i < 0); i--) {
-                                if (this.checkCriteria(data.videos[i])) {
-                                    elementList.push(this.generateListElement(data.videos[i]));
-                                }
-                            }
-                            resolve(elementList);
-                        }) */
                     }
                     else {
                         for (var i = (data.videos.length - 1); !(i < 0); i--) {
@@ -195,8 +262,6 @@ export default class Home extends Component{
     editVideoClick = (video) => {
         let newSelectedVideos = this.state.selectedVideos;
         if (this.state.edit) {
-            /* console.log("EDIT and VIDEO CLIK");
-            console.log(video); */
             if (this.state.selectedVideos.includes(video.videolink)) {
                 newSelectedVideos.splice(newSelectedVideos.indexOf(video.videolink), 1);
                 this.setState({
@@ -226,16 +291,16 @@ export default class Home extends Component{
         let selectedVideos = this.state.selectedVideos;
         let opts = {};
         let selectorName = "";
-        if (selectedVideos.includes(video.videolink)) {
-            selectorName = selectorName + " selected";
+        if (edit) {
+            if (selectedVideos.includes(video.videolink)) {
+                selectorName = selectorName + " selected";
+            }
+            else {
+                selectorName = selectorName + " unselected"
+            }
         }
-        //let link = "";
-        if (!edit) { opts["href"] = video.videolink;/* link = "NO_LINK"; */ }
-        //else { link = video.videolink; }
-        //console.log("Generated link: " + link);
-        //console.log("MARGIN-RIGHT:" + this.marginRight);
+        if (!edit) { opts["href"] = video.videolink;}
         return (
-            //TODO: Changed the following element to div; need to change CSS to match.
             <div className={`list-element-container`} onClick={()=>this.editVideoClick(video)}>
                 <a className={`main-list-element${selectorName}`} {...opts} target="_blank" title={video.title}
                     style={`margin-right: ${this.marginRight}px;`}>
@@ -259,10 +324,10 @@ export default class Home extends Component{
                     
                 </div>
                 </a>
-                <style jsx>{`
-                    .selected {
-                        background-color: red;
-                    }   
+                <style jsx>{`   
+                    .unselected {
+                        opacity: 0.4;
+                    }
                 `}
                 </style>
         </div>  
