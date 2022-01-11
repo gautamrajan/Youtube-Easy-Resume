@@ -298,7 +298,10 @@ function extractWatchID(link){
             end=i+1;
         }
     }
-    var result = link.slice(start,end);
+    var result = link.slice(start, end);
+    if (start == end == 0) {
+        return "";
+    }
     return result;
 }
 //Promise that tries to get the channel name and title from the site. If they aren't loaded yet,
@@ -387,16 +390,23 @@ function checkStoredLinks(link){
 }
 //Adds a new video to the database. 
 function addNewVideo(video){
-    return new Promise(function(resolve){
-        DEBUG && console.log("ADDING LINK: " + video.videolink);
-        var currentVideos = [];
-        var newVideo = {videolink:video.videolink, time:-1,
-            duration: video.duration, title:video.title, channel:video.channel}
-        chrome.storage.local.get("videos", async function(data){
-            currentVideos = data;
-            currentVideos.videos.push(newVideo);
-            chrome.storage.local.set(currentVideos,()=>{resolve();});
-        });
+    return new Promise(function (resolve) {
+        //Fix for a weird glitch where the process triggers on a link
+        //that isn't a video link
+        if (extractWatchID(video.videolink).length==0) {
+            resolve();
+        }
+        else {
+            DEBUG && console.log("ADDING LINK: " + video.videolink);
+            var currentVideos = [];
+            var newVideo = {videolink:video.videolink, time:-1,
+                duration: video.duration, title:video.title, channel:video.channel}
+            chrome.storage.local.get("videos", async function(data){
+                currentVideos = data;
+                currentVideos.videos.push(newVideo);
+                chrome.storage.local.set(currentVideos,()=>{resolve();});
+            });
+        }
         
     })
     

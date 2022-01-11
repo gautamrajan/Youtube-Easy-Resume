@@ -6,6 +6,7 @@ import './styles/mainlist.css';
 import MainList from "./mainlist";
 import SettingsPage from "./settings"
 import Snackbar from 'preact-material-components/Snackbar';
+const DEBUG = false;
 export default class Home extends Component{
     constructor(){
         super();
@@ -39,7 +40,7 @@ export default class Home extends Component{
                 selectedVideos: []
             }, () => {
                 //this.mainList.editChange();
-                console.log("Edit mode: " + (this.state.edit ? "on" : "off"));
+                DEBUG && console.log("Edit mode: " + (this.state.edit ? "on" : "off"));
                 this.setList();
             });
         }
@@ -48,16 +49,17 @@ export default class Home extends Component{
                 edit: !this.state.edit
             }, () => {
                 //this.mainList.editChange();
-                console.log("Edit mode: " + (this.state.edit ? "on" : "off"));
+                DEBUG && console.log("Edit mode: " + (this.state.edit ? "on" : "off"));
                 this.setList();
             });
         }
     }
-    componentDidMount(){
+    componentDidMount() {
+        //cleanDB();
         initSettingsDB().then(
             ()=>{
                 chrome.storage.local.get("settings",(data)=>{
-                    console.log("in constructor, data.settings.pauseResume = " + data.settings.pauseResume);
+                    DEBUG && console.log("in constructor, data.settings.pauseResume = " + data.settings.pauseResume);
                     this.setState({
                         paused: data.settings.pauseResume,
                         dataReady:true,
@@ -87,7 +89,7 @@ export default class Home extends Component{
                 settings:tempSettings
             },()=>{
                 this.setState({paused:newState});
-                console.log("newState")
+                DEBUG && console.log("newState")
             })
         })
     }
@@ -103,7 +105,7 @@ export default class Home extends Component{
                     }
                 }
                 chrome.storage.local.set(newList, () => {
-                    console.log("Selected videos deleted");
+                    DEBUG && console.log("Selected videos deleted");
                     //this.setedit;
                     this.setState({
                         edit: !this.state.edit,
@@ -114,7 +116,7 @@ export default class Home extends Component{
                         this.bar.MDComponent.show({
                             message:`${delete_counter} ${delete_counter > 1 ? "videos":"video"} removed`
                         })
-                        console.log("Edit mode: " + (this.state.edit ? "on" : "off"));
+                        DEBUG && console.log("Edit mode: " + (this.state.edit ? "on" : "off"));
                         this.setList();
                     });
                 })
@@ -129,7 +131,7 @@ export default class Home extends Component{
                 this.bar.MDComponent.show({
                     message:"No videos removed"
                 })
-                console.log("Edit mode: " + (this.state.edit ? "on" : "off"));
+                DEBUG && console.log("Edit mode: " + (this.state.edit ? "on" : "off"));
                 this.setList();
             });
         }
@@ -138,7 +140,7 @@ export default class Home extends Component{
     buttonBar = () => {
         let paused = this.state.paused;
         var pauseButtonText = "";
-        console.log(paused);
+        DEBUG && console.log(paused);
         if(paused){pauseButtonText = "Unpause"}else{pauseButtonText = "Pause"};
         if (!this.state.edit) {
             return(
@@ -177,7 +179,7 @@ export default class Home extends Component{
         let paused = this.state.paused;
         let settingsPage = this.state.settingsPage;
         var pauseButtonText = "";
-        console.log(paused);
+        DEBUG && console.log(paused);
         if(paused){pauseButtonText = "Unpause"}else{pauseButtonText = "Pause"};
         if(this.state.dataReady){
             if(settingsPage){
@@ -219,7 +221,7 @@ export default class Home extends Component{
             this.setState({
                 listReady: true,
                 listElements: elementList
-            },()=>{console.log("Set list done")})
+            },()=>{DEBUG && console.log("Set list done")})
         });
     }
     getList = () => {
@@ -234,10 +236,10 @@ export default class Home extends Component{
         var elementList = [];
         return new Promise((resolve) => {
             chrome.storage.local.get("videos", (data) => {
-                //console.log("HERE");
+                //DEBUG && console.log("HERE");
                 if (data.videos != undefined && data.videos.length != 0) {
                     if (data.videos.length >= 4) {
-                        //console.log("videos length greater than 4");
+                        //DEBUG && console.log("videos length greater than 4");
                         this.maxBarWidth = 211;
                         this.marginRight = 7;
                         for (var i = (data.videos.length - 1); !(i < 0); i--) {
@@ -269,7 +271,7 @@ export default class Home extends Component{
                     selectedVideos: newSelectedVideos
                 }, () => {
                     this.setList();
-                    console.log(`UN-selected video: ${video.videolink}`);
+                    DEBUG && console.log(`UN-selected video: ${video.videolink}`);
                 });
             }
             else {
@@ -278,13 +280,13 @@ export default class Home extends Component{
                     selectedVideos: newSelectedVideos
                 }, () => {
                     this.setList();
-                    console.log(`selected video: ${video.videolink}`);
+                    DEBUG && console.log(`selected video: ${video.videolink}`);
                 });
             }
             
         }
         else {
-            console.log("false alarm");
+            DEBUG && console.log("false alarm");
         }
     }
     generateListElement = (video) => {
@@ -300,6 +302,7 @@ export default class Home extends Component{
                 selectorName = selectorName + " unselected"
             }
         }
+        DEBUG && console.log("THUMBNAIL LINK: " + `https://img.youtube.com/vi/${extractWatchID(video.videolink)}/default.jpg`);
         if (!edit) { opts["href"] = video.videolink;}
         return (
             <div className={`list-element-container`} onClick={()=>this.editVideoClick(video)}>
@@ -375,9 +378,9 @@ export default class Home extends Component{
 function initSettingsDB(){
     return new Promise((resolve)=>{
         chrome.storage.local.getBytesInUse("settings",(bytes)=>{
-            console.log("INIT SETTINGS DB");
+            DEBUG && console.log("INIT SETTINGS DB");
             if(bytes == undefined || bytes == 0){
-                console.log("BYTES==0 OR UNDEFINED");
+                DEBUG && console.log("BYTES==0 OR UNDEFINED");
                 chrome.storage.local.set(
                 {
                     settings:{
@@ -389,7 +392,7 @@ function initSettingsDB(){
                 },()=>{resolve();})
             }
             else{
-                console.log("BYTES!=0");
+                DEBUG && console.log("BYTES!=0");
                resolve(); 
             }
             
@@ -399,6 +402,7 @@ function initSettingsDB(){
 function extractWatchID(link){
     var start = 0;
     var end = 0;
+    let result = ""
     for(var i=0;i<link.length;i++){
         if(link[i]== 'v' && link[i+1] == '='){
             start = i+2;
@@ -411,11 +415,12 @@ function extractWatchID(link){
             end=i+1;
         }
     }
-    var result = link.slice(start,end);
-    console.log("start: " + start + ", end: " + end); 
-    console.log("extractWatchID:  " + result);
+    result = link.slice(start,end);
+    DEBUG && console.log("start: " + start + ", end: " + end); 
+    DEBUG && console.log("extractWatchID: " + result);
     return result;
 }
+    
 
 function secondsToHMS(timeInSeconds){
     var inputSeconds = Math.floor(timeInSeconds);
@@ -438,4 +443,18 @@ function secondsToHMS(timeInSeconds){
         return hours + ":" + minutes + ":" + seconds;
     }
 
+}
+//TEST DEVELOPMENT FUNCTION
+function cleanDB() {
+    return new Promise((resolve) => {
+        chrome.storage.local.get("videos", (data) => {
+            let fixedDB = data.slice();
+            for (let i = 0; i < data.videos.length; i++){
+                if (extractWatchID(data.videos[i].videolink).length==0){
+                    fixedDB.videos.splice(i, 1);
+                }
+            }
+            chrome.storage.local.set(fixedDB,()=>{resolve()});
+        })
+    })
 }
