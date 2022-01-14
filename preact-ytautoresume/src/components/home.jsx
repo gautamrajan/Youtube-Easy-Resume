@@ -6,7 +6,7 @@ import './styles/mainlist.css';
 import MainList from "./mainlist";
 import SettingsPage from "./settings"
 import Snackbar from 'preact-material-components/Snackbar';
-const DEBUG = false;
+const DEBUG = true;
 export default class Home extends Component{
     constructor(){
         super();

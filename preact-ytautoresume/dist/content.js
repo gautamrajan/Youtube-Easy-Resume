@@ -1,5 +1,5 @@
 //content.js
-const DEBUG = false;
+const DEBUG = true;
 var initialLinkIsVideo; //Sets whether or not the user's entry point is a video link (not the youtube homepage, etc.)
 var directLoopDone; //Handles hand-off from direct link process and yt-nav process
 var ytNavLoop;     //Set to true when the main process runs as a result of a yt-navigation event
@@ -286,8 +286,9 @@ function initSettings(){
 function extractWatchID(link){
     var start = 0;
     var end = 0;
+    let result = ""
     for(var i=0;i<link.length;i++){
-        if(link[i]=='v' && link[i+1] == '='){
+        if(link[i]== 'v' && link[i+1] == '='){
             start = i+2;
         }
         else if(link[i] =='&'){
@@ -298,10 +299,9 @@ function extractWatchID(link){
             end=i+1;
         }
     }
-    var result = link.slice(start, end);
-    if (start == end == 0) {
-        return "";
-    }
+    result = link.slice(start,end);
+    DEBUG && console.log("start: " + start + ", end: " + end); 
+    DEBUG && console.log("extractWatchID: " + result);
     return result;
 }
 //Promise that tries to get the channel name and title from the site. If they aren't loaded yet,
