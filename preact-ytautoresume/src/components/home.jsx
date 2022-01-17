@@ -3,9 +3,9 @@ import Switch from 'preact-material-components/Switch';
 import './styles/materialswitch.css';
 import './styles/home.css';
 import './styles/mainlist.css';
-import MainList from "./mainlist";
 import SettingsPage from "./settings"
 import Snackbar from 'preact-material-components/Snackbar';
+import generateList from './list';
 const DEBUG = true;
 export default class Home extends Component{
     constructor(){
@@ -68,8 +68,10 @@ export default class Home extends Component{
             }
         ).then(() => {
             //moved from mainlist
-            this.getSettings();
-            this.setList();
+            this.getSettings().then(
+                this.setList
+            );
+            
             /* .then(() => { return this.generateList() })
             .then((elementList) => {
                 this.setState({
@@ -216,7 +218,17 @@ export default class Home extends Component{
         }
     }
     setList = () => {
-        this.generateList().then((elementList) => {
+        //props -> edit, selectedVideos, marginRight, maxBarWidth, editVideoClick
+        let props = {
+            edit: this.state.edit,
+            selectedVideos: this.state.selectedVideos,
+            marginRight: this.marginRight,
+            maxBarWidth: this.maxBarWidth,
+            settings: this.state.settings,
+            eClickHandler: this.eClickHandler.bind(this)
+        }
+        generateList(props).then((elementList) => {
+        //this.generateList().then((elementList) => {
             //return elementList;
             this.setState({
                 listReady: true,
@@ -232,7 +244,7 @@ export default class Home extends Component{
         )
     }
     //functions moved from mainlist
-    generateList = () => {
+/*     generateList = () => {
         var elementList = [];
         return new Promise((resolve) => {
             chrome.storage.local.get("videos", (data) => {
@@ -261,7 +273,8 @@ export default class Home extends Component{
                 
             })
         })
-    }
+    } */
+    eClickHandler = (video)=>{this.editVideoClick(video)}
     editVideoClick = (video) => {
         let newSelectedVideos = this.state.selectedVideos;
         if (this.state.edit) {
@@ -368,6 +381,9 @@ export default class Home extends Component{
             return false;
         }
         else if (video.time < this.state.settings.minWatchTime) {
+            return false;
+        }
+        else if (video.duration < this.state.settings.minVideoLength) {
             return false;
         }
         else {
