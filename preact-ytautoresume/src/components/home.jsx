@@ -148,7 +148,7 @@ export default class Home extends Component{
             return(
                 <div className="button-container">
                     <button type="button" id="EditButton" onClick={this.setedit}>
-                        <i class="fas fa-edit"></i>
+                        <i class="fas fa-trash-alt"></i>
                     </button>
                     <div className="AR SwitchContainer">
                         <label for="AutoResumeToggle">
