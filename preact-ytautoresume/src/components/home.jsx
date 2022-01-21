@@ -460,17 +460,32 @@ function secondsToHMS(timeInSeconds){
     }
 
 }
-//TEST DEVELOPMENT FUNCTION
+//TEMP FIX
 function cleanDB() {
     return new Promise((resolve) => {
         chrome.storage.local.get("videos", (data) => {
-            let fixedDB = data.slice();
+            let fixedDB = data;
             for (let i = 0; i < data.videos.length; i++){
-                if (extractWatchID(data.videos[i].videolink).length==0){
+                if (!checkWatchable(data.videos[i].videolink)) {
+                    console.log("FOUND BROKEN LINK");
                     fixedDB.videos.splice(i, 1);
                 }
             }
             chrome.storage.local.set(fixedDB,()=>{resolve()});
         })
     })
+}
+function checkWatchable(link){
+    if(link.indexOf("watch?") > -1 && link.indexOf("?t=")>-1){
+        DEBUG && console.log("IGNORING TIMESTAMPED LINK");
+        return false;
+    }
+    
+    else if (link.indexOf("watch?") > -1) {
+        return true;
+    }
+    else{
+        DEBUG && console.log("NOT A WATCHABLE LINK");
+        return false;
+    }
 }

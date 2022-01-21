@@ -578,13 +578,16 @@ async function mainVideoProcess(){
                             + document.querySelector("video").duration +", " 
                             + $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent + ", "
                             + $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent);
-
-                            setTime({videolink: window.location.href, time: document.querySelector("video").currentTime,
-                            duration: document.querySelector("video").duration,
-                            title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
-                            channel: $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent,
-                            complete:markPlayed, doNotResume:false})
-                            .then(()=>{return});
+                            let link = window.location.href;
+                            if (!checkWatchable(link)) { resolve() }
+                            else {
+                                setTime({videolink: link, time: document.querySelector("video").currentTime,
+                                duration: document.querySelector("video").duration,
+                                title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
+                                channel: $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent,
+                                complete:markPlayed, doNotResume:false})
+                                .then(() => { return });
+                            }
                         }
                     }
                     else if(!initialLinkIsVideo && !ytNavLoop){
