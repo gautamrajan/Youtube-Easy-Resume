@@ -15,13 +15,9 @@ export default class Home extends Component{
             settingsPage: false,
             paused: false,
             edit: false,
-            //mainlist state
             listReady: false,
             listElements: [],
             selectedVideos:[],
-            //maxBarWidth: 226,
-            //marginRight: 0,
-            //titleWidth: 188,
             settings: {},
         }
         this.maxBarWidth = 226;
@@ -39,7 +35,6 @@ export default class Home extends Component{
                 edit: !this.state.edit,
                 selectedVideos: []
             }, () => {
-                //this.mainList.editChange();
                 DEBUG && console.log("Edit mode: " + (this.state.edit ? "on" : "off"));
                 this.setList();
             });
@@ -48,7 +43,6 @@ export default class Home extends Component{
             this.setState({
                 edit: !this.state.edit
             }, () => {
-                //this.mainList.editChange();
                 DEBUG && console.log("Edit mode: " + (this.state.edit ? "on" : "off"));
                 this.setList();
             });
@@ -67,18 +61,9 @@ export default class Home extends Component{
                 });
             }
         ).then(() => {
-            //moved from mainlist
             this.getSettings().then(
                 this.setList
             );
-            
-            /* .then(() => { return this.generateList() })
-            .then((elementList) => {
-                this.setState({
-: true,
-                    listElements: elementList
-                });
-            }) */
         })
     }
     handlePause = (event)=>{
@@ -243,37 +228,6 @@ export default class Home extends Component{
             </Fragment>
         )
     }
-    //functions moved from mainlist
-/*     generateList = () => {
-        var elementList = [];
-        return new Promise((resolve) => {
-            chrome.storage.local.get("videos", (data) => {
-                //DEBUG && console.log("HERE");
-                if (data.videos != undefined && data.videos.length != 0) {
-                    if (data.videos.length >= 4) {
-                        //DEBUG && console.log("videos length greater than 4");
-                        this.maxBarWidth = 211;
-                        this.marginRight = 7;
-                        for (var i = (data.videos.length - 1); !(i < 0); i--) {
-                            if (this.checkCriteria(data.videos[i])) {
-                                elementList.push(this.generateListElement(data.videos[i]));
-                            }
-                        }
-                        resolve(elementList);
-                    }
-                    else {
-                        for (var i = (data.videos.length - 1); !(i < 0); i--) {
-                            if (this.checkCriteria(data.videos[i])) {
-                                elementList.push(this.generateListElement(data.videos[i]));
-                            }
-                        }
-                        resolve(elementList);
-                    }
-                }
-                
-            })
-        })
-    } */
     eClickHandler = (video)=>{this.editVideoClick(video)}
     editVideoClick = (video) => {
         let newSelectedVideos = this.state.selectedVideos;
