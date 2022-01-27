@@ -6,14 +6,15 @@ export default function ListElement(props) {
     let opts = {};
     let selectorName = "";
     if (props.edit) {
-        if (props.selectedVideos.includes(video.videolink)) {
+        if (props.selectedVideos.some(vid => video.videolink === vid.videolink)) {
+            console.log("VIDEO SELECTED!");
             selectorName = selectorName + " selected";
         }
         else {
             selectorName = selectorName + " unselected"
         }
     }
-    DEBUG && console.log("THUMBNAIL LINK: " + `https://img.youtube.com/vi/${extractWatchID(video.videolink)}/default.jpg`);
+    //DEBUG && console.log("THUMBNAIL LINK: " + `https://img.youtube.com/vi/${extractWatchID(video.videolink)}/default.jpg`);
     if (!props.edit) { opts["href"] = video.videolink;}
     return (
         <div className={`list-element-container`} onClick={()=>props.eClickHandler(video)}>
@@ -64,8 +65,8 @@ function extractWatchID(link){
         }
     }
     result = link.slice(start,end);
-    DEBUG && console.log("start: " + start + ", end: " + end); 
-    DEBUG && console.log("extractWatchID: " + result);
+    //DEBUG && console.log("start: " + start + ", end: " + end); 
+    //DEBUG && console.log("extractWatchID: " + result);
     return result;
 }
 function secondsToHMS(timeInSeconds){

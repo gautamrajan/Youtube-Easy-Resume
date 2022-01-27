@@ -55,8 +55,8 @@ export default function generateList(props) {
 }
 
 function checkCriteria(video, settings) {
-    DEBUG && console.log("settings @ check criteria: ");
-    console.log(JSON.stringify(settings));
+    //DEBUG && console.log("settings @ check criteria: ");
+    //console.log(JSON.stringify(settings));
     if (video.doNotResume) {
         return false;
     }

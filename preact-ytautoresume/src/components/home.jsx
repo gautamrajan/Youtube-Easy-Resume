@@ -86,25 +86,26 @@ export default class Home extends Component{
         if (this.state.selectedVideos.length > 0) {
             chrome.storage.local.get("videos", (data) => {
                 let newList = data;
-                for (let i = 0; i<data.videos.length; i++) {
-                    if (this.state.selectedVideos.includes(data.videos[i].videolink)){
-                        newList.videos.splice(i, 1);
-                    }
+                for (let vid in this.state.selectedVideos) {
+                    newList.videos.splice(newList.videos.indexOf(vid), 1);
                 }
+                DEBUG && console.log("STATE OF DB AFTER DELETIONS: ");
+                DEBUG && console.log(newList.videos);
                 chrome.storage.local.set(newList, () => {
-                    DEBUG && console.log("Selected videos deleted");
+                    //DEBUG && console.log("Selected videos deleted");
                     //this.setedit;
                     this.setState({
                         edit: !this.state.edit,
+                        listReady:false,
                         selectedVideos: []
                     }, () => {
                         //this.mainList.editChange();
                         //TODO: fix view doesn't immediately update when deleting last video from list
+                        this.setList();
                         this.bar.MDComponent.show({
                             message:`${delete_counter} ${delete_counter > 1 ? "videos":"video"} removed`
                         })
                         DEBUG && console.log("Edit mode: " + (this.state.edit ? "on" : "off"));
-                        this.setList();
                     });
                 })
             })
@@ -127,7 +128,7 @@ export default class Home extends Component{
     buttonBar = () => {
         let paused = this.state.paused;
         var pauseButtonText = "";
-        DEBUG && console.log(paused);
+        //DEBUG && console.log(paused);
         if(paused){pauseButtonText = "Unpause"}else{pauseButtonText = "Pause"};
         if (!this.state.edit) {
             return(
@@ -166,7 +167,7 @@ export default class Home extends Component{
         let paused = this.state.paused;
         let settingsPage = this.state.settingsPage;
         var pauseButtonText = "";
-        DEBUG && console.log(paused);
+        //DEBUG && console.log(paused);
         if(paused){pauseButtonText = "Unpause"}else{pauseButtonText = "Pause"};
         if(this.state.dataReady){
             if(settingsPage){
@@ -185,10 +186,18 @@ export default class Home extends Component{
                             titleWidth={this.titleWidth}/> */}
                         <div className="main-list" id="main-list">
                             {this.state.listReady ? this.getList() : null}
+                            {!this.state.listReady && this.state.listElements.length == 0 ?
+                            <h2>No videos</h2> : null}
                             <style jsx>{`
                                 .main-list-element{
-                                margin-right:${this.props.marginRight}
-                            }  
+                                    margin-right:${this.props.marginRight}
+                                }  
+                                h2 {
+                                    margin-top: 42vh;
+                                    text-align: center;
+                                    color: #ffffff;
+                                    font-size: 1.8em;
+                                }
                             `}
                             </style>
                         </div>
@@ -216,7 +225,7 @@ export default class Home extends Component{
         //this.generateList().then((elementList) => {
             //return elementList;
             this.setState({
-                listReady: true,
+                listReady: elementList.length==0 ? false : true,
                 listElements: elementList
             },()=>{DEBUG && console.log("Set list done")})
         });
@@ -232,8 +241,8 @@ export default class Home extends Component{
     editVideoClick = (video) => {
         let newSelectedVideos = this.state.selectedVideos;
         if (this.state.edit) {
-            if (this.state.selectedVideos.includes(video.videolink)) {
-                newSelectedVideos.splice(newSelectedVideos.indexOf(video.videolink), 1);
+            if (this.state.selectedVideos.includes(video)) {
+                newSelectedVideos.splice(newSelectedVideos.indexOf(video), 1);
                 this.setState({
                     selectedVideos: newSelectedVideos
                 }, () => {
@@ -242,7 +251,7 @@ export default class Home extends Component{
                 });
             }
             else {
-                newSelectedVideos.push(video.videolink);
+                newSelectedVideos.push(video);
                 this.setState({
                     selectedVideos: newSelectedVideos
                 }, () => {
@@ -250,7 +259,6 @@ export default class Home extends Component{
                     DEBUG && console.log(`selected video: ${video.videolink}`);
                 });
             }
-            
         }
         else {
             DEBUG && console.log("false alarm");
@@ -269,7 +277,7 @@ export default class Home extends Component{
                 selectorName = selectorName + " unselected"
             }
         }
-        DEBUG && console.log("THUMBNAIL LINK: " + `https://img.youtube.com/vi/${extractWatchID(video.videolink)}/default.jpg`);
+        //DEBUG && console.log("THUMBNAIL LINK: " + `https://img.youtube.com/vi/${extractWatchID(video.videolink)}/default.jpg`);
         if (!edit) { opts["href"] = video.videolink;}
         return (
             <div className={`list-element-container`} onClick={()=>this.editVideoClick(video)}>
@@ -386,8 +394,8 @@ function extractWatchID(link){
         }
     }
     result = link.slice(start,end);
-    DEBUG && console.log("start: " + start + ", end: " + end); 
-    DEBUG && console.log("extractWatchID: " + result);
+    // DEBUG && console.log("start: " + start + ", end: " + end); 
+    // DEBUG && console.log("extractWatchID: " + result);
     return result;
 }
     
