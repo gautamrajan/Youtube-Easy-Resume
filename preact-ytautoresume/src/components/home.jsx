@@ -181,9 +181,6 @@ export default class Home extends Component{
                             <h1>Currently watching</h1>
                             {buttonBar}
                         </div>
-                        {/* <MainList {...this.state} listReady={true} listElements={this.returnList()}
-                            maxBarWidth={this.maxBarWidth} marginRight={this.marginRight}
-                            titleWidth={this.titleWidth}/> */}
                         <div className="main-list" id="main-list">
                             {this.state.listReady ? this.getList() : null}
                             {!this.state.listReady && this.state.listElements.length == 0 ?
@@ -264,54 +261,7 @@ export default class Home extends Component{
             DEBUG && console.log("false alarm");
         }
     }
-    generateListElement = (video) => {
-        let edit = this.state.edit;
-        let selectedVideos = this.state.selectedVideos;
-        let opts = {};
-        let selectorName = "";
-        if (edit) {
-            if (selectedVideos.includes(video.videolink)) {
-                selectorName = selectorName + " selected";
-            }
-            else {
-                selectorName = selectorName + " unselected"
-            }
-        }
-        //DEBUG && console.log("THUMBNAIL LINK: " + `https://img.youtube.com/vi/${extractWatchID(video.videolink)}/default.jpg`);
-        if (!edit) { opts["href"] = video.videolink;}
-        return (
-            <div className={`list-element-container`} onClick={()=>this.editVideoClick(video)}>
-                <a className={`main-list-element${selectorName}`} {...opts} target="_blank" title={video.title}
-                    style={`margin-right: ${this.marginRight}px;`}>
-                <img src={`https://img.youtube.com/vi/${extractWatchID(video.videolink)}/default.jpg`} width="120" height="90"/>
-                <div className={`element-body`}>
-                    <info>
-                        <videoTitle width={`${this.titleWidth}px`}>
-                            {video.title}
-                        </videoTitle>
-                        <subtext>
-                            {video.channel}
-                        </subtext>
-                    </info>
-                    <div className="time-display">
-                        <timeInfo>
-                            {video.time<0 ? <currentTime>0:00</currentTime>:<currentTime>{secondsToHMS(video.time)}</currentTime>}
-                            <duration>{secondsToHMS(video.duration)}</duration>
-                        </timeInfo>
-                        <bar style={`width:${Math.round((video.time/video.duration)*this.maxBarWidth)}px`}></bar>
-                    </div>
-                    
-                </div>
-                </a>
-                <style jsx>{`   
-                    .unselected {
-                        opacity: 0.4;
-                    }
-                `}
-                </style>
-        </div>  
-        )
-    }
+
     getSettings = () => {
         return new Promise((resolve) => {
             chrome.storage.local.get("settings", (data) => {
