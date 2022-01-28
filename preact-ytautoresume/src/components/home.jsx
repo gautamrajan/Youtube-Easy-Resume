@@ -81,7 +81,6 @@ export default class Home extends Component{
         })
     }
     deleteSelected = () => {
-        //alert("Selected Videos Deleted");
         let delete_counter = this.state.selectedVideos.length;
         if (this.state.selectedVideos.length > 0) {
             chrome.storage.local.get("videos", (data) => {
@@ -92,15 +91,12 @@ export default class Home extends Component{
                 DEBUG && console.log("STATE OF DB AFTER DELETIONS: ");
                 DEBUG && console.log(newList.videos);
                 chrome.storage.local.set(newList, () => {
-                    //DEBUG && console.log("Selected videos deleted");
-                    //this.setedit;
+
                     this.setState({
                         edit: !this.state.edit,
                         listReady:false,
                         selectedVideos: []
                     }, () => {
-                        //this.mainList.editChange();
-                        //TODO: fix view doesn't immediately update when deleting last video from list
                         this.setList();
                         this.bar.MDComponent.show({
                             message:`${delete_counter} ${delete_counter > 1 ? "videos":"video"} removed`
@@ -124,7 +120,6 @@ export default class Home extends Component{
             });
         }
     }
-
     buttonBar = () => {
         let paused = this.state.paused;
         var pauseButtonText = "";
@@ -136,10 +131,10 @@ export default class Home extends Component{
                     <button type="button" id="EditButton" onClick={this.setedit}>
                         <i class="fas fa-trash-alt"></i>
                     </button>
-                    <div className="AR SwitchContainer">
+                    <div className={`AR SwitchContainer ${this.state.paused ? "Off" : "On"}`}>
                         <label for="AutoResumeToggle">
-                            <span id="AutoRedSwitchLabel">Auto</span>
-                            Resume
+                            <span className={`SwitchLabel ${this.state.paused ? "Off" : "On"}`} id="AutoRedSwitchLabel">{this.state.paused ? "OFF" : "ON"}</span>
+                            {/* Resume */}
                         </label>
                         <Switch name="AutoResumeToggle" checked={!paused} ref={pauseSwitch=>{this.switch=pauseSwitch;}}
                                 onChange={(event)=>{this.handlePause(event)}}/>
@@ -147,6 +142,23 @@ export default class Home extends Component{
                     <button type="button" id="SettingsButton" onClick={this.moveToSettingsPage}>
                         <i class="fas fa-cog"></i>
                     </button>
+                    <style jsx>{`
+                        .SwitchLabel{
+                            font-weight:600;
+                        }
+                        .SwitchLabel.On{
+                            color:red;
+                            padding-right:4px;
+                        }
+                        .SwitchLabel.Off{
+                            color:white;
+                            opacity: 0.4;
+                        }    
+                        .SwitchContainer.On{
+                            margin-left:6px;
+                        }
+                    `}
+                    </style>
                 </div>
             )
         }
@@ -326,51 +338,6 @@ function initSettingsDB(){
             
         })
     })
-}
-function extractWatchID(link){
-    var start = 0;
-    var end = 0;
-    let result = ""
-    for(var i=0;i<link.length;i++){
-        if(link[i]== 'v' && link[i+1] == '='){
-            start = i+2;
-        }
-        else if(link[i] =='&'){
-            end = i;
-            break;
-        }
-        else if(i==link.length-1){
-            end=i+1;
-        }
-    }
-    result = link.slice(start,end);
-    // DEBUG && console.log("start: " + start + ", end: " + end); 
-    // DEBUG && console.log("extractWatchID: " + result);
-    return result;
-}
-    
-
-function secondsToHMS(timeInSeconds){
-    var inputSeconds = Math.floor(timeInSeconds);
-    var hours = Math.floor(inputSeconds / 3600);
-    var minutes = Math.floor(inputSeconds / 60) % 60;
-    var seconds = inputSeconds % 60;
-    if(hours == 0){
-        minutes = minutes.toString();
-        if(seconds <10){seconds = "0" + seconds.toString();}
-        else{seconds = seconds.toString();};
-        return minutes + ":" + seconds;
-    }
-    else{
-        hours = hours.toString();
-        if(minutes <10){minutes = "0" + minutes.toString();}
-        else{minutes = minutes.toString();};
-
-        if(seconds <10){seconds = "0" + seconds.toString();}
-        else{seconds = seconds.toString();};
-        return hours + ":" + minutes + ":" + seconds;
-    }
-
 }
 //TEMP FIX
 function cleanDB() {

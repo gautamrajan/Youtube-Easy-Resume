@@ -45,7 +45,7 @@ div.header-bar /* #ClearListButton */button{
     color: #d8d6d6;
 }
 .button.editmode {
-     margin-bottom:2px; 
+    margin-bottom:2px; 
     margin-left:5px;
     flex-grow:0;
     display:flex;
@@ -77,7 +77,8 @@ div.header-bar /* #ClearListButton */button{
 }
 .SwitchContainer{
     margin-right:4px;
-    margin-bottom:7px;
+    margin-bottom:9px;
+    margin-left:5px;
     /* background-color:blue; */
     display:flex;
     flex-direction: row;
@@ -97,10 +98,7 @@ div.header-bar /* #ClearListButton */button{
     margin-left:4px;
 }
 
-#AutoRedSwitchLabel{
-    color:red;
-    font-weight:600;
-}
+
 h1{
     font-size:1.4em;
     margin-top:5px;
