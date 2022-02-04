@@ -1,0 +1,39 @@
+{
+    "manifest_version": 2,
+    "name": "Youtube Auto-Resume",
+    "version": "0.0.0.2",
+    "description": "An extension that provides auto-resume functionality and an easy to access watchlist for Youtube",
+    "short_name": "YT Auto-Resume",
+    "permissions": ["unlimitedStorage", "storage", "http://youtube.com/*", "https://www.youtube.com/*"],
+
+    "content_scripts":[
+        {
+            "matches":[
+                "http://youtube.com/*",
+                "https://www.youtube.com/*"
+            ],
+            "js": [
+                "jquery-3.5.1.min.js",
+                "content.js"
+            ],
+            "run_at": "document_end"
+        }
+    ],
+    
+    "background": {
+        "scripts": []
+    }, 
+
+    "browser_action": {
+      "default_title": "YTAutoResume",
+      "default_popup": "popup.html",
+      "default_icon": {
+        "16": "icons/icon128.png"
+      }
+    },
+    "web_accessible_resources": [
+        "icons/redcircle.svg",
+        "icons/playericon.svg",
+        "icons/playericon_inactive.svg"
+      ]
+   }

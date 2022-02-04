@@ -85,8 +85,15 @@ export default class Home extends Component{
         if (this.state.selectedVideos.length > 0) {
             chrome.storage.local.get("videos", (data) => {
                 let newList = data;
-                for (let vid in this.state.selectedVideos) {
-                    newList.videos.splice(newList.videos.indexOf(vid), 1);
+                DEBUG && console.log("HERE");
+                for (let x = 0; x < this.state.selectedVideos.length;x++) {
+                    DEBUG && console.log("LOOKING FOR " + this.state.selectedVideos[x].videolink);
+                    for (let i = 0; i < newList.videos.length; i++){
+                        if (newList.videos[i].videolink == this.state.selectedVideos[x].videolink) {
+                            DEBUG && console.log("FOUND ELEMENT TO DELETE: " + this.state.selectedVideos[x].videolink);
+                            newList.videos.splice(i, 1);
+                        }
+                    }
                 }
                 DEBUG && console.log("STATE OF DB AFTER DELETIONS: ");
                 DEBUG && console.log(newList.videos);
@@ -195,7 +202,7 @@ export default class Home extends Component{
                         </div>
                         <div className="main-list" id="main-list">
                             {this.state.listReady ? this.getList() : null}
-                            {!this.state.listReady && this.state.listElements.length == 0 ?
+                            {!this.state.listReady && this.state.listElements.length==0 ?
                             <h2>No videos</h2> : null}
                             <style jsx>{`
                                 .main-list-element{
