@@ -1,6 +1,6 @@
 import ListElement from "./listelement";
 import { h } from 'preact';
-const DEBUG = true;
+const DEBUG = false;
 export default function generateList(props) {
     //props -> edit, selectedVideos, marginRight, maxBarWidth, eClickHandler, settings
     var elementList = [];

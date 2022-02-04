@@ -1,5 +1,5 @@
 import { h } from 'preact';
-const DEBUG = true;
+const DEBUG = false;
 export default function ListElement(props) {
     //props -> video, edit, selectedVideos, marginRight, maxBarWidth, eClickHandler
     let video = props.video;

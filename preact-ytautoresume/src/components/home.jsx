@@ -6,7 +6,7 @@ import './styles/mainlist.css';
 import SettingsPage from "./settings"
 import Snackbar from 'preact-material-components/Snackbar';
 import generateList from './list';
-const DEBUG = true;
+const DEBUG = false;
 export default class Home extends Component{
     constructor(){
         super();
