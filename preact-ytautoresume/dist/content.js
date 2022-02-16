@@ -27,7 +27,7 @@ window.addEventListener('load', async function () {
                 initialLinkIsVideo = true;
                 //If it's watchable, we can add the button to the video player now.
                 injectPlayerButton()
-                .then(()=>{startPlayerButtonListener()});
+                //.then(()=>{startPlayerButtonListener()});
             }
             else{initialLinkIsVideo = false};
             //This listens to events fired by YouTube when a user navigates within the website.
@@ -44,10 +44,9 @@ window.addEventListener('load', async function () {
                     waitYtNav().then(()=>{
                         DEBUG && console.log("ytnav set. startin mvp process in event listener loop");
                         //The button state was set to according to the previous video, we have to reset it here.
-                        resetButton().then(()=>{
-                            //this.document.querySelector("#YTAutoResumePlayerSwitch").unbind("click");
+                        resetButton()/* .then(()=>{
                             startPlayerButtonListener();
-                        });
+                        }) */;
                     })
                     .then(async ()=>{
                         //Now we can start the mainVideoProcess.
@@ -108,16 +107,10 @@ function injectPlayerButton(){
             }
             DEBUG && console.log("starting image src:" + imgSrc);
 
-            // var button = $(
-            //     `<button class="ytp-button YTAutoResume" name="YTAutoResumeSwitch" id="YTAutoResumePlayerSwitch" title="${tooltip}"
-            //     aria-label="${tooltip}" style="vertical-align: top;">
-            //         <img id="YTAutoResumeSwitchIcon" src="${imgSrc}"
-            //          style="height: 84%; display: block; margin: auto;">
-            //     </button>`
-            // );
-            var button = document.createElement("button");
+            var button = document.createElement("div");
             button.classList.add("ytp-button");
             button.classList.add("YTAutoResume");
+            button.onclick = onPlayerButtonClick;
             button.name = "YTAutoResumeSwitch";
             button.id = "YTAutoResumePlayerSwitch";
             button.title = tooltip;
@@ -138,11 +131,7 @@ function injectPlayerButton(){
     })
     
 }
-//This function starts up click listener for the injected player button
-function startPlayerButtonListener(){
-    //This calls a promise that blocks until it's able to grab the title and channel name.
-    //This is necessary in practice due to cases where the video loads and starts playing
-    //before all the information is available.
+function onPlayerButtonClick() {
     let grabTitlePromise = new Promise((resolve)=>{
         if(!grabTitleComplete){
             grabTitle().then(()=>{
@@ -150,71 +139,58 @@ function startPlayerButtonListener(){
             })
         } else{resolve();}  
     })
+
     grabTitlePromise.then(()=>{
-        //This listens for clicks on the button, sets the button icon appropriately,
-        //and sets the video's doNotResume status appropriately in the DB.
-        //TODO: AFTER REMOVING JQUERY, this only fires once and doesnt' respond to any other clicks
-        document.querySelector("#YTAutoResumePlayerSwitch").addEventListener('click', (event) => {
-            //console.log("EVENT TARGET:" + JSON.stringify(event.target));
-            //if (event.target.matches("#YTAutoResumePlayerSwitch") || event.target.matches("#YTAutoResumePlayerSwitchIcon") ) {
-                //DEBUG && console.log("PLAYER BUTTON CLICK");
-                // var icon =  document.querySelector("#YTAutoResumeSwitchIcon");
-                // var button = document.querySelector("#YTAutoResumePlayerSwitch");
-                //DEBUG && console.log("button.prop: " + $(button).prop("checked"));
-                DEBUG && console.log("button.prop: " + document.querySelector("#YTAutoResumePlayerSwitch").checked);
-                var video = document.querySelector("video");
-                var markPlayed = false;
-                    var timeRemaining = video.duration - video.currentTime;
-                    if(timeRemaining < userSettings.markPlayedTime){
-                        markPlayed=true;
-                        DEBUG && console.log("marking played");
-                    }
-                    else{
-                        markPlayed=false;
-                    }
-                //if($(button).prop("checked")){
-                if (document.querySelector("#YTAutoResumePlayerSwitch").checked == true) {
-                    DEBUG && console.log("PLAYER BUTTON CLICK TRUE");
-                    blacklist = true;
-                    //$(button).prop("checked",false);
-                    document.querySelector("#YTAutoResumePlayerSwitch").checked = false;
-                    //$(icon).attr("src", chrome.runtime.getURL("icons/playericon_inactive.svg"));
-                    document.querySelector("#YTAutoResumeSwitchIcon").setAttribute("src", chrome.runtime.getURL("icons/playericon_inactive.svg"));
-                    // $("#YTAutoResumePlayerSwitch").attr("title","Video will not auto-resume");
-                    document.querySelector("#YTAutoResumePlayerSwitch").setAttribute("title","Video will not auto-resume");
-                    setTime({
-                        videolink: window.location.href, time: document.querySelector("video").currentTime,
-                        duration: document.querySelector("video").duration,
-                        title: document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent,
-                        channel: document.querySelector("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name").textContent,
-                        complete:markPlayed, doNotResume:true})
-                        .then(()=>{
-                            DEBUG && console.log("Video blacklisted successfully");
-                        });
-                }
-                else {
-                    DEBUG && console.log("PLAYER BUTTON CLICK FALSE");
-                    blacklist = false;
-                    //$(button).prop("checked",true);
-                    document.querySelector("#YTAutoResumePlayerSwitch").checked = true;
-                    //$(icon).attr("src",chrome.runtime.getURL("icons/playericon.svg"));
-                    document.querySelector("#YTAutoResumeSwitchIcon").setAttribute("src",chrome.runtime.getURL("icons/playericon.svg"));
-                    //$("#YTAutoResumePlayerSwitch").attr("title","Video will auto-resume");
-                    document.querySelector("#YTAutoResumePlayerSwitch").setAttribute("title","Video will auto-resume");
-                    setTime({videolink: window.location.href, time: document.querySelector("video").currentTime,
-                        duration: document.querySelector("video").duration,
-                        title: document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent,
-                        channel: document.querySelector("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name").textContent,
-                        complete:markPlayed, doNotResume:false})
-                        .then(()=>{
-                            DEBUG && console.log("Video removecd from blacklist successfully");
-                        });
-                    
-                }
-            //}
-        }, false);
+        DEBUG && console.log("button.prop: " + document.querySelector("#YTAutoResumePlayerSwitch").checked);
+        var video = document.querySelector("video");
+        var markPlayed = false;
+            var timeRemaining = video.duration - video.currentTime;
+            if(timeRemaining < userSettings.markPlayedTime){
+                markPlayed=true;
+                DEBUG && console.log("marking played");
+            }
+            else{
+                markPlayed=false;
+            }
+        if (document.querySelector("#YTAutoResumePlayerSwitch").checked == true) {
+            DEBUG && console.log("PLAYER BUTTON CLICK TRUE");
+            blacklist = true;
+            document.querySelector("#YTAutoResumePlayerSwitch").checked = false;
+
+            document.querySelector("#YTAutoResumeSwitchIcon").setAttribute("src", chrome.runtime.getURL("icons/playericon_inactive.svg"));
+
+            document.querySelector("#YTAutoResumePlayerSwitch").setAttribute("title","Video will not auto-resume");
+            setTime({
+                videolink: window.location.href, time: document.querySelector("video").currentTime,
+                duration: document.querySelector("video").duration,
+                title: document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent,
+                channel: document.querySelector("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name").textContent,
+                complete:markPlayed, doNotResume:true})
+                .then(()=>{
+                    DEBUG && console.log("Video blacklisted successfully");
+                });
+        }
+        else {
+            DEBUG && console.log("PLAYER BUTTON CLICK FALSE");
+            blacklist = false;
+
+            document.querySelector("#YTAutoResumePlayerSwitch").checked = true;
+
+            document.querySelector("#YTAutoResumeSwitchIcon").setAttribute("src",chrome.runtime.getURL("icons/playericon.svg"));
+
+            document.querySelector("#YTAutoResumePlayerSwitch").setAttribute("title","Video will auto-resume");
+            setTime({videolink: window.location.href, time: document.querySelector("video").currentTime,
+                duration: document.querySelector("video").duration,
+                title: document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent,
+                channel: document.querySelector("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name").textContent,
+                complete:markPlayed, doNotResume:false})
+                .then(()=>{
+                    DEBUG && console.log("Video removecd from blacklist successfully");
+                });
+            
+        }
+    //}
     });
-                
 }
 //This function resets the button if the element is present, if element doesn't exist on page,
 //the button is added.
@@ -236,13 +212,13 @@ function resetButton(){
                     tooltip = "Video will auto-resume";
                 }
                 DEBUG && console.log("starting image src:" + imgSrc);
-                // $("#YTAutoResumePlayerSwitch").attr("title",tooltip);
-                // $("#YTAutoResumePlayerSwitch").attr("aria-label",tooltip);
+
+
                 document.querySelector("#YTAutoResumePlayerSwitch").setAttribute("title",tooltip)
                 document.querySelector("#YTAutoResumePlayerSwitch").setAttribute("aria-label",tooltip);
-                //$("#YTAutoResumePlayerSwitch").prop("checked",!blacklisted);
+
                 document.querySelector("#YTAutoResumePlayerSwitch").checked = !blacklisted;
-                //$("#YTAutoResumeSwitchIcon").attr("src",imgSrc);
+
                 document.querySelector("#YTAutoResumeSwitchIcon").setAttribute("src",imgSrc);
                 resolve();
             })
