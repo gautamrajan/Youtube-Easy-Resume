@@ -28,7 +28,9 @@ div.header-bar button{
     background-color: transparent;
     text-align: center;
     vertical-align: middle;
-    
+    display:flex;
+    flex-direction: column;
+    justify-content:center;
 }
 div.header-bar button:active{
     background-color: rgba(158, 158, 158, 0.781);

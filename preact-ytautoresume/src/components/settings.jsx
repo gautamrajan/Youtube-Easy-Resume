@@ -146,10 +146,44 @@ export default class SettingsPage extends Component{
                                     away from the end.
                                 </div>
                             </div>
+                            <div className="MadeBy Message">
+                                Made with ❤️ at
+                                <a href="https://www.uscannenbergmedia.com/" target="_blank">Annenberg Media</a>
+                                <style jsx>{`
+                                    .Message {
+                                        color: white;
+                                        margin-top:8px;
+                                        font-size: 15px;
+                                        display: inline-block;
+                                        flex-direction:row;
+                                        justify-content:flex-start;
+                                    }                              
+                                    a:link{
+                                        margin-left: 5px;
+                                        color:#a10000;
+                                        font-weight: bold;
+                                        text-decoration: none;
+                                    }  
+                                    a:visited{
+                                        margin-left: 5px;
+                                        color:#a10000;
+                                        font-weight: bold;
+                                        text-decoration: none;
+                                    }
+                                    a:hover{
+                                        color: red;
+                                        font-weight: bold;
+                                    }
+                                    a:active{
+                                        color: #990000;
+                                    }
+                                `}
+                                </style>
+                            </div>
                         </form>
                         {settingsChanged?<button type="button" id="SaveButton" onClick={()=>this.saveSettings()}>Save Settings</button>
                         :null}
-                        <Snackbar ref={bar=>{this.bar=bar;}}/>
+                        <Snackbar ref={bar => { this.bar = bar; }} />
                     </div>
                 </div>
             )   
