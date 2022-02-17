@@ -6,6 +6,7 @@ export default function generateList(props) {
     var elementList = [];
     var maxBarWidth = 226;
     var marginRight = 0;
+    //var titleWidth = 188;
     //let titleWidth = 188;
     return new Promise((resolve) => {
         chrome.storage.local.get("videos", (data) => {
@@ -31,6 +32,7 @@ export default function generateList(props) {
                                 selectedVideos={props.selectedVideos}
                                 marginRight={marginRight}
                                 maxBarWidth={maxBarWidth}
+                                //titleWidth = {titleWidth}
                                 eClickHandler={props.eClickHandler}
                             />
                         );

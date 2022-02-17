@@ -23,7 +23,7 @@ export default function ListElement(props) {
             <img src={`https://img.youtube.com/vi/${extractWatchID(video.videolink)}/default.jpg`} width="120" height="90"/>
             <div className={`element-body`}>
                 <info>
-                    <videoTitle width={`${props.titleWidth}px`}>
+                    <videoTitle>
                         {video.title}
                     </videoTitle>
                     <subtext>
@@ -43,6 +43,13 @@ export default function ListElement(props) {
                 .unselected {
                     opacity: 0.4;
                 }
+                info {
+                    cursor: pointer;
+                }
+                timeInfo {
+                    cursor: pointer;
+                }
+
             `}
             </style>
     </div>  
