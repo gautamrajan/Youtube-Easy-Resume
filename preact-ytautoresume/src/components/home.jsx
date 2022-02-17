@@ -256,17 +256,21 @@ export default class Home extends Component{
     eClickHandler = (video)=>{this.editVideoClick(video)}
     editVideoClick = (video) => {
         let newSelectedVideos = this.state.selectedVideos;
+        let unclick = false;
         if (this.state.edit) {
-            if (this.state.selectedVideos.includes(video)) {
-                newSelectedVideos.splice(newSelectedVideos.indexOf(video), 1);
-                this.setState({
-                    selectedVideos: newSelectedVideos
-                }, () => {
-                    this.setList();
-                    DEBUG && console.log(`UN-selected video: ${video.videolink}`);
-                });
+            for (let i = 0; i < this.state.selectedVideos.length; i++){
+                if (extractWatchID(this.state.selectedVideos[i].videolink) == extractWatchID(video.videolink)) {
+                    unclick = true;
+                    newSelectedVideos.splice(newSelectedVideos.indexOf(video), 1);
+                    this.setState({
+                        selectedVideos: newSelectedVideos
+                    }, () => {
+                        this.setList();
+                        DEBUG && console.log(`UN-selected video: ${video.videolink}`);
+                    });
+                }
             }
-            else {
+            if(!unclick) {
                 newSelectedVideos.push(video);
                 this.setState({
                     selectedVideos: newSelectedVideos
@@ -374,4 +378,25 @@ function checkWatchable(link){
         DEBUG && console.log("NOT A WATCHABLE LINK");
         return false;
     }
+}
+function extractWatchID(link){
+    var start = 0;
+    var end = 0;
+    let result = ""
+    for(var i=0;i<link.length;i++){
+        if(link[i]== 'v' && link[i+1] == '='){
+            start = i+2;
+        }
+        else if(link[i] =='&'){
+            end = i;
+            break;
+        }
+        else if(i==link.length-1){
+            end=i+1;
+        }
+    }
+    result = link.slice(start,end);
+    //DEBUG && console.log("start: " + start + ", end: " + end); 
+    //DEBUG && console.log("extractWatchID: " + result);
+    return result;
 }

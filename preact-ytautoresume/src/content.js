@@ -62,7 +62,7 @@ window.addEventListener('load', async function () {
                     //As a result, we go straight to the ytNavLoop after resetting the button.
                     resetButton().then(()=>{
                         //this.document.querySelector("#YTAutoResumePlayerSwitch").unbind("click");
-                        startPlayerButtonListener();
+                        //startPlayerButtonListener();
                     });
                     //We set ytNavLoop true here to indicate the state.
                     ytNavLoop = true;
