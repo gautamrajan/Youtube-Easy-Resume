@@ -50,7 +50,7 @@ export default class Home extends Component{
     }
     componentDidMount() {
         //cleanDB();
-        initSettingsDB().then(
+        initSettingsDB()/* .then(
             ()=>{
                 chrome.storage.local.get("settings",(data)=>{
                     DEBUG && console.log("in constructor, data.settings.pauseResume = " + data.settings.pauseResume);
@@ -60,7 +60,7 @@ export default class Home extends Component{
                     });
                 });
             }
-        ).then(() => {
+        ) */.then(() => {
             this.getSettings().then(
                 this.setList
             );
@@ -289,7 +289,7 @@ export default class Home extends Component{
         return new Promise((resolve) => {
             chrome.storage.local.get("settings", (data) => {
                 if (data.settings != undefined) {
-                    this.setState({ settings: data.settings, newSettings: data.settings, dataReady: true },
+                    this.setState({ settings: data.settings, newSettings: data.settings, dataReady: true, paused: data.settings.pauseResume},
                         () => { resolve(); });
                 }
                 else {
