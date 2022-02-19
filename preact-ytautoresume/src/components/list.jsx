@@ -6,11 +6,8 @@ export default function generateList(props) {
     var elementList = [];
     var maxBarWidth = 226;
     var marginRight = 0;
-    //var titleWidth = 188;
-    //let titleWidth = 188;
     return new Promise((resolve) => {
         chrome.storage.local.get("videos", (data) => {
-            //DEBUG && console.log("HERE");
             if (data.videos != undefined && data.videos.length != 0) {
                 let list_counter = 0;
                 for (let i = 0; i < data.videos.length; i++){
@@ -46,8 +43,6 @@ export default function generateList(props) {
 }
 
 function checkCriteria(video, settings) {
-    //DEBUG && console.log("settings @ check criteria: ");
-    //console.log(JSON.stringify(settings));
     if (video.doNotResume) {
         return false;
     }

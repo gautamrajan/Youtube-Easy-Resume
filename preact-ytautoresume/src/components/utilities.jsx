@@ -15,8 +15,6 @@ export function extractWatchID(link) {
         }
     }
     result = link.slice(start,end);
-    //DEBUG && console.log("start: " + start + ", end: " + end); 
-    //DEBUG && console.log("extractWatchID: " + result);
     return result;
 }
 export function secondsToHMS(timeInSeconds){

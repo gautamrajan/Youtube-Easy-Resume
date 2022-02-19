@@ -15,7 +15,6 @@ export default function ListElement(props) {
             selectorName = selectorName + " unselected"
         }
     }
-    //DEBUG && console.log("THUMBNAIL LINK: " + `https://img.youtube.com/vi/${extractWatchID(video.videolink)}/default.jpg`);
     if (!props.edit) { opts["href"] = video.videolink;}
     return (
         <div className={`list-element-container`} onClick={()=>props.eClickHandler(video)}>

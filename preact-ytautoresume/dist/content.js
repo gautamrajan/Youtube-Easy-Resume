@@ -568,7 +568,7 @@ async function mainVideoProcess(){
                                     resolve();
                                 }
                                 else if(!initialLinkIsVideo && !ytNavLoop){
-                                    DEBUG && console.log("TITLE CHANGE DURING TRADEOFF.RESOLVING.");
+                                    DEBUG && console.log("TITLE CHANGE DURING TRADEOFF. RESOLVING.");
                                     resolve();
                                 }
                         }
