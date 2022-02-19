@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "name": "Youtube Auto-Resume",
-    "version": "0.0.0.7",
+    "version": "0.0.0.8",
     "description": "An extension that provides auto-resume functionality and an easy to access watchlist for Youtube",
     "short_name": "YT Auto-Resume",
     "permissions": ["unlimitedStorage", "storage", "http://youtube.com/*", "https://www.youtube.com/*"],

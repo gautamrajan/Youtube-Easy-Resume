@@ -3,7 +3,7 @@ import Snackbar from 'preact-material-components/Snackbar';
 import 'preact-material-components/Snackbar/style.css';
 import './styles/settings.css';
 import Home from './home';
-
+import { secondsToMinutes, minutesToSeconds } from './utilities';
 //TODO: Input validation for settings
 export default class SettingsPage extends Component{
     constructor(){
@@ -191,21 +191,5 @@ export default class SettingsPage extends Component{
         else{
             return (null);
         }
-    }
-}
-function secondsToMinutes(seconds){
-    if(seconds<60){
-        return seconds;
-    }
-    else{
-        return Math.round(seconds/60);
-    }
-}
-function minutesToSeconds(minutes){
-    if(minutes == 0){
-        return 0;
-    }
-    else{
-        return minutes*60;
     }
 }

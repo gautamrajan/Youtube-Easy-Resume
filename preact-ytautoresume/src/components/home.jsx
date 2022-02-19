@@ -6,6 +6,7 @@ import './styles/mainlist.css';
 import SettingsPage from "./settings"
 import Snackbar from 'preact-material-components/Snackbar';
 import generateList from './list';
+import {extractWatchID} from './utilities'
 const DEBUG = false;
 export default class Home extends Component{
     constructor(){
@@ -308,23 +309,6 @@ export default class Home extends Component{
             });
         });
     }
-    checkCriteria = (video) => {
-        if (video.doNotResume) {
-            return false;
-        }
-        else if (video.complete) {
-            return false;
-        }
-        else if (video.time < this.state.settings.minWatchTime) {
-            return false;
-        }
-        else if (video.duration < this.state.settings.minVideoLength) {
-            return false;
-        }
-        else {
-            return true;
-        }
-    }
 }
 function initSettingsDB(){
     return new Promise((resolve)=>{
@@ -378,25 +362,4 @@ function checkWatchable(link){
         DEBUG && console.log("NOT A WATCHABLE LINK");
         return false;
     }
-}
-function extractWatchID(link){
-    var start = 0;
-    var end = 0;
-    let result = ""
-    for(var i=0;i<link.length;i++){
-        if(link[i]== 'v' && link[i+1] == '='){
-            start = i+2;
-        }
-        else if(link[i] =='&'){
-            end = i;
-            break;
-        }
-        else if(i==link.length-1){
-            end=i+1;
-        }
-    }
-    result = link.slice(start,end);
-    //DEBUG && console.log("start: " + start + ", end: " + end); 
-    //DEBUG && console.log("extractWatchID: " + result);
-    return result;
 }
