@@ -125,7 +125,9 @@ function injectPlayerButton(){
             button.appendChild(img_element);
             //$(button).prop("checked",!blacklisted);
             button.checked = !blacklisted;
-            document.querySelector("div.ytp-right-controls").prepend(button);
+            if (document.querySelector("div.ytp-right-controls") !== null) {
+                document.querySelector("div.ytp-right-controls").prepend(button);
+            }
             resolve();
         })
     })
