@@ -3,7 +3,7 @@ import Snackbar from 'preact-material-components/Snackbar';
 import 'preact-material-components/Snackbar/style.css';
 import './styles/settings.css';
 import Home from './home';
-
+import { secondsToMinutes, minutesToSeconds } from './utilities';
 //TODO: Input validation for settings
 export default class SettingsPage extends Component{
     constructor(){
@@ -146,10 +146,44 @@ export default class SettingsPage extends Component{
                                     away from the end.
                                 </div>
                             </div>
+                            <div className="MadeBy Message">
+                                Made with ❤️ at
+                                <a href="https://www.uscannenbergmedia.com/" target="_blank">Annenberg Media</a>
+                                <style jsx>{`
+                                    .Message {
+                                        color: white;
+                                        margin-top:8px;
+                                        font-size: 15px;
+                                        display: inline-block;
+                                        flex-direction:row;
+                                        justify-content:flex-start;
+                                    }                              
+                                    a:link{
+                                        margin-left: 5px;
+                                        color:#a10000;
+                                        font-weight: bold;
+                                        text-decoration: none;
+                                    }  
+                                    a:visited{
+                                        margin-left: 5px;
+                                        color:#a10000;
+                                        font-weight: bold;
+                                        text-decoration: none;
+                                    }
+                                    a:hover{
+                                        color: red;
+                                        font-weight: bold;
+                                    }
+                                    a:active{
+                                        color: #990000;
+                                    }
+                                `}
+                                </style>
+                            </div>
                         </form>
                         {settingsChanged?<button type="button" id="SaveButton" onClick={()=>this.saveSettings()}>Save Settings</button>
                         :null}
-                        <Snackbar ref={bar=>{this.bar=bar;}}/>
+                        <Snackbar ref={bar => { this.bar = bar; }} />
                     </div>
                 </div>
             )   
@@ -157,21 +191,5 @@ export default class SettingsPage extends Component{
         else{
             return (null);
         }
-    }
-}
-function secondsToMinutes(seconds){
-    if(seconds<60){
-        return seconds;
-    }
-    else{
-        return Math.round(seconds/60);
-    }
-}
-function minutesToSeconds(minutes){
-    if(minutes == 0){
-        return 0;
-    }
-    else{
-        return minutes*60;
     }
 }

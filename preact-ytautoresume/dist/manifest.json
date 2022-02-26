@@ -1,10 +1,11 @@
 {
-    "manifest_version": 2,
-    "name": "PreactYTAutoResume",
-    "version": "0.1",
-    "description": "PreactYTAutoResume",
-    "short_name": "PreactYTAutoResume",
-    "permissions": ["activeTab", "declarativeContent", "unlimitedStorage", "storage", "<all_urls>", "webNavigation"],
+    "manifest_version": 3,
+    "name": "Youtube Auto-Resume",
+    "version": "0.0.0.11",
+    "description": "An extension that provides auto-resume functionality and an easy to access watchlist for Youtube",
+    "short_name": "YT Auto-Resume",
+    "permissions": ["unlimitedStorage", "storage"],
+    "host_permissions": ["http://youtube.com/*", "https://www.youtube.com/*"],
 
     "content_scripts":[
         {
@@ -13,18 +14,13 @@
                 "https://www.youtube.com/*"
             ],
             "js": [
-                "jquery-3.5.1.min.js",
                 "content.js"
             ],
             "run_at": "document_end"
         }
     ],
-    
-    "background": {
-        "scripts": []
-    }, 
 
-    "browser_action": {
+    "action": {
       "default_title": "YTAutoResume",
       "default_popup": "popup.html",
       "default_icon": {
@@ -32,8 +28,10 @@
       }
     },
     "web_accessible_resources": [
-        "icons/redcircle.svg",
-        "icons/playericon.svg",
-        "icons/playericon_inactive.svg"
-      ]
-   }
+        {
+            "resources": [ "icons/redcircle.svg", "icons/playericon.svg", "icons/playericon_inactive.svg"],
+            "matches": [ "http://youtube.com/*","https://www.youtube.com/*" ]
+        }
+    ]
+
+}

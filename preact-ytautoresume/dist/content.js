@@ -1,5 +1,6 @@
 //content.js
 const DEBUG = false;
+//const $ = document.querySelector
 var initialLinkIsVideo; //Sets whether or not the user's entry point is a video link (not the youtube homepage, etc.)
 var directLoopDone; //Handles hand-off from direct link process and yt-nav process
 var ytNavLoop;     //Set to true when the main process runs as a result of a yt-navigation event
@@ -7,7 +8,7 @@ var userSettings;  //Holds the user's settings
 var blacklist = false; //Holds the current video's blacklist status.
 var grabTitleComplete = false;  
 
-$(document).ready(async function(){
+window.addEventListener('load', async function () {
     //Initialize storage -> Grab user settings -> Begin main process
     initStorage()
     .then(()=>getUserSettings())
@@ -26,7 +27,7 @@ $(document).ready(async function(){
                 initialLinkIsVideo = true;
                 //If it's watchable, we can add the button to the video player now.
                 injectPlayerButton()
-                .then(()=>{startPlayerButtonListener()});
+                //.then(()=>{startPlayerButtonListener()});
             }
             else{initialLinkIsVideo = false};
             //This listens to events fired by YouTube when a user navigates within the website.
@@ -43,10 +44,9 @@ $(document).ready(async function(){
                     waitYtNav().then(()=>{
                         DEBUG && console.log("ytnav set. startin mvp process in event listener loop");
                         //The button state was set to according to the previous video, we have to reset it here.
-                        resetButton().then(()=>{
-                            $("#YTAutoResumePlayerSwitch").unbind("click");
+                        resetButton()/* .then(()=>{
                             startPlayerButtonListener();
-                        });
+                        }) */;
                     })
                     .then(async ()=>{
                         //Now we can start the mainVideoProcess.
@@ -61,8 +61,8 @@ $(document).ready(async function(){
                     //or through another video. This means the initial loop is never triggered.
                     //As a result, we go straight to the ytNavLoop after resetting the button.
                     resetButton().then(()=>{
-                        $("#YTAutoResumePlayerSwitch").unbind("click");
-                        startPlayerButtonListener();
+                        //this.document.querySelector("#YTAutoResumePlayerSwitch").unbind("click");
+                        //startPlayerButtonListener();
                     });
                     //We set ytNavLoop true here to indicate the state.
                     ytNavLoop = true;
@@ -106,25 +106,34 @@ function injectPlayerButton(){
                 tooltip = "Video will auto-resume";
             }
             DEBUG && console.log("starting image src:" + imgSrc);
-            var button = $(
-                `<button class="ytp-button YTAutoResume" name="YTAutoResumeSwitch" id="YTAutoResumePlayerSwitch" title="${tooltip}"
-                aria-label="${tooltip}" style="vertical-align: top;">
-                    <img id="YTAutoResumeSwitchIcon" src="${imgSrc}"
-                     style="height: 84%; display: block; margin: auto;">
-                </button>`
-            );
-            $(button).prop("checked",!blacklisted);
-            $("div.ytp-right-controls").prepend(button);
+
+            var button = document.createElement("div");
+            button.classList.add("ytp-button");
+            button.classList.add("YTAutoResume");
+            button.onclick = onPlayerButtonClick;
+            button.name = "YTAutoResumeSwitch";
+            button.id = "YTAutoResumePlayerSwitch";
+            button.title = tooltip;
+            button.ariaLabel = tooltip;
+            button.style.verticalAlign = "top";
+            var img_element = document.createElement("img");
+            img_element.id = "YTAutoResumeSwitchIcon";
+            img_element.src = imgSrc;
+            img_element.style.height = "84%";
+            img_element.style.display = "block";
+            img_element.style.margin = "auto";
+            button.appendChild(img_element);
+            //$(button).prop("checked",!blacklisted);
+            button.checked = !blacklisted;
+            if (document.querySelector("div.ytp-right-controls") !== null) {
+                document.querySelector("div.ytp-right-controls").prepend(button);
+            }
             resolve();
         })
     })
     
 }
-//This function starts up click listener for the injected player button
-function startPlayerButtonListener(){
-    //This calls a promise that blocks until it's able to grab the title and channel name.
-    //This is necessary in practice due to cases where the video loads and starts playing
-    //before all the information is available.
+function onPlayerButtonClick() {
     let grabTitlePromise = new Promise((resolve)=>{
         if(!grabTitleComplete){
             grabTitle().then(()=>{
@@ -132,62 +141,64 @@ function startPlayerButtonListener(){
             })
         } else{resolve();}  
     })
+
     grabTitlePromise.then(()=>{
-        //This listens for clicks on the button, sets the button icon appropriately,
-        //and sets the video's doNotResume status appropriately in the DB.
-        $("#YTAutoResumePlayerSwitch").click(()=>{
-            var icon =  $("#YTAutoResumeSwitchIcon");
-            var button = $("#YTAutoResumePlayerSwitch");
-            DEBUG && console.log("button.prop: " + $(button).prop("checked"));
-            var video = document.querySelector("video");
-            var markPlayed = false;
-                var timeRemaining = video.duration - video.currentTime;
-                if(timeRemaining < userSettings.markPlayedTime){
-                    markPlayed=true;
-                    DEBUG && console.log("marking played");
-                }
-                else{
-                    markPlayed=false;
-                }
-            if($(button).prop("checked")){
-                blacklist = true;
-                $(button).prop("checked",false);
-                $(icon).attr("src", chrome.runtime.getURL("icons/playericon_inactive.svg"));
-                $("#YTAutoResumePlayerSwitch").attr("title","Video will not auto-resume");
-                setTime({videolink: window.location.href, time: document.querySelector("video").currentTime,
-                    duration: document.querySelector("video").duration,
-                    title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
-                    channel: $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent,
-                    complete:markPlayed, doNotResume:true})
-                    .then(()=>{
-                        DEBUG && console.log("Video blacklisted successfully");
-                    });
+        DEBUG && console.log("button.prop: " + document.querySelector("#YTAutoResumePlayerSwitch").checked);
+        var video = document.querySelector("video");
+        var markPlayed = false;
+            var timeRemaining = video.duration - video.currentTime;
+            if(timeRemaining < userSettings.markPlayedTime){
+                markPlayed=true;
+                DEBUG && console.log("marking played");
             }
             else{
-                blacklist = false;
-                $(button).prop("checked",true);
-                $(icon).attr("src",chrome.runtime.getURL("icons/playericon.svg"));
-                $("#YTAutoResumePlayerSwitch").attr("title","Video will auto-resume");
-                setTime({videolink: window.location.href, time: document.querySelector("video").currentTime,
-                    duration: document.querySelector("video").duration,
-                    title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
-                    channel: $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent,
-                    complete:markPlayed, doNotResume:false})
-                    .then(()=>{
-                        DEBUG && console.log("Video removecd from blacklist successfully");
-                    });
-                
+                markPlayed=false;
             }
+        if (document.querySelector("#YTAutoResumePlayerSwitch").checked == true) {
+            DEBUG && console.log("PLAYER BUTTON CLICK TRUE");
+            blacklist = true;
+            document.querySelector("#YTAutoResumePlayerSwitch").checked = false;
+
+            document.querySelector("#YTAutoResumeSwitchIcon").setAttribute("src", chrome.runtime.getURL("icons/playericon_inactive.svg"));
+
+            document.querySelector("#YTAutoResumePlayerSwitch").setAttribute("title","Video will not auto-resume");
+            setTime({
+                videolink: window.location.href, time: document.querySelector("video").currentTime,
+                duration: document.querySelector("video").duration,
+                title: document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent,
+                channel: document.querySelector("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name").textContent,
+                complete:markPlayed, doNotResume:true})
+                .then(()=>{
+                    DEBUG && console.log("Video blacklisted successfully");
+                });
+        }
+        else {
+            DEBUG && console.log("PLAYER BUTTON CLICK FALSE");
+            blacklist = false;
+
+            document.querySelector("#YTAutoResumePlayerSwitch").checked = true;
+
+            document.querySelector("#YTAutoResumeSwitchIcon").setAttribute("src",chrome.runtime.getURL("icons/playericon.svg"));
+
+            document.querySelector("#YTAutoResumePlayerSwitch").setAttribute("title","Video will auto-resume");
+            setTime({videolink: window.location.href, time: document.querySelector("video").currentTime,
+                duration: document.querySelector("video").duration,
+                title: document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent,
+                channel: document.querySelector("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name").textContent,
+                complete:markPlayed, doNotResume:false})
+                .then(()=>{
+                    DEBUG && console.log("Video removecd from blacklist successfully");
+                });
             
-        });
+        }
+    //}
     });
-                
 }
 //This function resets the button if the element is present, if element doesn't exist on page,
 //the button is added.
 function resetButton(){
     return new Promise ((resolve) =>{
-        if($("#YTAutoResumePlayerSwitch").length){
+        if(document.querySelectorAll("#YTAutoResumePlayerSwitch").length>0){
             DEBUG && console.log("resetting button");
             checkBlacklist(window.location.href).then((blacklisted)=>{
                 var imgSrc;
@@ -203,10 +214,14 @@ function resetButton(){
                     tooltip = "Video will auto-resume";
                 }
                 DEBUG && console.log("starting image src:" + imgSrc);
-                $("#YTAutoResumePlayerSwitch").attr("title",tooltip);
-                $("#YTAutoResumePlayerSwitch").attr("aria-label",tooltip);
-                $("#YTAutoResumePlayerSwitch").prop("checked",!blacklisted);
-                $("#YTAutoResumeSwitchIcon").attr("src",imgSrc);
+
+
+                document.querySelector("#YTAutoResumePlayerSwitch").setAttribute("title",tooltip)
+                document.querySelector("#YTAutoResumePlayerSwitch").setAttribute("aria-label",tooltip);
+
+                document.querySelector("#YTAutoResumePlayerSwitch").checked = !blacklisted;
+
+                document.querySelector("#YTAutoResumeSwitchIcon").setAttribute("src",imgSrc);
                 resolve();
             })
         }
@@ -286,8 +301,9 @@ function initSettings(){
 function extractWatchID(link){
     var start = 0;
     var end = 0;
+    let result = ""
     for(var i=0;i<link.length;i++){
-        if(link[i]=='v' && link[i+1] == '='){
+        if(link[i]== 'v' && link[i+1] == '='){
             start = i+2;
         }
         else if(link[i] =='&'){
@@ -298,7 +314,9 @@ function extractWatchID(link){
             end=i+1;
         }
     }
-    var result = link.slice(start,end);
+    result = link.slice(start,end);
+    DEBUG && console.log("start: " + start + ", end: " + end); 
+    DEBUG && console.log("extractWatchID: " + result);
     return result;
 }
 //Promise that tries to get the channel name and title from the site. If they aren't loaded yet,
@@ -311,12 +329,12 @@ function grabTitle(){
             DEBUG && console.log("rejecting grabTitle. link not watchable");
             reject();
         };
-        videoTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0];
+        videoTitle = document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer");
         if(videoTitle==null || videoTitle==undefined || videoTitle.textContent==""){
             DEBUG && console.log("VIDEO TITLE OR CHANNEL NAME IS NULL. TRYING AGAIN IN ONE SECOND.");
             var interval = setInterval(()=>{
-                videoTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0];
-                cN = $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0];
+                videoTitle = document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer");
+                cN = document.querySelector("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name");
                 if(!(videoTitle==null || videoTitle==undefined)){
                     resolve(videoTitle);
                     clearInterval(interval);
@@ -387,16 +405,23 @@ function checkStoredLinks(link){
 }
 //Adds a new video to the database. 
 function addNewVideo(video){
-    return new Promise(function(resolve){
-        DEBUG && console.log("ADDING LINK: " + video.videolink);
-        var currentVideos = [];
-        var newVideo = {videolink:video.videolink, time:-1,
-            duration: video.duration, title:video.title, channel:video.channel}
-        chrome.storage.local.get("videos", async function(data){
-            currentVideos = data;
-            currentVideos.videos.push(newVideo);
-            chrome.storage.local.set(currentVideos,()=>{resolve();});
-        });
+    return new Promise(function (resolve) {
+        //Fix for a weird glitch where the process triggers on a link
+        //that isn't a video link
+        if (extractWatchID(video.videolink).length==0) {
+            resolve();
+        }
+        else {
+            DEBUG && console.log("ADDING LINK: " + video.videolink);
+            var currentVideos = [];
+            var newVideo = {videolink:video.videolink, time:-1,
+                duration: video.duration, title:video.title, channel:video.channel}
+            chrome.storage.local.get("videos", async function(data){
+                currentVideos = data;
+                currentVideos.videos.push(newVideo);
+                chrome.storage.local.set(currentVideos,()=>{resolve();});
+            });
+        }
         
     })
     
@@ -473,8 +498,8 @@ async function mainVideoProcess(){
                 //Handoff condition
                 if(!initialLinkIsVideo && !ytNavLoop){resolve();}
                 if(checkWatchable(window.location.href)){
-                    var channelName = $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent;
-                    var vTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent;
+                    var channelName = document.querySelector("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name").textContent;
+                    var vTitle = document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent;
                     DEBUG && console.log("Video Title: " + vTitle);
                     DEBUG && console.log("Channel Name: " + channelName);
                     DEBUG && console.log("Current URL: " + currentURL);
@@ -522,7 +547,7 @@ async function mainVideoProcess(){
                 DEBUG && console.log("starting from videolink");
                 var lastTitle;
                 try{
-                    lastTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent;
+                    lastTitle = document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent;
                 }catch(err){DEBUG && console.log("caught last title err")}
                 //ontimeupdate function triggers when the time changes for the video.
                 document.querySelector("video").ontimeupdate = async function(){     
@@ -531,21 +556,21 @@ async function mainVideoProcess(){
                     }   
                     currentURL = window.location.href;
                     DEBUG && console.log("ontimeupdate");
-                    var videoTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent;
-                    var channelName = $("yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent;
+                    var videoTitle = document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent;
+                    var channelName = document.querySelector("yt-formatted-string#text.style-scope.ytd-channel-name").textContent;
                     if(!Number.isNaN(document.querySelector("video").duration) && document.querySelector("video").duration!=0 
                         && !(document.querySelector("video").currentTime<0) && channelName!=null && videoTitle!=null
                         ){
                         ct = document.querySelector("video").currentTime;
-                        if($("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent!=lastTitle){
-                            lastTitle = $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent;
+                        if(document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent!=lastTitle){
+                            lastTitle = document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent;
                                 //Detecting a title change means that the loop should reset.
                                 if(initialLinkIsVideo && !ytNavLoop){
                                     DEBUG && console.log("TITLE CHANGE DURING INITIAL LINK LOOP. RESOLVING.");
                                     resolve();
                                 }
                                 else if(!initialLinkIsVideo && !ytNavLoop){
-                                    DEBUG && console.log("TITLE CHANGE DURING TRADEOFF.RESOLVING.");
+                                    DEBUG && console.log("TITLE CHANGE DURING TRADEOFF. RESOLVING.");
                                     resolve();
                                 }
                         }
@@ -566,15 +591,18 @@ async function mainVideoProcess(){
                             }
                             DEBUG && console.log("TC - " + document.querySelector("video").currentTime + "/" 
                             + document.querySelector("video").duration +", " 
-                            + $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent + ", "
-                            + $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent);
-
-                            setTime({videolink: window.location.href, time: document.querySelector("video").currentTime,
-                            duration: document.querySelector("video").duration,
-                            title: $("h1.title.style-scope.ytd-video-primary-info-renderer")[0].textContent,
-                            channel: $("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name")[0].textContent,
-                            complete:markPlayed, doNotResume:false})
-                            .then(()=>{return});
+                            + document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent + ", "
+                            + document.querySelector("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name").textContent);
+                            let link = window.location.href;
+                            if (!checkWatchable(link)) { resolve() }
+                            else {
+                                setTime({videolink: link, time: document.querySelector("video").currentTime,
+                                duration: document.querySelector("video").duration,
+                                title: document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent,
+                                channel: document.querySelector("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name").textContent,
+                                complete:markPlayed, doNotResume:false})
+                                .then(() => { return });
+                            }
                         }
                     }
                     else if(!initialLinkIsVideo && !ytNavLoop){
