@@ -37,6 +37,8 @@
   },
   "dependencies": {
     "@babel/plugin-transform-react-jsx-source": "^7.12.13",
+    "@js-joda/core": "^5.2.0",
+    "js-joda": "^1.11.0",
     "preact": "^10.3.2",
     "preact-render-to-string": "^5.1.4",
     "preact-router": "^3.2.1"

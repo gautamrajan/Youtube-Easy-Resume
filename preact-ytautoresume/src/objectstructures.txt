@@ -8,6 +8,7 @@ Object Structures:
         channel,
         complete:boolean,
         doNotResume:boolean,
+        timestamp: string timestamp,
     }
 
     settings:{
@@ -15,4 +16,5 @@ Object Structures:
         minWatchTime: value in seconds,
         minVideoLength: value in seconds,
         markPlayedTime: value in seconds,
+        deleteAfter: days
     }

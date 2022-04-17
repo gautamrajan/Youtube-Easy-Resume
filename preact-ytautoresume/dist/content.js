@@ -1,5 +1,6 @@
 //content.js
-const DEBUG = false;
+var LocalDate = require("@js-joda/core").LocalDate;
+const DEBUG = true;
 //const $ = document.querySelector
 var initialLinkIsVideo; //Sets whether or not the user's entry point is a video link (not the youtube homepage, etc.)
 var directLoopDone; //Handles hand-off from direct link process and yt-nav process
@@ -119,7 +120,7 @@ function injectPlayerButton(){
             var img_element = document.createElement("img");
             img_element.id = "YTAutoResumeSwitchIcon";
             img_element.src = imgSrc;
-            img_element.style.height = "84%";
+            img_element.style.height = "90%";
             img_element.style.display = "block";
             img_element.style.margin = "auto";
             button.appendChild(img_element);
@@ -275,20 +276,39 @@ function initDB(){
 function initSettings(){
     return new Promise((resolve)=>{
         chrome.storage.local.getBytesInUse("settings",(bytes)=>{
-            if(bytes == undefined || bytes == 0){
+            if (bytes == undefined || bytes == 0) {
                 DEBUG && console.log("Settings BYTES USED ZERO OR undefined");
                 chrome.storage.local.set(
-                {
-                    settings:{
-                        pauseResume:false,
-                        minWatchTime:60,
-                        minVideoLength:480,
-                        markPlayedTime:60,
-                    }
-                },()=>{resolve();})
+                    {
+                        settings: {
+                            pauseResume: false,
+                            minWatchTime: 60,
+                            minVideoLength: 480,
+                            markPlayedTime: 60,
+                            deleteAfter: 30
+                        }
+                    }, () => { resolve(); })
             }
-            else{
+            else {
                 DEBUG && console.log("Settings storage not empty");
+                chrome.storage.local.get("settings", (data) => {
+                    DEBUG && console.log(data.settings);
+                    let current_settings = data.settings;
+                    if (!current_settings.hasOwnProperty('deleteAfter')) {
+                        DEBUG && console.log("here");
+
+                        chrome.storage.local.set(
+                            {
+                                settings: {
+                                    pauseResume: current_settings.pauseResume,
+                                    minVideoLength: current_settings.minVideoLength,
+                                    minWatchTime: current_settings.minWatchtime,
+                                    markPlayedTime: current_settings.markPlayedTime,
+                                    deleteAfter: 30
+                                }
+                            }, () => { resolve(); })
+                    }
+                });
                 resolve();
             }
             
@@ -415,7 +435,7 @@ function addNewVideo(video){
             DEBUG && console.log("ADDING LINK: " + video.videolink);
             var currentVideos = [];
             var newVideo = {videolink:video.videolink, time:-1,
-                duration: video.duration, title:video.title, channel:video.channel}
+                duration: video.duration, title:video.title, channel:video.channel, timestamp: LocalDate.now().toString()}
             chrome.storage.local.get("videos", async function(data){
                 currentVideos = data;
                 currentVideos.videos.push(newVideo);
@@ -474,15 +494,23 @@ function checkBlacklist(link){
                         vidNotFound = false;
                         resolve(true);
                     }
-                    
+                    if (data.videos[i].hasOwnProperty('timestamp')
+                        && userSettings.hasOwnProperty('deleteAfter')&&
+                        daysSince(LocalDate.parse(data.videos[i].timestamp)) > userSettings.deleteAfter) {
+                        resolve(true);
+                    }
                 }
             }
             if(vidNotFound){
-                DEBUG && console.log(link + " VIDEO IS NOT BLACKLISTED");
+                DEBUG && console.log(link + "VIDEO IS NOT BLACKLISTED");
                 resolve(false);
             }
         });
     })
+}
+//time1-> LocalDate
+function daysSince(time1) {
+    return JSJoda.ChronoUnit.DAYS.between(time1, time2);
 }
 //The mainVideoProcess handles keeping track of the current time and storing it in the db.
 //It also handles resuming the video if it exists in the database. 

@@ -40,7 +40,7 @@ export default function ListElement(props) {
             </div>
             </a>
             <style jsx>{`   
-                .unselected {
+                .unselected {   
                     opacity: 0.4;
                 }
                 info {

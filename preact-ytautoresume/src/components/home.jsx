@@ -7,7 +7,7 @@ import SettingsPage from "./settings"
 import Snackbar from 'preact-material-components/Snackbar';
 import generateList from './list';
 import {extractWatchID} from './utilities'
-const DEBUG = false;
+const DEBUG = true;
 export default class Home extends Component{
     constructor(){
         super();
@@ -322,12 +322,31 @@ function initSettingsDB(){
                         pauseResume: false,
                         minVideoLength: 600,
                         minWatchTime: 60,
-                        markPlayedTime:60
+                        markPlayedTime: 60,
+                        deleteAfter:30
                     }
                 },()=>{resolve();})
             }
-            else{
+            else {
                 DEBUG && console.log("BYTES!=0");
+                chrome.storage.local.get("settings", (data) => {
+                    DEBUG && console.log(data.settings);
+                    let current_settings = data.settings;
+                    if (!current_settings.hasOwnProperty('deleteAfter')) {
+                        DEBUG && console.log("here");
+
+                        chrome.storage.local.set(
+                            {
+                                settings:{
+                                    pauseResume: current_settings.pauseResume,
+                                    minVideoLength: current_settings.minVideoLength,
+                                    minWatchTime: current_settings.minWatchTime,
+                                    markPlayedTime: current_settings.markPlayedTime,
+                                    deleteAfter:30
+                                }
+                            },()=>{resolve();})
+                    }
+                })
                resolve(); 
             }
             
