@@ -1,5 +1,4 @@
 import ListElement from "./listelement";
-import LocalDate from '@js-joda/core';
 import { h } from 'preact';
 const DEBUG = false;
 export default function generateList(props) {
@@ -58,10 +57,15 @@ function checkCriteria(video, settings) {
     }
     else if (video.hasOwnProperty('timestamp') &&
         settings.hasOwnProperty('deleteAfter')&&
-        JSJoda.ChronoUnit.DAYS.between(LocalDate.parse(video.timestamp), LocalDate.now())>settings.deleteAfter) {
+        daysSince(video.timestamp)>settings.deleteAfter) {
         return false;
     }
     else {
         return true;
     }
+}
+function daysSince(time1) {
+    let current_time = new Date().getTime();
+    let time_since_ms = current_time - time1;
+    return Math.round(time_since_ms/86400000);
 }

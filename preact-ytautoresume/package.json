@@ -20,6 +20,7 @@
   "devDependencies": {
     "@babel/core": "^7.14.0",
     "@babel/plugin-transform-react-jsx": "^7.13.12",
+    "@babel/plugin-transform-runtime": "^7.17.0",
     "@babel/preset-env": "^7.14.0",
     "babel-loader": "^8.2.2",
     "enzyme": "^3.10.0",
@@ -37,7 +38,9 @@
   },
   "dependencies": {
     "@babel/plugin-transform-react-jsx-source": "^7.12.13",
+    "@babel/runtime": "^7.17.9",
     "@js-joda/core": "^5.2.0",
+    "core-js": "^3.22.0",
     "js-joda": "^1.11.0",
     "preact": "^10.3.2",
     "preact-render-to-string": "^5.1.4",

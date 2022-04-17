@@ -1,5 +1,4 @@
 //content.js
-var LocalDate = require("@js-joda/core").LocalDate;
 const DEBUG = true;
 //const $ = document.querySelector
 var initialLinkIsVideo; //Sets whether or not the user's entry point is a video link (not the youtube homepage, etc.)
@@ -435,7 +434,7 @@ function addNewVideo(video){
             DEBUG && console.log("ADDING LINK: " + video.videolink);
             var currentVideos = [];
             var newVideo = {videolink:video.videolink, time:-1,
-                duration: video.duration, title:video.title, channel:video.channel, timestamp: LocalDate.now().toString()}
+                duration: video.duration, title:video.title, channel:video.channel, timestamp: new Date().getTime()}
             chrome.storage.local.get("videos", async function(data){
                 currentVideos = data;
                 currentVideos.videos.push(newVideo);
@@ -496,7 +495,7 @@ function checkBlacklist(link){
                     }
                     if (data.videos[i].hasOwnProperty('timestamp')
                         && userSettings.hasOwnProperty('deleteAfter')&&
-                        daysSince(LocalDate.parse(data.videos[i].timestamp)) > userSettings.deleteAfter) {
+                        daysSince(data.videos[i].timestamp) > userSettings.deleteAfter) {
                         resolve(true);
                     }
                 }
@@ -508,9 +507,12 @@ function checkBlacklist(link){
         });
     })
 }
-//time1-> LocalDate
+//time1-> unix timestamp number
 function daysSince(time1) {
-    return JSJoda.ChronoUnit.DAYS.between(time1, time2);
+    let current_time = new Date().getTime();
+    let time_since_ms = current_time - time1;
+    return Math.round(time_since_ms/86400000);
+    //return JSJoda.ChronoUnit.DAYS.between(time1, time2);
 }
 //The mainVideoProcess handles keeping track of the current time and storing it in the db.
 //It also handles resuming the video if it exists in the database. 
