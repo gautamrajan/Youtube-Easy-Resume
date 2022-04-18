@@ -396,21 +396,27 @@ function waitYtNav(){
 }
 //Checks if a video exists in the DB with the same link as the one provided.
 function checkStoredLinks(link){
-    var result = -1;
     var resultFound = false;
     return new Promise(function(resolve,reject){
         chrome.storage.local.get("videos",function(data){
             DEBUG && console.log("videos.length at checkStoredLinks: "+ data.videos.length);
             if(data.videos.legnth != 0)
             {
-                for(var i=0;i<data.videos.length;i++){
+                for(let i=0;i<data.videos.length;i++){
                     if(extractWatchID(data.videos[i].videolink) == extractWatchID(link)){
                         DEBUG && console.log("link == videolink; INDEX: " + i);
                         DEBUG && console.log("MATCH FOUND: " + data.videos[i].title + ", " + data.videos[i].channel);
-                        result = i;
-                        resultFound=true;
-                        DEBUG && console.log("resolving checkStoredLinks");
-                        resolve(data.videos[i]);
+                        resultFound = true;
+                        if (data.videos[i].hasOwnProperty('timestamp')
+                            && userSettings.hasOwnProperty('deleteAfter')&&
+                            daysSince(data.videos[i].timestamp) > userSettings.deleteAfter) {
+                            deleteVideo(data.videos[i]);
+                            reject(-1);
+                        }
+                        else {
+                            DEBUG && console.log("resolving checkStoredLinks");
+                            resolve(data.videos[i]);
+                        }
                         break;
                     }
                 }
@@ -493,11 +499,6 @@ function checkBlacklist(link){
                         vidNotFound = false;
                         resolve(true);
                     }
-                    if (data.videos[i].hasOwnProperty('timestamp')
-                        && userSettings.hasOwnProperty('deleteAfter')&&
-                        daysSince(data.videos[i].timestamp) > userSettings.deleteAfter) {
-                        resolve(true);
-                    }
                 }
             }
             if(vidNotFound){
@@ -514,6 +515,22 @@ function daysSince(time1) {
     return Math.round(time_since_ms/86400000);
     //return JSJoda.ChronoUnit.DAYS.between(time1, time2);
 }
+function deleteVideo(video){
+    return new Promise(function(resolve){
+        var currentVideos = [];
+        chrome.storage.local.get("videos", (data)=>{
+            currentVideos = data;
+            for(var i=0;i<currentVideos.videos.length;i++){
+                if(extractWatchID(currentVideos.videos[i].videolink) == extractWatchID(video.videolink)){
+                    currentVideos.videos.splice(i,1);
+                    chrome.storage.local.set(currentVideos,()=>{return;});
+                    break;
+                }
+            }
+            resolve();
+        });  
+    })
+}
 //The mainVideoProcess handles keeping track of the current time and storing it in the db.
 //It also handles resuming the video if it exists in the database. 
 async function mainVideoProcess(){
@@ -528,8 +545,8 @@ async function mainVideoProcess(){
                 //Handoff condition
                 if(!initialLinkIsVideo && !ytNavLoop){resolve();}
                 if(checkWatchable(window.location.href)){
-                    var channelName = document.querySelector("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name").textContent;
-                    var vTitle = document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent;
+                    let channelName = document.querySelector("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name").textContent;
+                    let vTitle = document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent;
                     DEBUG && console.log("Video Title: " + vTitle);
                     DEBUG && console.log("Channel Name: " + channelName);
                     DEBUG && console.log("Current URL: " + currentURL);

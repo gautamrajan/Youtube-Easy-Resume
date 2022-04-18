@@ -51,17 +51,7 @@ export default class Home extends Component{
     }
     componentDidMount() {
         //cleanDB();
-        initSettingsDB()/* .then(
-            ()=>{
-                chrome.storage.local.get("settings",(data)=>{
-                    DEBUG && console.log("in constructor, data.settings.pauseResume = " + data.settings.pauseResume);
-                    this.setState({
-                        paused: data.settings.pauseResume,
-                        dataReady:true,
-                    });
-                });
-            }
-        ) */.then(() => {
+        initSettingsDB().then(cleanDB()).then(() => {
             this.getSettings().then(
                 this.setList
             );
@@ -309,6 +299,20 @@ export default class Home extends Component{
             });
         });
     }
+    cleanDB = ()=>{
+        return new Promise((resolve) => {
+            chrome.storage.local.get("videos", (data) => {
+                let fixedDB = data;
+                for (let i = data.videos.length-1; i >= 0; i--){
+                    if (checkExpired(data.videos[i], this.state.settings)) {
+                        DEBUG && console.log("CLEANING EXPIRED LINK");
+                        fixedDB.videos.splice(i, 1);
+                    }
+                }
+                chrome.storage.local.set(fixedDB,()=>{resolve()});
+            })
+        })
+    }
 }
 function initSettingsDB(){
     return new Promise((resolve)=>{
@@ -352,21 +356,21 @@ function initSettingsDB(){
             
         })
     })
+    
 }
 //TEMP FIX
-function cleanDB() {
-    return new Promise((resolve) => {
-        chrome.storage.local.get("videos", (data) => {
-            let fixedDB = data;
-            for (let i = 0; i < data.videos.length; i++){
-                if (!checkWatchable(data.videos[i].videolink)) {
-                    console.log("FOUND BROKEN LINK");
-                    fixedDB.videos.splice(i, 1);
-                }
-            }
-            chrome.storage.local.set(fixedDB,()=>{resolve()});
-        })
-    })
+
+function checkExpired(video,settings) {
+    if (video.hasOwnProperty('timestamp')){
+        let current_time = new Date().getTime();
+        let time_since_ms = current_time - video.timestamp;
+        let diff = Math.round(time_since_ms/86400000);
+        if (diff > settings.deleteAfter) {
+            return true;
+        }
+    }
+    return false;
+   
 }
 function checkWatchable(link){
     if(link.indexOf("watch?") > -1 && link.indexOf("?t=")>-1){
