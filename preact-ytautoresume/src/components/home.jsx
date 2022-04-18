@@ -7,7 +7,7 @@ import SettingsPage from "./settings"
 import Snackbar from 'preact-material-components/Snackbar';
 import generateList from './list';
 import {extractWatchID} from './utilities'
-const DEBUG = true;
+const DEBUG = false;
 export default class Home extends Component{
     constructor(){
         super();
@@ -51,7 +51,7 @@ export default class Home extends Component{
     }
     componentDidMount() {
         //cleanDB();
-        initSettingsDB().then(cleanDB()).then(() => {
+        initSettingsDB().then(this.cleanDB()).then(() => {
             this.getSettings().then(
                 this.setList
             );

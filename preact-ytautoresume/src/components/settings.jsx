@@ -4,7 +4,7 @@ import 'preact-material-components/Snackbar/style.css';
 import './styles/settings.css';
 import Home from './home';
 import { secondsToMinutes, minutesToSeconds } from './utilities';
-const DEBUG = true;
+const DEBUG = false;
 //TODO: Input validation for settings
 export default class SettingsPage extends Component{
     constructor(){

@@ -1,5 +1,5 @@
 //content.js
-const DEBUG = true;
+const DEBUG = false;
 //const $ = document.querySelector
 var initialLinkIsVideo; //Sets whether or not the user's entry point is a video link (not the youtube homepage, etc.)
 var directLoopDone; //Handles hand-off from direct link process and yt-nav process
