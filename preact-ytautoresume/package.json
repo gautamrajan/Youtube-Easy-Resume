@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "build": "rm -rf dist && webpack && npm run copy:dist",
+    "build":"rm -rf dist && webpack && npm run copy:dist",
     "copy:dist": "cp -r ./src/popup.html manifest.json ./src/content.js ./src/assets/icons  ./src/jquery-3.5.1.min.js ./dist",
     "serve": "sirv build --port 8080 --cors --single",
     "dev": "preact watch",

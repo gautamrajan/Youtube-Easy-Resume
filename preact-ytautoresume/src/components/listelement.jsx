@@ -5,7 +5,7 @@ export default function ListElement(props) {
     //props -> video, edit, selectedVideos, marginRight, maxBarWidth, eClickHandler
     let video = props.video;
     let opts = {};
-    let selectorName = "";
+    let selectorName = ""; 
     if (props.edit) {
         if (props.selectedVideos.some(vid => video.videolink === vid.videolink)) {
             console.log("VIDEO SELECTED!");

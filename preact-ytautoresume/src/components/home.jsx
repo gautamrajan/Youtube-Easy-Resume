@@ -7,7 +7,7 @@ import SettingsPage from "./settings"
 import Snackbar from 'preact-material-components/Snackbar';
 import generateList from './list';
 import {extractWatchID} from './utilities'
-const DEBUG = false;
+const DEBUG = true;
 export default class Home extends Component{
     constructor(){
         super();
@@ -303,8 +303,8 @@ export default class Home extends Component{
         return new Promise((resolve) => {
             chrome.storage.local.get("videos", (data) => {
                 let fixedDB = data;
-                for (let i = data.videos.length-1; i >= 0; i--){
-                    if (checkExpired(data.videos[i], this.state.settings)) {
+                for (let i = fixedDB.videos.length - 1; i >= 0; i--){
+                    if (checkExpired(fixedDB.videos[i], this.state.settings)) {
                         DEBUG && console.log("CLEANING EXPIRED LINK");
                         fixedDB.videos.splice(i, 1);
                     }
@@ -361,7 +361,8 @@ function initSettingsDB(){
 //TEMP FIX
 
 function checkExpired(video,settings) {
-    if (video.hasOwnProperty('timestamp')){
+    if (video.hasOwnProperty('timestamp')) {
+        DEBUG && console.log(video.title + " Timestamp: " + video.timestamp);
         let current_time = new Date().getTime();
         let time_since_ms = current_time - video.timestamp;
         let diff = Math.round(time_since_ms/86400000);
