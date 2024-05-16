@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "YouTube Easy Resume",
-    "version": "0.0.1.2",
+    "version": "0.0.1.3",
     "description": "An extension that provides auto-resume functionality and an easy to access watchlist for YouTube",
     "short_name": "YT Easy Resume",
     "permissions": ["unlimitedStorage", "storage"],

@@ -1,5 +1,6 @@
 //content.js
 const DEBUG = false;
+const CHANNEL_SELECTOR = "yt-formatted-string#text.style-scope.ytd-channel-name";
 //const $ = document.querySelector
 var initialLinkIsVideo; //Sets whether or not the user's entry point is a video link (not the youtube homepage, etc.)
 var directLoopDone; //Handles hand-off from direct link process and yt-nav process
@@ -166,7 +167,7 @@ function onPlayerButtonClick() {
                 videolink: window.location.href, time: document.querySelector("video").currentTime,
                 duration: document.querySelector("video").duration,
                 title: document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent,
-                channel: document.querySelector('yt-formatted-string.style-scope.ytd-channel-name.complex-string > a.yt-simple-endpoint.style-scope.yt-formatted-string').textContent,
+                channel: document.querySelector(CHANNEL_SELECTOR).textContent,
                 complete:markPlayed, doNotResume:true})
                 .then(()=>{
                     DEBUG && console.log("Video blacklisted successfully");
@@ -184,7 +185,7 @@ function onPlayerButtonClick() {
             setTime({videolink: window.location.href, time: document.querySelector("video").currentTime,
                 duration: document.querySelector("video").duration,
                 title: document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent,
-                channel:document.querySelector('yt-formatted-string.style-scope.ytd-channel-name.complex-string > a.yt-simple-endpoint.style-scope.yt-formatted-string').textContent,
+                channel:document.querySelector(CHANNEL_SELECTOR).textContent,
                 complete:markPlayed, doNotResume:false})
                 .then(()=>{
                     DEBUG && console.log("Video removecd from blacklist successfully");
@@ -353,8 +354,7 @@ function grabTitle(){
             DEBUG && console.log("VIDEO TITLE OR CHANNEL NAME IS NULL. TRYING AGAIN IN ONE SECOND.");
             var interval = setInterval(()=>{
                 videoTitle = document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer");
-                //cN = document.querySelector("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name");
-                cN = document.querySelector('yt-formatted-string.style-scope.ytd-channel-name.complex-string > a.yt-simple-endpoint.style-scope.yt-formatted-string');
+                cN = document.querySelector(CHANNEL_SELECTOR);
                 if (!(videoTitle == null || videoTitle == undefined)) {
                     resolve(videoTitle);
                     clearInterval(interval);
@@ -554,8 +554,7 @@ async function mainVideoProcess(){
                 //Handoff condition
                 if(!initialLinkIsVideo && !ytNavLoop){resolve();}
                 if(checkWatchable(window.location.href)){
-                    //let channelName = document.querySelector("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name").textContent;
-                    let channelName =  document.querySelector('yt-formatted-string.style-scope.ytd-channel-name.complex-string > a.yt-simple-endpoint.style-scope.yt-formatted-string').textContent;
+                    let channelName =  document.querySelector(CHANNEL_SELECTOR).textContent;
 
                     let vTitle = document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent;
                     DEBUG && console.log("Video Title: " + vTitle);
@@ -615,8 +614,7 @@ async function mainVideoProcess(){
                     currentURL = window.location.href;
                     DEBUG && console.log("ontimeupdate");
                     var videoTitle = document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent;
-                    //var channelName = document.querySelector("yt-formatted-string#text.style-scope.ytd-channel-name").textContent;
-                    var channelName = document.querySelector('yt-formatted-string.style-scope.ytd-channel-name.complex-string > a.yt-simple-endpoint.style-scope.yt-formatted-string').textContent;
+                    var channelName = document.querySelector(CHANNEL_SELECTOR).textContent;
 
                     if(!Number.isNaN(document.querySelector("video").duration) && document.querySelector("video").duration!=0 
                         && !(document.querySelector("video").currentTime<0) && channelName!=null && videoTitle!=null
@@ -652,8 +650,7 @@ async function mainVideoProcess(){
                             DEBUG && console.log("TC - " + document.querySelector("video").currentTime + "/" 
                             + document.querySelector("video").duration +", " 
                             + document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent + ", "
-                            //+ document.querySelector("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name").textContent);
-                            + document.querySelector('yt-formatted-string.style-scope.ytd-channel-name.complex-string > a.yt-simple-endpoint.style-scope.yt-formatted-string').textContent
+                            + document.querySelector(CHANNEL_SELECTOR).textContent
                             );
 
                             let link = window.location.href;
@@ -662,7 +659,7 @@ async function mainVideoProcess(){
                                 setTime({videolink: link, time: document.querySelector("video").currentTime,
                                 duration: document.querySelector("video").duration,
                                 title: document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent,
-                                channel: document.querySelector('yt-formatted-string.style-scope.ytd-channel-name.complex-string > a.yt-simple-endpoint.style-scope.yt-formatted-string').textContent,
+                                channel: document.querySelector(CHANNEL_SELECTOR).textContent,
                                 complete:markPlayed, doNotResume:false})
                                 .then(() => { return });
                             }
