@@ -7,7 +7,7 @@ import SettingsPage from "./settings"
 import Snackbar from 'preact-material-components/Snackbar';
 import generateList from './list';
 import {extractWatchID} from './utilities'
-const DEBUG = false;
+const DEBUG = true;
 export default class Home extends Component{
     constructor(){
         super();
@@ -51,17 +51,7 @@ export default class Home extends Component{
     }
     componentDidMount() {
         //cleanDB();
-        initSettingsDB()/* .then(
-            ()=>{
-                chrome.storage.local.get("settings",(data)=>{
-                    DEBUG && console.log("in constructor, data.settings.pauseResume = " + data.settings.pauseResume);
-                    this.setState({
-                        paused: data.settings.pauseResume,
-                        dataReady:true,
-                    });
-                });
-            }
-        ) */.then(() => {
+        initSettingsDB().then(this.cleanDB()).then(() => {
             this.getSettings().then(
                 this.setList
             );
@@ -309,6 +299,20 @@ export default class Home extends Component{
             });
         });
     }
+    cleanDB = ()=>{
+        return new Promise((resolve) => {
+            chrome.storage.local.get("videos", (data) => {
+                let fixedDB = data;
+                for (let i = fixedDB.videos.length - 1; i >= 0; i--){
+                    if (checkExpired(fixedDB.videos[i], this.state.settings)) {
+                        DEBUG && console.log("CLEANING EXPIRED LINK");
+                        fixedDB.videos.splice(i, 1);
+                    }
+                }
+                chrome.storage.local.set(fixedDB,()=>{resolve()});
+            })
+        })
+    }
 }
 function initSettingsDB(){
     return new Promise((resolve)=>{
@@ -322,32 +326,52 @@ function initSettingsDB(){
                         pauseResume: false,
                         minVideoLength: 600,
                         minWatchTime: 60,
-                        markPlayedTime:60
+                        markPlayedTime: 60,
+                        deleteAfter:30
                     }
                 },()=>{resolve();})
             }
-            else{
+            else {
                 DEBUG && console.log("BYTES!=0");
+                chrome.storage.local.get("settings", (data) => {
+                    DEBUG && console.log(data.settings);
+                    let current_settings = data.settings;
+                    if (!current_settings.hasOwnProperty('deleteAfter')) {
+                        DEBUG && console.log("here");
+
+                        chrome.storage.local.set(
+                            {
+                                settings:{
+                                    pauseResume: current_settings.pauseResume,
+                                    minVideoLength: current_settings.minVideoLength,
+                                    minWatchTime: current_settings.minWatchTime,
+                                    markPlayedTime: current_settings.markPlayedTime,
+                                    deleteAfter:30
+                                }
+                            },()=>{resolve();})
+                    }
+                })
                resolve(); 
             }
             
         })
     })
+    
 }
 //TEMP FIX
-function cleanDB() {
-    return new Promise((resolve) => {
-        chrome.storage.local.get("videos", (data) => {
-            let fixedDB = data;
-            for (let i = 0; i < data.videos.length; i++){
-                if (!checkWatchable(data.videos[i].videolink)) {
-                    console.log("FOUND BROKEN LINK");
-                    fixedDB.videos.splice(i, 1);
-                }
-            }
-            chrome.storage.local.set(fixedDB,()=>{resolve()});
-        })
-    })
+
+function checkExpired(video,settings) {
+    if (video.hasOwnProperty('timestamp')) {
+        DEBUG && console.log(video.title + " Timestamp: " + video.timestamp);
+        let current_time = new Date().getTime();
+        let time_since_ms = current_time - video.timestamp;
+        let diff = Math.round(time_since_ms/86400000);
+        if (diff > settings.deleteAfter) {
+            return true;
+        }
+    }
+    return false;
+   
 }
 function checkWatchable(link){
     if(link.indexOf("watch?") > -1 && link.indexOf("?t=")>-1){

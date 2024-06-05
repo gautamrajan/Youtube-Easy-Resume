@@ -1,5 +1,6 @@
 //content.js
 const DEBUG = false;
+const CHANNEL_SELECTOR = "yt-formatted-string#text.style-scope.ytd-channel-name";
 //const $ = document.querySelector
 var initialLinkIsVideo; //Sets whether or not the user's entry point is a video link (not the youtube homepage, etc.)
 var directLoopDone; //Handles hand-off from direct link process and yt-nav process
@@ -119,7 +120,7 @@ function injectPlayerButton(){
             var img_element = document.createElement("img");
             img_element.id = "YTAutoResumeSwitchIcon";
             img_element.src = imgSrc;
-            img_element.style.height = "84%";
+            img_element.style.height = "90%";
             img_element.style.display = "block";
             img_element.style.margin = "auto";
             button.appendChild(img_element);
@@ -166,7 +167,7 @@ function onPlayerButtonClick() {
                 videolink: window.location.href, time: document.querySelector("video").currentTime,
                 duration: document.querySelector("video").duration,
                 title: document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent,
-                channel: document.querySelector("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name").textContent,
+                channel: document.querySelector(CHANNEL_SELECTOR).textContent,
                 complete:markPlayed, doNotResume:true})
                 .then(()=>{
                     DEBUG && console.log("Video blacklisted successfully");
@@ -184,7 +185,7 @@ function onPlayerButtonClick() {
             setTime({videolink: window.location.href, time: document.querySelector("video").currentTime,
                 duration: document.querySelector("video").duration,
                 title: document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent,
-                channel: document.querySelector("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name").textContent,
+                channel:document.querySelector(CHANNEL_SELECTOR).textContent,
                 complete:markPlayed, doNotResume:false})
                 .then(()=>{
                     DEBUG && console.log("Video removecd from blacklist successfully");
@@ -275,20 +276,39 @@ function initDB(){
 function initSettings(){
     return new Promise((resolve)=>{
         chrome.storage.local.getBytesInUse("settings",(bytes)=>{
-            if(bytes == undefined || bytes == 0){
+            if (bytes == undefined || bytes == 0) {
                 DEBUG && console.log("Settings BYTES USED ZERO OR undefined");
                 chrome.storage.local.set(
-                {
-                    settings:{
-                        pauseResume:false,
-                        minWatchTime:60,
-                        minVideoLength:480,
-                        markPlayedTime:60,
-                    }
-                },()=>{resolve();})
+                    {
+                        settings: {
+                            pauseResume: false,
+                            minWatchTime: 60,
+                            minVideoLength: 480,
+                            markPlayedTime: 60,
+                            deleteAfter: 30
+                        }
+                    }, () => { resolve(); })
             }
-            else{
+            else {
                 DEBUG && console.log("Settings storage not empty");
+                chrome.storage.local.get("settings", (data) => {
+                    DEBUG && console.log(data.settings);
+                    let current_settings = data.settings;
+                    if (!current_settings.hasOwnProperty('deleteAfter')) {
+                        DEBUG && console.log("here");
+
+                        chrome.storage.local.set(
+                            {
+                                settings: {
+                                    pauseResume: current_settings.pauseResume,
+                                    minVideoLength: current_settings.minVideoLength,
+                                    minWatchTime: current_settings.minWatchtime,
+                                    markPlayedTime: current_settings.markPlayedTime,
+                                    deleteAfter: 30
+                                }
+                            }, () => { resolve(); })
+                    }
+                });
                 resolve();
             }
             
@@ -334,8 +354,8 @@ function grabTitle(){
             DEBUG && console.log("VIDEO TITLE OR CHANNEL NAME IS NULL. TRYING AGAIN IN ONE SECOND.");
             var interval = setInterval(()=>{
                 videoTitle = document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer");
-                cN = document.querySelector("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name");
-                if(!(videoTitle==null || videoTitle==undefined)){
+                cN = document.querySelector(CHANNEL_SELECTOR);
+                if (!(videoTitle == null || videoTitle == undefined)) {
                     resolve(videoTitle);
                     clearInterval(interval);
                 }
@@ -377,21 +397,28 @@ function waitYtNav(){
 }
 //Checks if a video exists in the DB with the same link as the one provided.
 function checkStoredLinks(link){
-    var result = -1;
     var resultFound = false;
     return new Promise(function(resolve,reject){
         chrome.storage.local.get("videos",function(data){
             DEBUG && console.log("videos.length at checkStoredLinks: "+ data.videos.length);
             if(data.videos.legnth != 0)
             {
-                for(var i=0;i<data.videos.length;i++){
+                for(let i=0;i<data.videos.length;i++){
                     if(extractWatchID(data.videos[i].videolink) == extractWatchID(link)){
                         DEBUG && console.log("link == videolink; INDEX: " + i);
                         DEBUG && console.log("MATCH FOUND: " + data.videos[i].title + ", " + data.videos[i].channel);
-                        result = i;
-                        resultFound=true;
-                        DEBUG && console.log("resolving checkStoredLinks");
-                        resolve(data.videos[i]);
+                        resultFound = true;
+                        if (data.videos[i].hasOwnProperty('timestamp')
+                            && userSettings.hasOwnProperty('deleteAfter')&&
+                            daysSince(data.videos[i].timestamp) > userSettings.deleteAfter) {
+                            DEBUG && console.log("DELETING EXPIRED VIDEO");
+                            deleteVideo(data.videos[i]);
+                            reject(-1);
+                        }
+                        else {
+                            DEBUG && console.log("resolving checkStoredLinks");
+                            resolve(data.videos[i]);
+                        }
                         break;
                     }
                 }
@@ -414,8 +441,10 @@ function addNewVideo(video){
         else {
             DEBUG && console.log("ADDING LINK: " + video.videolink);
             var currentVideos = [];
+            let newDate = new Date();
+            let vid_timestamp = newDate.getTime();
             var newVideo = {videolink:video.videolink, time:-1,
-                duration: video.duration, title:video.title, channel:video.channel}
+                duration: video.duration, title:video.title, channel:video.channel, timestamp: vid_timestamp}
             chrome.storage.local.get("videos", async function(data){
                 currentVideos = data;
                 currentVideos.videos.push(newVideo);
@@ -427,7 +456,11 @@ function addNewVideo(video){
     
 }
 //Attempts to set the time on a video, if the video doesn't exist then it is added.
-function setTime(video){
+function setTime(video) {
+    let vidWithTimestamp = {};
+    vidWithTimestamp = Object.assign(vidWithTimestamp, video);
+    let newTimestamp = new Date();
+    vidWithTimestamp.timestamp = newTimestamp.getTime();
     return new Promise(function(resolve){
         var currentVideos = [];
         var videoFound = false;
@@ -436,7 +469,7 @@ function setTime(video){
             for(var i=0;i<currentVideos.videos.length;i++){
                 if(extractWatchID(currentVideos.videos[i].videolink) == extractWatchID(video.videolink)){
                     currentVideos.videos.splice(i,1);
-                    currentVideos.videos.push(video);          
+                    currentVideos.videos.push(vidWithTimestamp);          
                     chrome.storage.local.set(currentVideos,()=>{return;});
                     videoFound = true;
                     break;
@@ -474,14 +507,37 @@ function checkBlacklist(link){
                         vidNotFound = false;
                         resolve(true);
                     }
-                    
                 }
             }
             if(vidNotFound){
-                DEBUG && console.log(link + " VIDEO IS NOT BLACKLISTED");
+                DEBUG && console.log(link + "VIDEO IS NOT BLACKLISTED");
                 resolve(false);
             }
         });
+    })
+}
+//time1-> unix timestamp number
+function daysSince(time1) {
+    let newDate = new Date();
+    let current_time = newDate.getTime();
+    let time_since_ms = current_time - time1;
+    return Math.round(time_since_ms/86400000);
+    //return JSJoda.ChronoUnit.DAYS.between(time1, time2);
+}
+function deleteVideo(video){
+    return new Promise(function(resolve){
+        var currentVideos = [];
+        chrome.storage.local.get("videos", (data)=>{
+            currentVideos = data;
+            for(var i=0;i<currentVideos.videos.length;i++){
+                if(extractWatchID(currentVideos.videos[i].videolink) == extractWatchID(video.videolink)){
+                    currentVideos.videos.splice(i,1);
+                    chrome.storage.local.set(currentVideos,()=>{return;});
+                    break;
+                }
+            }
+            resolve();
+        });  
     })
 }
 //The mainVideoProcess handles keeping track of the current time and storing it in the db.
@@ -498,8 +554,9 @@ async function mainVideoProcess(){
                 //Handoff condition
                 if(!initialLinkIsVideo && !ytNavLoop){resolve();}
                 if(checkWatchable(window.location.href)){
-                    var channelName = document.querySelector("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name").textContent;
-                    var vTitle = document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent;
+                    let channelName =  document.querySelector(CHANNEL_SELECTOR).textContent;
+
+                    let vTitle = document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent;
                     DEBUG && console.log("Video Title: " + vTitle);
                     DEBUG && console.log("Channel Name: " + channelName);
                     DEBUG && console.log("Current URL: " + currentURL);
@@ -557,7 +614,8 @@ async function mainVideoProcess(){
                     currentURL = window.location.href;
                     DEBUG && console.log("ontimeupdate");
                     var videoTitle = document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent;
-                    var channelName = document.querySelector("yt-formatted-string#text.style-scope.ytd-channel-name").textContent;
+                    var channelName = document.querySelector(CHANNEL_SELECTOR).textContent;
+
                     if(!Number.isNaN(document.querySelector("video").duration) && document.querySelector("video").duration!=0 
                         && !(document.querySelector("video").currentTime<0) && channelName!=null && videoTitle!=null
                         ){
@@ -592,14 +650,16 @@ async function mainVideoProcess(){
                             DEBUG && console.log("TC - " + document.querySelector("video").currentTime + "/" 
                             + document.querySelector("video").duration +", " 
                             + document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent + ", "
-                            + document.querySelector("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name").textContent);
+                            + document.querySelector(CHANNEL_SELECTOR).textContent
+                            );
+
                             let link = window.location.href;
                             if (!checkWatchable(link)) { resolve() }
                             else {
                                 setTime({videolink: link, time: document.querySelector("video").currentTime,
                                 duration: document.querySelector("video").duration,
                                 title: document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent,
-                                channel: document.querySelector("ytd-video-owner-renderer.style-scope.ytd-video-secondary-info-renderer yt-formatted-string#text.style-scope.ytd-channel-name").textContent,
+                                channel: document.querySelector(CHANNEL_SELECTOR).textContent,
                                 complete:markPlayed, doNotResume:false})
                                 .then(() => { return });
                             }

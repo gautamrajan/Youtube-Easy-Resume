@@ -1,7 +1,7 @@
 module.exports = {
     mode: 'production',
     entry: {
-      popup: './src/popup.jsx'
+      popup: './src/popup.jsx',
     },
     output: {
       filename: '[name].js',
@@ -29,6 +29,7 @@ module.exports = {
             'css-loader'
           ],
         },
+
       ]
     },
     resolve: {

@@ -4,6 +4,7 @@ import 'preact-material-components/Snackbar/style.css';
 import './styles/settings.css';
 import Home from './home';
 import { secondsToMinutes, minutesToSeconds } from './utilities';
+const DEBUG = false;
 //TODO: Input validation for settings
 export default class SettingsPage extends Component{
     constructor(){
@@ -22,11 +23,12 @@ export default class SettingsPage extends Component{
         var modifiedSettings = {};
         modifiedSettings = Object.assign(modifiedSettings, this.state.newSettings);
         if(minutes){
-            console.log("minutes case, setting name: " + setting);
+            DEBUG && console.log("minutes case, setting name: " + setting);
             console.log("minutes case, value: " + e.target.value);
             modifiedSettings[setting] = minutesToSeconds(e.target.value);
         }
-        else{
+        else {
+            DEBUG && console.log(setting + ": " + e.target.value);
             modifiedSettings[setting] = e.target.value;
         }
 
@@ -73,6 +75,7 @@ export default class SettingsPage extends Component{
     componentDidMount(){
         chrome.storage.local.get("settings",(data)=>{
             if(data.settings != undefined){
+                
                 this.setState({settings: data.settings, newSettings:data.settings, dataReady:true});
             }
             else{
@@ -81,7 +84,8 @@ export default class SettingsPage extends Component{
                         pauseResume:false,
                         minWatchTime:60,
                         minVideoLength:480,
-                        markPlayedTime:60,
+                        markPlayedTime: 60,
+                        deleteAfter:30
                     }
                 },()=>{this.setState({settings: data.settings, newSettings:data.settings, dataReady:true});});
             }
@@ -99,6 +103,7 @@ export default class SettingsPage extends Component{
         var initMVL = this.state.newSettings.minVideoLength;
         var initMWT = this.state.newSettings.minWatchTime;
         var initMPT = this.state.newSettings.markPlayedTime;
+        var initDeleteAfter = this.state.newSettings.deleteAfter;
         let settingsChanged = this.state.settingsChanged;
         if(goBack){
             return(
@@ -139,16 +144,24 @@ export default class SettingsPage extends Component{
                                     <input type="number" className="NumInput" name="ConsiderCompleteInput" id="ConsiderCompleteInput"
                                     value={secondsToMinutes(initMPT)}
                                     onInput={(event)=>{this.settingsChangedHandler(event,"markPlayedTime",true)}}/> 
-                                    <select className="TimeUnitSelector" name="ConsiderCompleteUnits" id="ConsiderCompleteUnits">
+                                    {/* <select className="TimeUnitSelector" name="ConsiderCompleteUnits" id="ConsiderCompleteUnits">
                                         <option value="minutes">minute(s)</option>
-                                        {/* <option value="seconds">second(s)</option> */}
-                                    </select>
-                                    away from the end.
+                                    
+                                    </select> */}
+                                    minute(s) away from the end.
+                                </div>
+                            </div>
+                            <div className="Setting DeleteAfter">
+                                <label for="DeleteAfterInput" className="SettingLabel">Automatically remove videos after: </label>
+                                <div className="DeleteAfter InputContainer">
+                                    <input type="number" className="NumInput" name="DeleteAfterInput" id="DeleteAfter"
+                                    value={initDeleteAfter}
+                                    onInput={(event)=>{this.settingsChangedHandler(event,"deleteAfter",false)}}/> day(s)
                                 </div>
                             </div>
                             <div className="MadeBy Message">
                                 Made with ❤️ at
-                                <a href="https://www.uscannenbergmedia.com/" target="_blank">Annenberg Media</a>
+                                <a href="https://www.youtube.com/c/AnnenbergMedia" target="_blank">Annenberg Media</a>
                                 <style jsx>{`
                                     .Message {
                                         color: white;
