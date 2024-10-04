@@ -1,5 +1,7 @@
 # preact-ytautoresume
 
+## Requires node v.16.13.0 to build
+
 ## CLI Commands
 
 ``` bash

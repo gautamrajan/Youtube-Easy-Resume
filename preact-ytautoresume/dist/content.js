@@ -1,7 +1,7 @@
 // content.js
 
 const DEBUG = false;
-const CHANNEL_SELECTOR = "yt-formatted-string#text.style-scope.ytd-channel-name";
+const CHANNEL_SELECTOR = "ytd-video-owner-renderer ytd-channel-name a";
 const PLAYER_ICON_ACTIVE = chrome.runtime.getURL("icons/playericon.svg");
 const PLAYER_ICON_INACTIVE = chrome.runtime.getURL("icons/playericon_inactive.svg");
 
@@ -312,6 +312,7 @@ class YouTubeAutoResume {
                     doNotResume: false
                 });
             }
+            DEBUG && console.log(document.querySelector(CHANNEL_SELECTOR).textContent);
         };
     }
 }
