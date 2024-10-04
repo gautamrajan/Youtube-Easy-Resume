@@ -1,6 +1,7 @@
 import ListElement from "./listelement";
 import { h } from 'preact';
 const DEBUG = false;
+
 export default function generateList(props) {
     //props -> edit, selectedVideos, marginRight, maxBarWidth, eClickHandler, settings
     var elementList = [];
@@ -24,7 +25,9 @@ export default function generateList(props) {
                     if (checkCriteria(data.videos[i], props.settings)) {
                         elementList.push(
                             <ListElement
+                                key={i}
                                 video={data.videos[i]}
+                                index={i}
                                 edit={props.edit}
                                 selectedVideos={props.selectedVideos}
                                 marginRight={marginRight}

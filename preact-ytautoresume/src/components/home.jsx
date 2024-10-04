@@ -20,6 +20,7 @@ export default class Home extends Component{
             listElements: [],
             selectedVideos:[],
             settings: {},
+            lastClickedIndex: -1,
         }
         this.maxBarWidth = 226;
         this.marginRight = 0;
@@ -226,7 +227,7 @@ export default class Home extends Component{
             marginRight: this.marginRight,
             maxBarWidth: this.maxBarWidth,
             settings: this.state.settings,
-            eClickHandler: this.eClickHandler.bind(this)
+            eClickHandler: (video, index, event) => this.editVideoClick(video, index, event)
         }
         generateList(props).then((elementList) => {
         //this.generateList().then((elementList) => {
@@ -245,37 +246,47 @@ export default class Home extends Component{
         )
     }
     eClickHandler = (video)=>{this.editVideoClick(video)}
-    editVideoClick = (video) => {
-        let newSelectedVideos = this.state.selectedVideos;
-        let unclick = false;
+    editVideoClick = (video, index, event) => {
         if (this.state.edit) {
-            for (let i = 0; i < this.state.selectedVideos.length; i++){
-                if (extractWatchID(this.state.selectedVideos[i].videolink) == extractWatchID(video.videolink)) {
-                    unclick = true;
-                    newSelectedVideos.splice(newSelectedVideos.indexOf(video), 1);
-                    this.setState({
-                        selectedVideos: newSelectedVideos
-                    }, () => {
-                        this.setList();
-                        DEBUG && console.log(`UN-selected video: ${video.videolink}`);
-                    });
+            let newSelectedVideos = [...this.state.selectedVideos];
+            const videoIndex = newSelectedVideos.findIndex(v => extractWatchID(v.videolink) === extractWatchID(video.videolink));
+
+            if (event.shiftKey && this.state.lastClickedIndex !== -1) {
+                this.handleShiftClick(index, newSelectedVideos);
+            } else {
+                if (videoIndex === -1) {
+                    newSelectedVideos.push(video);
+                } else {
+                    newSelectedVideos.splice(videoIndex, 1);
                 }
             }
-            if(!unclick) {
-                newSelectedVideos.push(video);
-                this.setState({
-                    selectedVideos: newSelectedVideos
-                }, () => {
-                    this.setList();
-                    DEBUG && console.log(`selected video: ${video.videolink}`);
-                });
-            }
-        }
-        else {
+
+            this.setState({
+                selectedVideos: newSelectedVideos,
+                lastClickedIndex: index
+            }, () => {
+                this.setList();
+                DEBUG && console.log(`${videoIndex === -1 ? 'Selected' : 'Unselected'} video: ${video.videolink}`);
+            });
+        } else {
             DEBUG && console.log("false alarm");
         }
     }
+    handleShiftClick = (currentIndex, selectedVideos) => {
+        const start = Math.min(this.state.lastClickedIndex, currentIndex);
+        const end = Math.max(this.state.lastClickedIndex, currentIndex);
 
+        chrome.storage.local.get("videos", (data) => {
+            const videos = data.videos;
+            for (let i = start; i <= end; i++) {
+                const video = videos[i];
+                const videoIndex = selectedVideos.findIndex(v => extractWatchID(v.videolink) === extractWatchID(video.videolink));
+                if (videoIndex === -1) {
+                    selectedVideos.push(video);
+                }
+            }
+        });
+    }
     getSettings = () => {
         return new Promise((resolve) => {
             chrome.storage.local.get("settings", (data) => {
