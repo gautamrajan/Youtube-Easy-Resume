@@ -21,8 +21,6 @@ div.header-bar{
 }
 div.header-bar button{
     font-size:20px;
-    margin-bottom:5px;
-    border-radius: 10px;
     border: none;
     color: #ffffff;
     background-color: transparent;

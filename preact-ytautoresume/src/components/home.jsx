@@ -6,7 +6,8 @@ import './styles/mainlist.css';
 import SettingsPage from "./settings"
 import Snackbar from 'preact-material-components/Snackbar';
 import generateList from './list';
-import {extractWatchID} from './utilities'
+import { extractWatchID } from './utilities'
+import SearchBar from './SearchBar';
 const DEBUG = true;
 export default class Home extends Component{
     constructor(){
@@ -21,10 +22,19 @@ export default class Home extends Component{
             selectedVideos:[],
             settings: {},
             lastClickedIndex: -1,
+            isSearching: false,
+            searchQuery: ''
         }
         this.maxBarWidth = 226;
         this.marginRight = 0;
         this.titleWidth = 188;
+    }
+    toggleSearch = () => {
+        this.setState(prevState => ({ isSearching: !prevState.isSearching, searchQuery: '' }));
+    }
+
+    handleSearchChange = (query) => {
+        this.setState({ searchQuery: query }, this.setList);
     }
     moveToSettingsPage = ()=>{
         this.setState({
@@ -123,13 +133,31 @@ export default class Home extends Component{
         let paused = this.state.paused;
         var pauseButtonText = "";
         //DEBUG && console.log(paused);
-        if(paused){pauseButtonText = "Unpause"}else{pauseButtonText = "Pause"};
+        
+        //Search State
+        if (this.state.isSearching) {
+            return (
+                <SearchBar 
+                    onBack={this.toggleSearch}
+                    onSearchChange={this.handleSearchChange}
+                    value={this.state.searchQuery}
+                />
+            );
+        }
+        if (paused) { pauseButtonText = "Unpause" } else { pauseButtonText = "Pause" };
         if (!this.state.edit) {
             return(
                 <div className="button-container">
-                    <button type="button" id="EditButton" onClick={this.setEdit}>
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
+                    <div className="button-wrapper">
+                        <button type="button" id="SearchButton" className="top-bar-button" onClick={this.toggleSearch}>
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>  
+                    <div className="button-wrapper">
+                        <button type="button" id="EditButton" className="top-bar-button" onClick={this.setEdit}>
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
                     <div className={`AR SwitchContainer ${this.state.paused ? "Off" : "On"}`}>
                         <label for="AutoResumeToggle">
                             <span className={`SwitchLabel ${this.state.paused ? "Off" : "On"}`} id="AutoRedSwitchLabel">{this.state.paused ? "OFF" : "ON"}</span>
@@ -138,10 +166,24 @@ export default class Home extends Component{
                         <Switch name="AutoResumeToggle" checked={!paused} ref={pauseSwitch=>{this.switch=pauseSwitch;}}
                                 onChange={(event)=>{this.handlePause(event)}}/>
                     </div>
-                    <button type="button" id="SettingsButton" onClick={this.moveToSettingsPage}>
+                    <button type="button" id="SettingsButton" className="top-bar-button" onClick={this.moveToSettingsPage}>
                         <i class="fas fa-cog"></i>
                     </button>
                     <style jsx>{`
+                        .button-wrapper {
+                            display: flex;
+                            padding-bottom:2px;
+                            height:30px;
+                            width:30px;
+                        }
+                        .top-bar-button {
+                            width: 100%;
+                            height: 100%;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            border-radius:100%;
+                        }
                         .SwitchLabel{
                             font-weight:600;
                         }
@@ -189,7 +231,7 @@ export default class Home extends Component{
                 return(
                     <div className="HomeContainer">
                         <div className="header-bar">
-                            <h1>Currently watching</h1>
+                            {!this.state.isSearching && <h1>Currently watching</h1>}
                             {buttonBar}
                         </div>
                         <div className="main-list" id="main-list">
@@ -227,6 +269,7 @@ export default class Home extends Component{
             marginRight: this.marginRight,
             maxBarWidth: this.maxBarWidth,
             settings: this.state.settings,
+            searchQuery: this.state.searchQuery,
             eClickHandler: (video, index, event) => this.editVideoClick(video, index, event)
         }
         generateList(props).then((elementList) => {
