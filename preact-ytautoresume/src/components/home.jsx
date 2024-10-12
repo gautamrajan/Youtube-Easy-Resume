@@ -7,24 +7,28 @@ import SettingsPage from "./settings"
 import Snackbar from 'preact-material-components/Snackbar';
 import generateList from './list';
 import {extractWatchID} from './utilities'
+import { openDB, getVideos, setVideo, deleteVideo, getSettings, setSettings, migrateData } from '../indexedDB';
+
 const DEBUG = true;
-export default class Home extends Component{
-    constructor(){
+
+export default class Home extends Component {
+    constructor() {
         super();
         this.state = {
-            dataReady:false,
+            dataReady: false,
             settingsPage: false,
             paused: false,
             edit: false,
             listReady: false,
             listElements: [],
-            selectedVideos:[],
+            selectedVideos: [],
             settings: {},
             lastClickedIndex: -1,
         }
         this.maxBarWidth = 226;
         this.marginRight = 0;
         this.titleWidth = 188;
+        this.db = null;
     }
     moveToSettingsPage = ()=>{
         this.setState({
@@ -51,70 +55,65 @@ export default class Home extends Component{
         }
     }
     componentDidMount() {
-        //cleanDB();
-        initSettingsDB().then(this.cleanDB()).then(() => {
-            this.getSettings().then(
-                this.setList
-            );
-        })
+        this.initializeDB();
     }
-    handlePause = (event)=>{
-        var newState;
-        {this.state.paused ? newState=false:newState=true}
-        chrome.storage.local.get("settings",(data)=>{
-            var tempSettings = data.settings;
-            tempSettings.pauseResume = newState;
-            chrome.storage.local.set({
-                settings:tempSettings
-            },()=>{
-                this.setState({paused:newState});
-                DEBUG && console.log("newState")
-            })
-        })
-    }
-    deleteSelected = () => {
-        let delete_counter = this.state.selectedVideos.length;
-        if (this.state.selectedVideos.length > 0) {
-            chrome.storage.local.get("videos", (data) => {
-                let newList = data;
-                DEBUG && console.log("HERE");
-                for (let x = 0; x < this.state.selectedVideos.length;x++) {
-                    DEBUG && console.log("LOOKING FOR " + this.state.selectedVideos[x].videolink);
-                    for (let i = 0; i < newList.videos.length; i++){
-                        if (newList.videos[i].videolink == this.state.selectedVideos[x].videolink) {
-                            DEBUG && console.log("FOUND ELEMENT TO DELETE: " + this.state.selectedVideos[x].videolink);
-                            newList.videos.splice(i, 1);
-                        }
-                    }
-                }
-                DEBUG && console.log("STATE OF DB AFTER DELETIONS: ");
-                DEBUG && console.log(newList.videos);
-                chrome.storage.local.set(newList, () => {
 
-                    this.setState({
-                        edit: !this.state.edit,
-                        listReady:false,
-                        selectedVideos: []
-                    }, () => {
-                        this.setList();
-                        this.bar.MDComponent.show({
-                            message:`${delete_counter} ${delete_counter > 1 ? "videos":"video"} removed`
-                        })
-                        DEBUG && console.log("Edit mode: " + (this.state.edit ? "on" : "off"));
-                    });
-                })
-            })
+    async initializeDB() {
+        try {
+            this.db = await openDB();
+            await migrateData(); // Migrate data from Chrome storage to IndexedDB
+            await this.cleanDB();
+            await this.getSettings();
+            this.setList();
+        } catch (error) {
+            console.error('Error initializing DB:', error);
         }
-        else {
+    }
+
+    handlePause = async (event) => {
+        const newState = !this.state.paused;
+        try {
+            const settings = await getSettings(this.db);
+            settings.pauseResume = newState;
+            await setSettings(this.db, settings);
+            this.setState({ paused: newState, settings });
+            DEBUG && console.log("Pause state updated");
+        } catch (error) {
+            console.error('Error updating pause state:', error);
+        }
+    }
+
+    deleteSelected = async () => {
+        const deleteCounter = this.state.selectedVideos.length;
+        if (deleteCounter > 0) {
+            try {
+                const videos = await getVideos(this.db);
+                for (const selectedVideo of this.state.selectedVideos) {
+                    await deleteVideo(this.db, selectedVideo.videolink);
+                }
+                this.setState({
+                    edit: false,
+                    listReady: false,
+                    selectedVideos: []
+                }, () => {
+                    this.setList();
+                    this.bar.MDComponent.show({
+                        message: `${deleteCounter} ${deleteCounter > 1 ? "videos" : "video"} removed`
+                    });
+                    DEBUG && console.log("Edit mode: off");
+                });
+            } catch (error) {
+                console.error('Error deleting videos:', error);
+            }
+        } else {
             this.setState({
-                edit: !this.state.edit,
+                edit: false,
                 selectedVideos: []
             }, () => {
-                //this.mainList.editChange();
                 this.bar.MDComponent.show({
-                    message:"No videos removed"
-                })
-                DEBUG && console.log("Edit mode: " + (this.state.edit ? "on" : "off"));
+                    message: "No videos removed"
+                });
+                DEBUG && console.log("Edit mode: off");
                 this.setList();
             });
         }
@@ -219,8 +218,8 @@ export default class Home extends Component{
             return(null);
         }
     }
-    setList = () => {
-        //props -> edit, selectedVideos, marginRight, maxBarWidth, editVideoClick
+    setList = async () => {
+        DEBUG && console.log('setList called');
         let props = {
             edit: this.state.edit,
             selectedVideos: this.state.selectedVideos,
@@ -229,14 +228,27 @@ export default class Home extends Component{
             settings: this.state.settings,
             eClickHandler: (video, index, event) => this.editVideoClick(video, index, event)
         }
-        generateList(props).then((elementList) => {
-        //this.generateList().then((elementList) => {
-            //return elementList;
+        DEBUG && console.log('setList props', props);
+    
+        try {
+            const videos = await getVideos(this.db);
+            DEBUG && console.log('Retrieved videos for list', videos);
+    
+            const elementList = await generateList(props, videos);
+            DEBUG && console.log('Generated element list', elementList);
+    
             this.setState({
-                listReady: elementList.length==0 ? false : true,
+                listReady: elementList.length > 0,
                 listElements: elementList
-            },()=>{DEBUG && console.log("Set list done")})
-        });
+            }, () => { 
+                DEBUG && console.log("Set list done", { 
+                    listReady: this.state.listReady, 
+                    listElementsCount: this.state.listElements.length 
+                });
+            });
+        } catch (error) {
+            console.error('Error generating list:', error);
+        }
     }
     getList = () => {
         return (
@@ -272,104 +284,72 @@ export default class Home extends Component{
             DEBUG && console.log("false alarm");
         }
     }
-    handleShiftClick = (currentIndex, selectedVideos) => {
+    handleShiftClick = async (currentIndex, selectedVideos) => {
+        DEBUG && console.log('handleShiftClick called', { currentIndex, lastClickedIndex: this.state.lastClickedIndex });
         const start = Math.min(this.state.lastClickedIndex, currentIndex);
         const end = Math.max(this.state.lastClickedIndex, currentIndex);
-
-        chrome.storage.local.get("videos", (data) => {
-            const videos = data.videos;
-            for (let i = start; i <= end; i++) {
-                const video = videos[i];
-                const videoIndex = selectedVideos.findIndex(v => extractWatchID(v.videolink) === extractWatchID(video.videolink));
-                if (videoIndex === -1) {
-                    selectedVideos.push(video);
-                }
-            }
-        });
-    }
-    getSettings = () => {
-        return new Promise((resolve) => {
-            chrome.storage.local.get("settings", (data) => {
-                if (data.settings != undefined) {
-                    this.setState({ settings: data.settings, newSettings: data.settings, dataReady: true, paused: data.settings.pauseResume},
-                        () => { resolve(); });
-                }
-                else {
-                    chrome.storage.local.set({
-                        settings: {
-                            pauseResume: false,
-                            minWatchTime: 60,
-                            minVideoLength: 480,
-                            markPlayedTime: 60,
-                        }
-                    }, () => {
-                        this.setState({ settings: data.settings, newSettings: data.settings, dataReady: true },
-                            () => { resolve(); });
-                    });
-                }
-            });
-        });
-    }
-    cleanDB = ()=>{
-        return new Promise((resolve) => {
-            chrome.storage.local.get("videos", (data) => {
-                let fixedDB = data;
-                for (let i = fixedDB.videos.length - 1; i >= 0; i--){
-                    if (checkExpired(fixedDB.videos[i], this.state.settings)) {
-                        DEBUG && console.log("CLEANING EXPIRED LINK");
-                        fixedDB.videos.splice(i, 1);
-                    }
-                }
-                chrome.storage.local.set(fixedDB,()=>{resolve()});
-            })
-        })
-    }
-}
-function initSettingsDB(){
-    return new Promise((resolve)=>{
-        chrome.storage.local.getBytesInUse("settings",(bytes)=>{
-            DEBUG && console.log("INIT SETTINGS DB");
-            if(bytes == undefined || bytes == 0){
-                DEBUG && console.log("BYTES==0 OR UNDEFINED");
-                chrome.storage.local.set(
-                {
-                    settings:{
-                        pauseResume: false,
-                        minVideoLength: 600,
-                        minWatchTime: 60,
-                        markPlayedTime: 60,
-                        deleteAfter:30
-                    }
-                },()=>{resolve();})
-            }
-            else {
-                DEBUG && console.log("BYTES!=0");
-                chrome.storage.local.get("settings", (data) => {
-                    DEBUG && console.log(data.settings);
-                    let current_settings = data.settings;
-                    if (!current_settings.hasOwnProperty('deleteAfter')) {
-                        DEBUG && console.log("here");
-
-                        chrome.storage.local.set(
-                            {
-                                settings:{
-                                    pauseResume: current_settings.pauseResume,
-                                    minVideoLength: current_settings.minVideoLength,
-                                    minWatchTime: current_settings.minWatchTime,
-                                    markPlayedTime: current_settings.markPlayedTime,
-                                    deleteAfter:30
-                                }
-                            },()=>{resolve();})
-                    }
-                })
-               resolve(); 
-            }
-            
-        })
-    })
     
+        try {
+            const videos = await getVideos(this.db);
+            DEBUG && console.log('Retrieved videos from IndexedDB', videos);
+    
+            for (let i = start; i <= end; i++) {
+                if (i >= 0 && i < videos.length) {
+                    const video = videos[i];
+                    const videoIndex = selectedVideos.findIndex(v => extractWatchID(v.videolink) === extractWatchID(video.videolink));
+                    if (videoIndex === -1) {
+                        selectedVideos.push(video);
+                        DEBUG && console.log('Added video to selectedVideos', video);
+                    }
+                }
+            }
+    
+            DEBUG && console.log('Updated selectedVideos', selectedVideos);
+            this.setState({ selectedVideos }, () => {
+                this.setList();
+            });
+        } catch (error) {
+            console.error('Error in handleShiftClick:', error);
+        }
+    }
+    getSettings = async () => {
+        try {
+            let settings = await getSettings(this.db);
+            if (!settings) {
+                settings = {
+                    pauseResume: false,
+                    minWatchTime: 60,
+                    minVideoLength: 480,
+                    markPlayedTime: 60,
+                    deleteAfter: 30
+                };
+                await setSettings(this.db, settings);
+            }
+            this.setState({ 
+                settings, 
+                newSettings: settings, 
+                dataReady: true, 
+                paused: settings.pauseResume 
+            });
+        } catch (error) {
+            console.error('Error getting settings:', error);
+        }
+    }
+
+    cleanDB = async () => {
+        try {
+            const videos = await getVideos(this.db);
+            for (const video of videos) {
+                if (checkExpired(video, this.state.settings)) {
+                    DEBUG && console.log("CLEANING EXPIRED LINK");
+                    await deleteVideo(this.db, video.videolink);
+                }
+            }
+        } catch (error) {
+            console.error('Error cleaning DB:', error);
+        }
+    }
 }
-//TEMP FIX
 
 function checkExpired(video,settings) {
     if (video.hasOwnProperty('timestamp')) {

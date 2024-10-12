@@ -1,6 +1,7 @@
 // content.js
+import { openDB, getVideos, setVideo, deleteVideo, getSettings, setSettings, migrateData } from './indexedDB.js';
 
-const DEBUG = false;
+const DEBUG = true;
 const CHANNEL_SELECTOR = "ytd-video-owner-renderer ytd-channel-name a";
 const PLAYER_ICON_ACTIVE = chrome.runtime.getURL("icons/playericon.svg");
 const PLAYER_ICON_INACTIVE = chrome.runtime.getURL("icons/playericon_inactive.svg");
@@ -104,7 +105,8 @@ class YouTubeAutoResume {
         switchButton.title = blacklist ? "Video will not auto-resume" : "Video will auto-resume";
         switchButton.checked = !blacklist;
 
-        await this.setTime({
+        const db = await openDB();
+        await setVideo(db, {
             videolink: window.location.href,
             time: video.currentTime,
             duration: video.duration,
@@ -132,48 +134,15 @@ class YouTubeAutoResume {
         }
     }
 
-    getUserSettings() {
-        return new Promise(resolve => {
-            chrome.storage.local.get("settings", data => {
-                resolve(data.settings);
-            });
-        });
+    async getUserSettings() {
+        const db = await openDB();
+        const settings = await getSettings(db);
+        DEBUG && console.log('User settings:', settings);
+        return settings;
     }
 
-    initStorage() {
-        return Promise.all([this.initDB(), this.initSettings()]);
-    }
-
-    initDB() {
-        return new Promise(resolve => {
-            chrome.storage.local.getBytesInUse("videos", bytes => {
-                if (bytes === 0 || bytes === undefined) {
-                    chrome.storage.local.set({ videos: [] }, resolve);
-                } else {
-                    resolve();
-                }
-            });
-        });
-    }
-
-    initSettings() {
-        return new Promise(resolve => {
-            chrome.storage.local.getBytesInUse("settings", bytes => {
-                if (bytes === 0 || bytes === undefined) {
-                    chrome.storage.local.set({
-                        settings: {
-                            pauseResume: false,
-                            minWatchTime: 60,
-                            minVideoLength: 480,
-                            markPlayedTime: 60,
-                            deleteAfter: 30
-                        }
-                    }, resolve);
-                } else {
-                    resolve();
-                }
-            });
-        });
+    async initStorage() {
+        await migrateData();
     }
 
     extractWatchID(link) {
@@ -203,23 +172,18 @@ class YouTubeAutoResume {
         return link.includes("watch?") && !link.includes("?t=");
     }
 
-    checkBlacklist(link) {
-        return new Promise(resolve => {
-            chrome.storage.local.get("videos", data => {
-                let blacklisted = data.videos.some(video => this.extractWatchID(video.videolink) === this.extractWatchID(link) && video.doNotResume);
-                resolve(blacklisted);
-            });
-        });
+    async checkBlacklist(link) {
+        const db = await openDB();
+        const videos = await getVideos(db);
+        return videos.some(video => this.extractWatchID(video.videolink) === this.extractWatchID(link) && video.doNotResume);
     }
 
-    setTime(video) {
-        return new Promise(resolve => {
-            chrome.storage.local.get("videos", data => {
-                let videos = data.videos.filter(v => this.extractWatchID(v.videolink) !== this.extractWatchID(video.videolink));
-                videos.push(video);
-                chrome.storage.local.set({ videos }, resolve);
-            });
-        });
+    async setTime(video) {
+        const db = await openDB();
+        const videos = await getVideos(db);
+        const updatedVideos = videos.filter(v => this.extractWatchID(v.videolink) !== this.extractWatchID(video.videolink));
+        updatedVideos.push(video);
+        await setVideo(db, video);
     }
 
     async runMainVideoProcess() {
@@ -258,30 +222,25 @@ class YouTubeAutoResume {
         return video.duration >= userSettings.minVideoLength;
     }
 
-    checkStoredLinks(link) {
-        return new Promise((resolve, reject) => {
-            chrome.storage.local.get("videos", data => {
-                let videoFound = data.videos.find(video => this.extractWatchID(video.videolink) === this.extractWatchID(link));
-                if (videoFound) {
-                    if (this.daysSince(videoFound.timestamp) > userSettings.deleteAfter) {
-                        this.deleteVideo(videoFound).then(() => reject(-1));
-                    } else {
-                        resolve(videoFound);
-                    }
-                } else {
-                    reject(-1);
-                }
-            });
-        });
+    async checkStoredLinks(link) {
+        const db = await openDB();
+        const videos = await getVideos(db);
+        const videoFound = videos.find(video => this.extractWatchID(video.videolink) === this.extractWatchID(link));
+        if (videoFound) {
+            if (this.daysSince(videoFound.timestamp) > userSettings.deleteAfter) {
+                await deleteVideo(db, videoFound.videolink);
+                throw new Error("Video expired");
+            } else {
+                return videoFound;
+            }
+        } else {
+            throw new Error("Video not found");
+        }
     }
 
-    deleteVideo(video) {
-        return new Promise(resolve => {
-            chrome.storage.local.get("videos", data => {
-                let videos = data.videos.filter(v => this.extractWatchID(v.videolink) !== this.extractWatchID(video.videolink));
-                chrome.storage.local.set({ videos }, resolve);
-            });
-        });
+    async deleteVideo(video) {
+        const db = await openDB();
+        await deleteVideo(db, video.videolink);
     }
 
     daysSince(time1) {

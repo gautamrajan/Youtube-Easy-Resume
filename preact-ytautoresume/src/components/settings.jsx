@@ -4,25 +4,28 @@ import 'preact-material-components/Snackbar/style.css';
 import './styles/settings.css';
 import Home from './home';
 import { secondsToMinutes, minutesToSeconds } from './utilities';
+import { openDB, getSettings, setSettings } from '../indexedDB.js';
+
 const DEBUG = false;
 //TODO: Input validation for settings
 export default class SettingsPage extends Component{
-    constructor(){
+    constructor() {
         super();
         this.state = {
-            dataReady:false,
+            dataReady: false,
             goBack: false,
-            settingsChanged:false,
-            settings:{},
-            newSettings:{},
-            savedSnackbar:false,
+            settingsChanged: false,
+            settings: {},
+            newSettings: {},
+            savedSnackbar: false,
         }
     }
-    settingsChangedHandler = (e,setting,minutes) =>{
+
+    settingsChangedHandler = (e, setting, minutes) => {
         console.log("At settingsChangedHandler: " + setting);
         var modifiedSettings = {};
         modifiedSettings = Object.assign(modifiedSettings, this.state.newSettings);
-        if(minutes){
+        if (minutes) {
             DEBUG && console.log("minutes case, setting name: " + setting);
             console.log("minutes case, value: " + e.target.value);
             modifiedSettings[setting] = minutesToSeconds(e.target.value);
@@ -32,68 +35,63 @@ export default class SettingsPage extends Component{
             modifiedSettings[setting] = e.target.value;
         }
 
-        
-        this.setState({newSettings:modifiedSettings},()=>{
+        this.setState({ newSettings: modifiedSettings }, () => {
             this.settingsChangedChecker();
-        })       
+        })
     }
-    settingsChangedChecker = () =>{
+
+    settingsChangedChecker = () => {
         var noSettingsChanged = true;
-        for(let key of Object.keys(this.state.settings)){
-            if(this.state.settings[key] !== this.state.newSettings[key]){
+        for (let key of Object.keys(this.state.settings)) {
+            if (this.state.settings[key] !== this.state.newSettings[key]) {
                 noSettingsChanged = false;
                 this.setState({
                     settingsChanged: true
-                },()=>{return;})
+                }, () => { return; })
             }
         }
-        if(noSettingsChanged && this.state.settingsChanged){
+        if (noSettingsChanged && this.state.settingsChanged) {
             this.setState({
-                settingsChanged:false,
+                settingsChanged: false,
             })
         }
+    }
 
-    }
-    saveSettings = () =>{
-        chrome.storage.local.set(
-            {
-                settings:this.state.newSettings
-            },()=>{
-                console.log("SETTINGS CHANGED IN STORAGE");
-                this.setState({
-                    settings: this.state.newSettings,
-                    settingsChanged:false,
-                },()=>{
-                    this.bar.MDComponent.show({
-                        message:"Settings saved successfully"
-                    })
-                })
-            }
-        )
-    }
-    
-    componentDidMount(){
-        chrome.storage.local.get("settings",(data)=>{
-            if(data.settings != undefined){
-                
-                this.setState({settings: data.settings, newSettings:data.settings, dataReady:true});
-            }
-            else{
-                chrome.storage.local.set({
-                    settings:{
-                        pauseResume:false,
-                        minWatchTime:60,
-                        minVideoLength:480,
-                        markPlayedTime: 60,
-                        deleteAfter:30
-                    }
-                },()=>{this.setState({settings: data.settings, newSettings:data.settings, dataReady:true});});
-            }
-        })
-    }
-    goBack = ()=>{
+    saveSettings = async () => {
+        const db = await openDB();
+        await setSettings(db, this.state.newSettings);
+        console.log("SETTINGS CHANGED IN STORAGE");
         this.setState({
-            goBack:true
+            settings: this.state.newSettings,
+            settingsChanged: false,
+        }, () => {
+            this.bar.MDComponent.show({
+                message: "Settings saved successfully"
+            })
+        });
+    }
+
+    async componentDidMount() {
+        const db = await openDB();
+        const settings = await getSettings(db);
+        if (settings) {
+            this.setState({ settings, newSettings: settings, dataReady: true });
+        } else {
+            const defaultSettings = {
+                pauseResume: false,
+                minWatchTime: 60,
+                minVideoLength: 480,
+                markPlayedTime: 60,
+                deleteAfter: 30
+            };
+            await setSettings(db, defaultSettings);
+            this.setState({ settings: defaultSettings, newSettings: defaultSettings, dataReady: true });
+        }
+    }
+
+    goBack = () => {
+        this.setState({
+            goBack: true
         })
     }
     

@@ -2,6 +2,7 @@ module.exports = {
     mode: 'production',
     entry: {
       popup: './src/popup.jsx',
+      content: ['./src/indexedDB.js', './src/content.js']
     },
     output: {
       filename: '[name].js',

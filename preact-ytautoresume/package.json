@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "build": "rm -rf dist && webpack && npm run copy:dist",
-    "copy:dist": "cp -r ./src/popup.html manifest.json ./src/content.js ./src/assets/icons ./dist",
+    "copy:dist": "cp -r ./src/popup.html manifest.json ./src/assets/icons ./dist",
     "serve": "sirv build --port 8080 --cors --single",
     "dev": "preact watch",
     "lint": "eslint src",
@@ -20,7 +20,7 @@
   "devDependencies": {
     "@babel/core": "^7.14.0",
     "@babel/plugin-transform-react-jsx": "^7.13.12",
-    "@babel/plugin-transform-runtime": "^7.17.0",
+    "@babel/plugin-transform-runtime": "^7.25.7",
     "@babel/preset-env": "^7.14.0",
     "babel-loader": "^8.2.2",
     "enzyme": "^3.10.0",
@@ -38,7 +38,7 @@
   },
   "dependencies": {
     "@babel/plugin-transform-react-jsx-source": "^7.12.13",
-    "@babel/runtime": "^7.17.9",
+    "@babel/runtime": "^7.25.7",
     "@js-joda/core": "^5.2.0",
     "core-js": "^3.22.0",
     "js-joda": "^1.11.0",
