@@ -8,7 +8,7 @@ import Snackbar from 'preact-material-components/Snackbar';
 import generateList from './list';
 import { extractWatchID } from './utilities'
 import SearchBar from './SearchBar';
-const DEBUG = true;
+const DEBUG = false;
 export default class Home extends Component{
     constructor(){
         super();
@@ -30,7 +30,15 @@ export default class Home extends Component{
         this.titleWidth = 188;
     }
     toggleSearch = () => {
-        this.setState(prevState => ({ isSearching: !prevState.isSearching, searchQuery: '' }));
+        this.setState(prevState => ({ 
+            isSearching: !prevState.isSearching, 
+            searchQuery: '' 
+        }), () => {
+            if (!this.state.isSearching) {
+                // Reset the list when exiting search mode
+                this.setList();
+            }
+        });
     }
 
     handleSearchChange = (query) => {
