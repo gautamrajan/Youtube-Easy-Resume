@@ -1,6 +1,6 @@
 // content.js
 
-const DEBUG = false;
+const DEBUG = true;
 const CHANNEL_SELECTOR = "ytd-video-owner-renderer ytd-channel-name a";
 const PLAYER_ICON_ACTIVE = chrome.runtime.getURL("icons/playericon.svg");
 const PLAYER_ICON_INACTIVE = chrome.runtime.getURL("icons/playericon_inactive.svg");
@@ -228,18 +228,22 @@ class YouTubeAutoResume {
     }
 
     async mainVideoProcess() {
+        DEBUG && console.log("Starting mainVideoProcess")
         return new Promise(async resolve => {
             if (!this.checkWatchable(window.location.href) || !this.checkDuration()) {
+                DEBUG && console.log("Video not viewable or does not meet duration requirements")
                 resolve();
                 return;
             }
 
             let videoTitle = await this.grabTitle();
             if (!initialLinkIsVideo && !ytNavLoop) {
+                DEBUG && console.log("Page has no video")
                 resolve();
             }
 
             try {
+                DEBUG && console.log("Attempting to set video time")
                 let storedVideo = await this.checkStoredLinks(window.location.href);
                 if (storedVideo.time > userSettings.minWatchTime && !storedVideo.complete && !storedVideo.doNotResume) {
                     document.querySelector("video").currentTime = storedVideo.time;
@@ -292,14 +296,19 @@ class YouTubeAutoResume {
     monitorVideoTime(resolve) {
         let video = document.querySelector("video");
         let lastTitle = document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent;
-
-        video.ontimeupdate = () => {
+        DEBUG && console.log("Starting video time monitoring for " + lastTitle);
+    
+        const timeUpdateHandler = () => {
             let currentTitle = document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent;
+            DEBUG && console.log("Monitoring video time for " + currentTitle);
+    
             if (currentTitle !== lastTitle) {
+                DEBUG && console.log("New title detected, video changed. Halting video monitoring");
+                video.removeEventListener('timeupdate', timeUpdateHandler);
                 resolve();
                 return;
             }
-
+    
             if (!blacklist) {
                 let markPlayed = video.duration - video.currentTime < userSettings.markPlayedTime;
                 this.setTime({
@@ -312,8 +321,9 @@ class YouTubeAutoResume {
                     doNotResume: false
                 });
             }
-            DEBUG && console.log(document.querySelector(CHANNEL_SELECTOR).textContent);
         };
+    
+        video.addEventListener('timeupdate', timeUpdateHandler);
     }
 }
 

@@ -1,6 +1,17 @@
 import { h, Component } from 'preact';
 
 class SearchBar extends Component {
+    constructor(props) {
+        super(props);
+        this.inputRef = null;
+    }
+
+    componentDidMount() {
+        if (this.inputRef) {
+            this.inputRef.focus();
+        }
+    }
+
     handleInputChange = (e) => {
         const value = e.target.value;
         this.props.onSearchChange(value);
@@ -10,12 +21,11 @@ class SearchBar extends Component {
         const { onBack, value } = this.props;
         return (
             <div className="search-bar-container">
-                <div className='button-wrapper'>
-                    <button type="button" className="back-button top-bar-button" onClick={onBack}>
-                        <i class="fas fa-arrow-left"></i>
-                    </button>
-                </div>
+                <button type="button" className="back-button" onClick={onBack}>
+                    <i class="fas fa-arrow-left"></i>
+                </button>
                 <input
+                    ref={(input) => { this.inputRef = input; }}
                     type="text"
                     placeholder="Search videos..."
                     value={value}
@@ -38,7 +48,7 @@ class SearchBar extends Component {
                         border-radius: 15px;
                         background-color: #3a3a3a;
                         color: #ffffff;
-                        
+                        margin-bottom: 2px;
                     }
                     input::placeholder {
                         color: #999999;
