@@ -22,7 +22,7 @@ div.header-bar{
 div.header-bar button{
     font-size:20px;
     border: none;
-    color: #ffffff;
+    color: #d8d6d6;
     background-color: transparent;
     text-align: center;
     vertical-align: middle;
@@ -118,4 +118,30 @@ h1{
 }
 #SaveButton:active{
     background-color:#c20000;
+}
+
+
+.button-wrapper {
+    display: flex;
+    padding-bottom:2px;
+    height:30px;
+    width:30px;
+}
+
+.top-bar-button {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius:100%;
+}
+
+h1{
+    font-size:1.4em;
+    margin-top:5px;
+    margin-bottom: 5px;
+    color: #ffffff;
+    padding-bottom:2px;
+    /* border: 1px solid black; */
 }

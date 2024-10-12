@@ -114,11 +114,19 @@ export default class SettingsPage extends Component{
             console.log("DATA READY: " + dataReady);
             return(
                 <div className="SettingsContainer">
+                    <style jsx>{`
+                        .header-bar{
+                            margin-top:4px;
+                        }
+                    `}
+                    </style>
                     <div className="header-bar">
                         <h1>Settings</h1>
-                        <button id="backButton" onClick={this.goBack}>
-                            <i class="fa fa-chevron-left"></i>
-                        </button>
+                        <div className='button-wrapper'>
+                            <button id="backButton" className='top-bar-button' onClick={this.goBack}>
+                                <i class="fa fa-chevron-left"></i>
+                            </button>
+                        </div>
                     </div>
                     <div id="MainPanel">
                         <form className="SettingsPanel">

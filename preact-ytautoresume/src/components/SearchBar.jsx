@@ -10,9 +10,11 @@ class SearchBar extends Component {
         const { onBack, value } = this.props;
         return (
             <div className="search-bar-container">
-                <button type="button" className="back-button" onClick={onBack}>
-                    <i class="fas fa-arrow-left"></i>
-                </button>
+                <div className='button-wrapper'>
+                    <button type="button" className="back-button top-bar-button" onClick={onBack}>
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                </div>
                 <input
                     type="text"
                     placeholder="Search videos..."
@@ -25,7 +27,7 @@ class SearchBar extends Component {
                         align-items: center;
                         width: 100%;
                         padding-top: 4px;
-                        padding-bottom: 3px;
+                        padding-bottom: 2px;
                     }
                     
                     input {
@@ -45,9 +47,7 @@ class SearchBar extends Component {
                         outline: none;
                         box-shadow: 0 0 0 2px #4a90e2;
                     }
-                    .back-button {
-                        margin-top: 4px;
-                    }
+                    
                 `}</style>
             </div>
         );

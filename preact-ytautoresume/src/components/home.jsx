@@ -170,20 +170,7 @@ export default class Home extends Component{
                         <i class="fas fa-cog"></i>
                     </button>
                     <style jsx>{`
-                        .button-wrapper {
-                            display: flex;
-                            padding-bottom:2px;
-                            height:30px;
-                            width:30px;
-                        }
-                        .top-bar-button {
-                            width: 100%;
-                            height: 100%;
-                            display: flex;
-                            justify-content: center;
-                            align-items: center;
-                            border-radius:100%;
-                        }
+                        
                         .SwitchLabel{
                             font-weight:600;
                         }
@@ -242,6 +229,7 @@ export default class Home extends Component{
                                 .main-list-element{
                                     margin-right:${this.props.marginRight}
                                 }  
+
                                 h2 {
                                     margin-top: 42vh;
                                     text-align: center;
