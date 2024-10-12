@@ -280,44 +280,79 @@ export default class Home extends Component{
     editVideoClick = (video, index, event) => {
         if (this.state.edit) {
             let newSelectedVideos = [...this.state.selectedVideos];
+            const totalVideos = this.state.listElements.length;
+    
+            // Use displayed index directly
+            const displayedIndex = index;
+    
+            DEBUG && console.log(`Clicked index: ${displayedIndex}`);
+            DEBUG && console.log(`Last clicked index: ${this.state.lastClickedIndex}`);
+    
             const videoIndex = newSelectedVideos.findIndex(v => extractWatchID(v.videolink) === extractWatchID(video.videolink));
-
+    
             if (event.shiftKey && this.state.lastClickedIndex !== -1) {
-                this.handleShiftClick(index, newSelectedVideos);
+                DEBUG && console.log(`Shift-click detected. Handling range from ${this.state.lastClickedIndex} to ${displayedIndex}`);
+                this.handleShiftClick(this.state.lastClickedIndex, displayedIndex, newSelectedVideos);
             } else {
                 if (videoIndex === -1) {
                     newSelectedVideos.push(video);
+                    DEBUG && console.log(`Selected video: ${video.videolink}`);
                 } else {
                     newSelectedVideos.splice(videoIndex, 1);
+                    DEBUG && console.log(`Unselected video: ${video.videolink}`);
                 }
+                // Update lastClickedIndex to the current displayed index
+                this.setState({
+                    selectedVideos: newSelectedVideos,
+                    lastClickedIndex: displayedIndex
+                }, () => {
+                    this.setList();
+                    DEBUG && console.log(`Updated selected videos: ${JSON.stringify(newSelectedVideos.map(v => v.videolink))}`);
+                });
             }
-
-            this.setState({
-                selectedVideos: newSelectedVideos,
-                lastClickedIndex: index
-            }, () => {
-                this.setList();
-                DEBUG && console.log(`${videoIndex === -1 ? 'Selected' : 'Unselected'} video: ${video.videolink}`);
-            });
         } else {
-            DEBUG && console.log("false alarm");
+            DEBUG && console.log("Edit mode is not active.");
         }
     }
-    handleShiftClick = (currentIndex, selectedVideos) => {
-        const start = Math.min(this.state.lastClickedIndex, currentIndex);
-        const end = Math.max(this.state.lastClickedIndex, currentIndex);
-
+    //TODO: Currentl implmentation grabs videos straight from DB without
+    //checking if they're blacklisted or completed. Causing issues
+    handleShiftClick = (lastClickedDisplayedIndex, currentDisplayedIndex, selectedVideos) => {
+        const totalVideos = this.state.listElements.length;
+    
+        // Convert displayed indices to storage indices
+        const actualLastClickedIndex = totalVideos - 1 - lastClickedDisplayedIndex;
+        const actualCurrentIndex = totalVideos - 1 - currentDisplayedIndex;
+    
+        const start = Math.min(actualLastClickedIndex, actualCurrentIndex);
+        const end = Math.max(actualLastClickedIndex, actualCurrentIndex);
+    
+        DEBUG && console.log(`Handling shift click from ${actualLastClickedIndex} to ${actualCurrentIndex} (start: ${start}, end: ${end})`);
+    
         chrome.storage.local.get("videos", (data) => {
             const videos = data.videos;
+            let newSelectedVideos = [...selectedVideos]; // Clone to avoid direct mutation
+    
             for (let i = start; i <= end; i++) {
                 const video = videos[i];
-                const videoIndex = selectedVideos.findIndex(v => extractWatchID(v.videolink) === extractWatchID(video.videolink));
-                if (videoIndex === -1) {
-                    selectedVideos.push(video);
+                const videoExists = newSelectedVideos.some(v => extractWatchID(v.videolink) === extractWatchID(video.videolink));
+                if (!videoExists) {
+                    newSelectedVideos.push(video);
+                    DEBUG && console.log(`Selected video during shift-click: ${video.videolink}`);
                 }
             }
+    
+            this.setState({
+                selectedVideos: newSelectedVideos,
+                lastClickedIndex: currentDisplayedIndex // Update to current clicked index
+            }, () => {
+                this.setList();
+                DEBUG && console.log(`Updated selected videos after shift-click: ${JSON.stringify(newSelectedVideos.map(v => v.videolink))}`);
+            });
         });
     }
+    
+    
+    
     getSettings = () => {
         return new Promise((resolve) => {
             chrome.storage.local.get("settings", (data) => {

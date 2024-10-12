@@ -36,8 +36,8 @@ class SearchBar extends Component {
                         display: flex;
                         align-items: center;
                         width: 100%;
-                        padding-top: 4px;
-                        padding-bottom: 2px;
+                        padding-top: 6px;
+                        padding-bottom: 5px;
                     }
                     
                     input {
@@ -48,14 +48,13 @@ class SearchBar extends Component {
                         border-radius: 15px;
                         background-color: #3a3a3a;
                         color: #ffffff;
-                        margin-bottom: 2px;
+                        margin-bottom: 3px;
                     }
                     input::placeholder {
                         color: #999999;
                     }
                     input:focus {
                         outline: none;
-                        box-shadow: 0 0 0 2px #4a90e2;
                     }
                     
                 `}</style>
