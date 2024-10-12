@@ -31,7 +31,7 @@ export default class Home extends Component{
             settingsPage:true
         });
     }
-    setedit = () => {
+    setEdit = () => {
         if (this.state.edit) {
             this.setState({
                 edit: !this.state.edit,
@@ -127,7 +127,7 @@ export default class Home extends Component{
         if (!this.state.edit) {
             return(
                 <div className="button-container">
-                    <button type="button" id="EditButton" onClick={this.setedit}>
+                    <button type="button" id="EditButton" onClick={this.setEdit}>
                         <i class="fas fa-trash-alt"></i>
                     </button>
                     <div className={`AR SwitchContainer ${this.state.paused ? "Off" : "On"}`}>
@@ -167,7 +167,7 @@ export default class Home extends Component{
                     <button className = "button editmode" type="button" id="ConfirmDeleteButton" onClick={this.deleteSelected}>
                         <i class="fas fa-check"></i>
                     </button>
-                    <button className = "button editmode" type="button" id="ExitEditButton" onClick={this.setedit}>
+                    <button className = "button editmode" type="button" id="ExitEditButton" onClick={this.setEdit}>
                         <i class="fa fa-times" aria-hidden="true"></i>
                     </button>
                 </div>
