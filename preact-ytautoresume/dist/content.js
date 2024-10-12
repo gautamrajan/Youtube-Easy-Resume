@@ -1,6 +1,6 @@
 // content.js
 
-const DEBUG = true;
+const DEBUG = false;
 const CHANNEL_SELECTOR = "ytd-video-owner-renderer ytd-channel-name a";
 const PLAYER_ICON_ACTIVE = chrome.runtime.getURL("icons/playericon.svg");
 const PLAYER_ICON_INACTIVE = chrome.runtime.getURL("icons/playericon_inactive.svg");
@@ -28,7 +28,7 @@ class YouTubeAutoResume {
                 await this.injectPlayerButton();
             }
 
-            this.setupNavigationListener();
+            this.setupEventListeners();
 
             if (initialLinkIsVideo && !ytNavLoop) {
                 this.runMainVideoProcess();
@@ -44,6 +44,11 @@ class YouTubeAutoResume {
         console.log("CHECK MIN VID LENGTH SETTING: " + userSettings.minVideoLength);
     }
 
+    setupEventListeners() {
+        this.setupNavigationListener();
+        window.addEventListener('yt-title-change', this.handleTitleChange.bind(this));
+    }
+
     setupNavigationListener() {
         document.addEventListener('yt-navigate-finish', async () => {
             DEBUG && console.log("yt-navigate-finish EVENT DETECTED.");
@@ -57,6 +62,17 @@ class YouTubeAutoResume {
                 ytNavLoop = true;
             }
         });
+    }
+
+    handleTitleChange(event) {
+        const newTitle = event.detail.title;
+        DEBUG && console.log("Title changed to: " + newTitle);
+        this.runMainVideoProcess(newTitle);
+    }
+
+    dispatchTitleChangeEvent(newTitle) {
+        const event = new CustomEvent('yt-title-change', { detail: { title: newTitle } });
+        window.dispatchEvent(event);
     }
 
     async injectPlayerButton() {
@@ -222,12 +238,12 @@ class YouTubeAutoResume {
         });
     }
 
-    async runMainVideoProcess() {
-        await this.mainVideoProcess();
+    async runMainVideoProcess(newTitle = null) {
+        await this.mainVideoProcess(newTitle);
         ytNavLoop = true;
     }
 
-    async mainVideoProcess() {
+    async mainVideoProcess(newTitle = null) {
         DEBUG && console.log("Starting mainVideoProcess")
         return new Promise(async resolve => {
             if (!this.checkWatchable(window.location.href) || !this.checkDuration()) {
@@ -236,7 +252,7 @@ class YouTubeAutoResume {
                 return;
             }
 
-            let videoTitle = await this.grabTitle();
+            let videoTitle = newTitle || await this.grabTitle();
             if (!initialLinkIsVideo && !ytNavLoop) {
                 DEBUG && console.log("Page has no video")
                 resolve();
@@ -303,10 +319,9 @@ class YouTubeAutoResume {
             DEBUG && console.log("Monitoring video time for " + currentTitle);
     
             if (currentTitle !== lastTitle) {
-                DEBUG && console.log("New title detected, video changed. Halting video monitoring");
-                video.removeEventListener('timeupdate', timeUpdateHandler);
-                resolve();
-                return;
+                DEBUG && console.log("New title detected: " + currentTitle);
+                lastTitle = currentTitle;
+                this.dispatchTitleChangeEvent(currentTitle);
             }
     
             if (!blacklist) {
