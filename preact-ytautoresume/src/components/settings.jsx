@@ -4,7 +4,9 @@ import 'preact-material-components/Snackbar/style.css';
 import './styles/settings.css';
 import Home from './home';
 import { secondsToMinutes, minutesToSeconds } from './utilities';
-const DEBUG = false;
+import Switch from 'preact-material-components/Switch';
+import 'preact-material-components/Switch/style.css';
+const DEBUG = true;
 //TODO: Input validation for settings
 export default class SettingsPage extends Component{
     constructor(){
@@ -15,7 +17,8 @@ export default class SettingsPage extends Component{
             settingsChanged:false,
             settings:{},
             newSettings:{},
-            savedSnackbar:false,
+            savedSnackbar: false,
+            paused: false
         }
     }
     settingsChangedHandler = (e,setting,minutes) =>{
@@ -24,7 +27,7 @@ export default class SettingsPage extends Component{
         modifiedSettings = Object.assign(modifiedSettings, this.state.newSettings);
         if(minutes){
             DEBUG && console.log("minutes case, setting name: " + setting);
-            console.log("minutes case, value: " + e.target.value);
+            DEBUG && console.log("minutes case, value: " + e.target.value);
             modifiedSettings[setting] = minutesToSeconds(e.target.value);
         }
         else {
@@ -76,7 +79,7 @@ export default class SettingsPage extends Component{
         chrome.storage.local.get("settings",(data)=>{
             if(data.settings != undefined){
                 
-                this.setState({settings: data.settings, newSettings:data.settings, dataReady:true});
+                this.setState({settings: data.settings, newSettings:data.settings, dataReady:true, paused: data.settings.pauseResume});
             }
             else{
                 chrome.storage.local.set({
@@ -96,7 +99,12 @@ export default class SettingsPage extends Component{
             goBack:true
         })
     }
-    
+    handlePause = (event) => {
+        
+        let newSettings = {...this.state.newSettings};
+        newSettings.pauseResume = !newSettings.pauseResume;
+        this.setState({newSettings: newSettings, paused:!this.state.paused}, this.settingsChangedChecker);
+    }
     render(){
         let goBack = this.state.goBack;
         let dataReady = this.state.dataReady;
@@ -105,6 +113,7 @@ export default class SettingsPage extends Component{
         var initMPT = this.state.newSettings.markPlayedTime;
         var initDeleteAfter = this.state.newSettings.deleteAfter;
         let settingsChanged = this.state.settingsChanged;
+        let paused = this.state.paused;
         if(goBack){
             return(
                 <Home/>
@@ -130,6 +139,53 @@ export default class SettingsPage extends Component{
                     </div>
                     <div id="MainPanel">
                         <form className="SettingsPanel">
+                        <div className="Setting AutoResume">
+                            <label htmlFor="AutoResumeToggle" className="SettingLabel">Auto Resume</label>
+                            <div className={`AR SwitchContainer ${paused ? "Off" : "On"}`}>
+                            <label for="AutoResumeToggle">
+                                <span className={`SwitchLabel ${paused ? "Off" : "On"}`} id="AutoRedSwitchLabel">{paused ? "OFF" : "ON"}</span>
+                            </label>
+                            <Switch name="AutoResumeToggle" checked={!paused} onChange={this.handlePause}/>
+                            <style jsx>{`
+                                .SwitchLabel{
+                                    font-weight:600;
+                                    font-size:15px;
+                                }
+                                .SwitchLabel.On{
+                                    color:red;
+                                    padding-right:4px;
+                                }
+                                .SwitchLabel.Off{
+                                    color:white;
+                                    opacity: 0.4;
+                                }    
+                                .SwitchContainer.On{
+                                    margin-left:6px;
+                                }
+                                .SwitchContainer{
+                                    margin-right:4px;
+                                    margin-bottom:2px;
+                                    margin-left:5px;
+                                    margin-top:10px;
+                                    /* background-color:blue; */
+                                    display:flex;
+                                    flex-direction: row;
+                                    color:white;
+                                    justify-content:flex-end;
+                                    align-items:center;
+                                    padding-bottom:2px;
+                                    /* background-color:red; */
+                                }
+                                .SwitchContainer label{
+                                    /* margin-right:4px; */
+                                    display:flex;
+                                    flex-direction:column;
+                                    line-height:95%;
+                                    margin-right:5px;
+                                }
+                            `}</style>
+                        </div>
+                        </div>
                             <div className="Setting MinVideoLength">
                                 <label for="MinVideoLengthInput" className="SettingLabel">Only resume videos longer than: </label>
                                 <div className="MinVideoLength InputContainer">
