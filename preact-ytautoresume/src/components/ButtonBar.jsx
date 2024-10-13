@@ -37,16 +37,21 @@ const ButtonBar = ({
                         <i class="fas fa-trash-alt"></i>
                     </button>
                 </div>
-                <div className={`AR SwitchContainer ${paused ? "Off" : "On"}`}>
+                {/* <div className={`AR SwitchContainer ${paused ? "Off" : "On"}`}>
                     <label for="AutoResumeToggle">
                         <span className={`SwitchLabel ${paused ? "Off" : "On"}`} id="AutoRedSwitchLabel">{paused ? "OFF" : "ON"}</span>
                     </label>
                     <Switch name="AutoResumeToggle" checked={!paused} onChange={handlePause}/>
+                </div> */}
+                <div className="button-wrapper">
+                    <button type="button" id="SettingsButton" className="top-bar-button" onClick={moveToSettingsPage}>
+                        <i class="fas fa-cog"></i>
+                    </button>
                 </div>
-                <button type="button" id="SettingsButton" className="top-bar-button" onClick={moveToSettingsPage}>
-                    <i class="fas fa-cog"></i>
-                </button>
                 <style jsx>{`
+                    .button-container{
+                        margin-bottom:2px;
+                    }
                     .SwitchLabel{
                         font-weight:600;
                     }

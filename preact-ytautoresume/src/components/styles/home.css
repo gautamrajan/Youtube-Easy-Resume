@@ -26,7 +26,7 @@ div.header-bar /* #ClearListButton */button{
 /* div.header-bar Switch+button{
     margin-left: 5px;
 } */
-#SettingsButton{
+/* #SettingsButton{
     margin-bottom:2px;
     margin-left:5px;
     flex-grow:0;
@@ -44,7 +44,7 @@ div.header-bar /* #ClearListButton */button{
     border-radius:50%;
     outline:none;
     color: #d8d6d6;
-}
+} */
 .button.editmode {
     margin-bottom:2px; 
     margin-left:5px;
@@ -67,7 +67,7 @@ div.header-bar /* #ClearListButton */button{
 /* div.header-bar button:active{
     background-color: rgba(158, 158, 158, 0.781);
 }  */
-#SettingsButton:hover{
+/* #SettingsButton:hover{
     color: #ffffff;
 }
 
@@ -75,7 +75,7 @@ div.header-bar /* #ClearListButton */button{
     transition-duration: 0.2s;
     background-color:#ffffff46;
     color: #ffffff;
-}
+} */
 .SwitchContainer{
     margin-right:4px;
     margin-bottom:9px;
@@ -155,3 +155,8 @@ h1{
     background-color: #ffffff46 ;
     color: #ffffff;
 }
+#SettingsButton{
+    line-height:51%;
+    font-size:22px;
+  
+} 

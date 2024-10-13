@@ -21,9 +21,12 @@ class SearchBar extends Component {
         const { onBack, value } = this.props;
         return (
             <div className="search-bar-container">
-                <button type="button" className="back-button" onClick={onBack}>
-                    <i class="fas fa-arrow-left"></i>
-                </button>
+                <div className='button-wrapper search-back'>
+                    <button type="button" className="back-button top-bar-button" onClick={onBack}>
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+
+                </div>
                 <input
                     ref={(input) => { this.inputRef = input; }}
                     type="text"
@@ -36,10 +39,11 @@ class SearchBar extends Component {
                         display: flex;
                         align-items: center;
                         width: 100%;
-                        padding-top: 6px;
-                        padding-bottom: 5px;
+                        padding-top: 4px;
+                        padding-bottom:2px;
+
                     }
-                    
+                
                     input {
                         flex-grow: 1;
                         padding: 4px 12px;
