@@ -8,6 +8,8 @@ import Snackbar from 'preact-material-components/Snackbar';
 import generateList from './list';
 import { extractWatchID, getDisplayedVideos } from './utilities'
 import SearchBar from './SearchBar';
+import ButtonBar from './ButtonBar';
+
 const DEBUG = true;
 export default class Home extends Component{
     constructor(){
@@ -137,80 +139,6 @@ export default class Home extends Component{
             });
         }
     }
-    buttonBar = () => {
-        let paused = this.state.paused;
-        var pauseButtonText = "";
-        //DEBUG && console.log(paused);
-        
-        //Search State
-        if (this.state.isSearching) {
-            return (
-                <SearchBar 
-                    onBack={this.toggleSearch}
-                    onSearchChange={this.handleSearchChange}
-                    value={this.state.searchQuery}
-                />
-            );
-        }
-        if (paused) { pauseButtonText = "Unpause" } else { pauseButtonText = "Pause" };
-        if (!this.state.edit) {
-            return(
-                <div className="button-container">
-                    <div className="button-wrapper">
-                        <button type="button" id="SearchButton" className="top-bar-button" onClick={this.toggleSearch}>
-                            <i class="fas fa-search"></i>
-                        </button>
-                    </div>  
-                    <div className="button-wrapper">
-                        <button type="button" id="EditButton" className="top-bar-button" onClick={this.setEdit}>
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
-                    </div>
-                    <div className={`AR SwitchContainer ${this.state.paused ? "Off" : "On"}`}>
-                        <label for="AutoResumeToggle">
-                            <span className={`SwitchLabel ${this.state.paused ? "Off" : "On"}`} id="AutoRedSwitchLabel">{this.state.paused ? "OFF" : "ON"}</span>
-                            {/* Resume */}
-                        </label>
-                        <Switch name="AutoResumeToggle" checked={!paused} ref={pauseSwitch=>{this.switch=pauseSwitch;}}
-                                onChange={(event)=>{this.handlePause(event)}}/>
-                    </div>
-                    <button type="button" id="SettingsButton" className="top-bar-button" onClick={this.moveToSettingsPage}>
-                        <i class="fas fa-cog"></i>
-                    </button>
-                    <style jsx>{`
-                        
-                        .SwitchLabel{
-                            font-weight:600;
-                        }
-                        .SwitchLabel.On{
-                            color:red;
-                            padding-right:4px;
-                        }
-                        .SwitchLabel.Off{
-                            color:white;
-                            opacity: 0.4;
-                        }    
-                        .SwitchContainer.On{
-                            margin-left:6px;
-                        }
-                    `}
-                    </style>
-                </div>
-            )
-        }
-        else{
-            return (
-                <div className="button-container">
-                    <button className = "button editmode" type="button" id="ConfirmDeleteButton" onClick={this.deleteSelected}>
-                        <i class="fas fa-check"></i>
-                    </button>
-                    <button className = "button editmode" type="button" id="ExitEditButton" onClick={this.setEdit}>
-                        <i class="fa fa-times" aria-hidden="true"></i>
-                    </button>
-                </div>
-            )
-        }
-    }
     render(){
         let paused = this.state.paused;
         let settingsPage = this.state.settingsPage;
@@ -222,12 +150,23 @@ export default class Home extends Component{
                 return(<SettingsPage/>)
             }
             else {
-                let buttonBar = this.buttonBar();
+                //let buttonBar = this.buttonBar();
                 return(
                     <div className="HomeContainer">
                         <div className="header-bar">
                             {!this.state.isSearching && <h1>Currently watching</h1>}
-                            {buttonBar}
+                            <ButtonBar 
+                                isSearching={this.state.isSearching}
+                                paused={this.state.paused}
+                                edit={this.state.edit}
+                                toggleSearch={this.toggleSearch}
+                                handleSearchChange={this.handleSearchChange}
+                                searchQuery={this.state.searchQuery}
+                                setEdit={this.setEdit}
+                                handlePause={this.handlePause}
+                                moveToSettingsPage={this.moveToSettingsPage}
+                                deleteSelected={this.deleteSelected}
+                            />
                         </div>
                         <div className="main-list" id="main-list">
                             {this.state.listReady ? this.getList() : null}
