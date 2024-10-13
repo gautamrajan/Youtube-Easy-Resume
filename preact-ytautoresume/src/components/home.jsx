@@ -6,9 +6,9 @@ import './styles/mainlist.css';
 import SettingsPage from "./settings"
 import Snackbar from 'preact-material-components/Snackbar';
 import generateList from './list';
-import { extractWatchID } from './utilities'
+import { extractWatchID, getDisplayedVideos } from './utilities'
 import SearchBar from './SearchBar';
-const DEBUG = false;
+const DEBUG = true;
 export default class Home extends Component{
     constructor(){
         super();
@@ -315,7 +315,7 @@ export default class Home extends Component{
                     lastClickedIndex: displayedIndex
                 }, () => {
                     this.setList();
-                    DEBUG && console.log(`Updated selected videos: ${JSON.stringify(newSelectedVideos.map(v => v.videolink))}`);
+                    DEBUG && console.log(`Updated selected videos: ${JSON.stringify(newSelectedVideos.map(v => v.title))}`);
                 });
             }
         } else {
@@ -324,28 +324,26 @@ export default class Home extends Component{
     }
     //TODO: Currentl implmentation grabs videos straight from DB without
     //checking if they're blacklisted or completed. Causing issues
-    handleShiftClick = (lastClickedDisplayedIndex, currentDisplayedIndex, selectedVideos) => {
-        const totalVideos = this.state.listElements.length;
+    handleShiftClick = async (lastClickedDisplayedIndex, currentDisplayedIndex, selectedVideos) => {
+        const start = Math.min(lastClickedDisplayedIndex, currentDisplayedIndex);
+        const end = Math.max(lastClickedDisplayedIndex, currentDisplayedIndex);
     
-        // Convert displayed indices to storage indices
-        const actualLastClickedIndex = totalVideos - 1 - lastClickedDisplayedIndex;
-        const actualCurrentIndex = totalVideos - 1 - currentDisplayedIndex;
+        DEBUG && console.log(`Handling shift click from ${lastClickedDisplayedIndex} to ${currentDisplayedIndex} (start: ${start}, end: ${end})`);
     
-        const start = Math.min(actualLastClickedIndex, actualCurrentIndex);
-        const end = Math.max(actualLastClickedIndex, actualCurrentIndex);
-    
-        DEBUG && console.log(`Handling shift click from ${actualLastClickedIndex} to ${actualCurrentIndex} (start: ${start}, end: ${end})`);
-    
-        chrome.storage.local.get("videos", (data) => {
-            const videos = data.videos;
+        try {
+            const displayedVideos = await getDisplayedVideos(this.state.settings, this.state.searchQuery);
+            DEBUG && console.log("Displayed videos:", displayedVideos);
             let newSelectedVideos = [...selectedVideos]; // Clone to avoid direct mutation
     
             for (let i = start; i <= end; i++) {
-                const video = videos[i];
-                const videoExists = newSelectedVideos.some(v => extractWatchID(v.videolink) === extractWatchID(video.videolink));
-                if (!videoExists) {
-                    newSelectedVideos.push(video);
-                    DEBUG && console.log(`Selected video during shift-click: ${video.videolink}`);
+                const video = displayedVideos[i];
+                DEBUG && console.log("Shift-selected video " + i + ": " + video.title)
+                if (video) {
+                    const videoExists = newSelectedVideos.some(v => extractWatchID(v.videolink) === extractWatchID(video.videolink));
+                    if (!videoExists) {
+                        newSelectedVideos.push(video);
+                        DEBUG && console.log(`Selected video during shift-click: ${video.title}`);
+                    }
                 }
             }
     
@@ -354,9 +352,11 @@ export default class Home extends Component{
                 lastClickedIndex: currentDisplayedIndex // Update to current clicked index
             }, () => {
                 this.setList();
-                DEBUG && console.log(`Updated selected videos after shift-click: ${JSON.stringify(newSelectedVideos.map(v => v.videolink))}`);
+                DEBUG && console.log(`Updated selected videos after shift-click: ${JSON.stringify(newSelectedVideos.map(v => v.title))}`);
             });
-        });
+        } catch (error) {
+            console.error("Error in handleShiftClick:", error);
+        }
     }
     
     

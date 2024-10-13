@@ -84,3 +84,22 @@ export function checkCriteria(video, settings) {
     return Math.round(time_since_ms / 86400000);
 }
 
+export function getDisplayedVideos(settings, searchQuery = '') {
+    return new Promise((resolve) => {
+      chrome.storage.local.get("videos", (data) => {
+        if (data.videos && data.videos.length > 0) {
+          const filteredVideos = data.videos.filter(video => 
+            checkCriteria(video, settings) &&
+            (searchQuery ? 
+              (video.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              video.channel.toLowerCase().includes(searchQuery.toLowerCase()))
+              : true
+            )
+          );
+          resolve(filteredVideos);
+        } else {
+          resolve([]);
+        }
+      });
+    });
+  }
