@@ -10,7 +10,7 @@ import { extractWatchID, getDisplayedVideos } from './utilities'
 import SearchBar from './SearchBar';
 import ButtonBar from './ButtonBar';
 
-const DEBUG = true;
+const DEBUG = false;
 export default class Home extends Component{
     constructor(){
         super();

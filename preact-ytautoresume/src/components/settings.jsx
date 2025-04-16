@@ -6,7 +6,7 @@ import Home from './home';
 import { secondsToMinutes, minutesToSeconds } from './utilities';
 import Switch from 'preact-material-components/Switch';
 import 'preact-material-components/Switch/style.css';
-const DEBUG = true;
+const DEBUG = false;
 //TODO: Input validation for settings
 export default class SettingsPage extends Component{
     constructor(){
