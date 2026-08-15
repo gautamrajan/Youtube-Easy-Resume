@@ -2,6 +2,7 @@ const initialStorage = {};
 let storage = { ...initialStorage };
 let storageError = null;
 let storageSetCalls = [];
+let storageChangeListeners = [];
 
 function selectStorage(keys) {
   if (keys == null) {
@@ -23,12 +24,21 @@ global.__resetExtensionStorage = values => {
   storage = { ...values };
   storageError = null;
   storageSetCalls = [];
+  storageChangeListeners = [];
 };
 
 global.__getExtensionStorage = () => storage;
 global.__getExtensionStorageSetCalls = () => [...storageSetCalls];
 global.__setExtensionStorageError = message => {
   storageError = message ? { message } : null;
+};
+global.__emitExtensionStorageChange = (changes, areaName = 'local') => {
+  Object.entries(changes).forEach(([key, change]) => {
+    if (change && Object.prototype.hasOwnProperty.call(change, 'newValue')) {
+      storage[key] = change.newValue;
+    }
+  });
+  storageChangeListeners.forEach(listener => listener(changes, areaName));
 };
 
 global.chrome = {
@@ -39,6 +49,9 @@ global.chrome = {
     }
   },
   storage: {
+    onChanged: {
+      addListener: listener => storageChangeListeners.push(listener)
+    },
     local: {
       get: (keys, callback) => callback(selectStorage(keys)),
       set: (values, callback = () => {}) => {

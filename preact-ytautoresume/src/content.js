@@ -37,6 +37,7 @@ class YouTubeAutoResume {
         await this.initStorage();
         userSettings = await this.getUserSettings();
         DEBUG && this.logUserSettings();
+        this.setupEventListeners();
 
         if (!userSettings.pauseResume) {
             initialLinkIsVideo = this.checkWatchable(window.location.href);
@@ -44,8 +45,6 @@ class YouTubeAutoResume {
             if (initialLinkIsVideo) {
                 await this.injectPlayerButton();
             }
-
-            this.setupEventListeners();
 
             if (initialLinkIsVideo) {
                 this.runMainVideoProcess();
@@ -63,6 +62,7 @@ class YouTubeAutoResume {
 
     setupEventListeners() {
         this.setupNavigationListener();
+        this.setupSettingsListener();
         window.addEventListener('yt-title-change', this.handleTitleChange.bind(this));
     }
 
@@ -70,6 +70,9 @@ class YouTubeAutoResume {
         document.addEventListener('yt-navigate-finish', async () => {
             DEBUG && console.log("yt-navigate-finish EVENT DETECTED.");
             await this.stopMonitoring({ flush: true });
+            if (userSettings.pauseResume) {
+                return;
+            }
             initialLinkIsVideo = false;
             await this.resetButton();
             await this.runMainVideoProcess();
@@ -77,9 +80,33 @@ class YouTubeAutoResume {
     }
 
     handleTitleChange(event) {
+        if (userSettings.pauseResume) {
+            return;
+        }
         const newTitle = event.detail.title;
         DEBUG && console.log("Title changed to: " + newTitle);
         this.runMainVideoProcess(newTitle);
+    }
+
+    setupSettingsListener() {
+        chrome.storage.onChanged.addListener(async (changes, areaName) => {
+            if (areaName !== "local" || !changes.settings || !changes.settings.newValue) {
+                return;
+            }
+
+            const wasPaused = userSettings.pauseResume;
+            userSettings = { ...userSettings, ...changes.settings.newValue };
+
+            if (!wasPaused && userSettings.pauseResume) {
+                await this.stopMonitoring({ flush: true });
+                return;
+            }
+
+            if (wasPaused && !userSettings.pauseResume && this.checkWatchable(window.location.href)) {
+                await this.resetButton();
+                await this.runMainVideoProcess();
+            }
+        });
     }
 
     dispatchTitleChangeEvent(newTitle) {
