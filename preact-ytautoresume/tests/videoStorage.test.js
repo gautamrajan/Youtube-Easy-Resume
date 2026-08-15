@@ -1,6 +1,7 @@
 const {
   createVideoStorage,
   getVideoKey,
+  getLegacyVideoKey,
   SCHEMA_VERSION,
   SCHEMA_VERSION_KEY
 } = require('../src/videoStorage');
@@ -45,15 +46,15 @@ describe('versioned video storage', () => {
     const storage = __getExtensionStorage();
     expect(storage.videos).toBeUndefined();
     expect(storage[SCHEMA_VERSION_KEY]).toBe(SCHEMA_VERSION);
-    expect(storage[getVideoKey(olderDuplicate.videolink)]).toMatchObject({
+    expect(storage[getLegacyVideoKey(olderDuplicate.videolink)]).toMatchObject({
       title: 'New title',
       updatedAt: NOW - 500
     });
-    expect(storage[getVideoKey(missingTimestamp.videolink)]).toMatchObject({
+    expect(storage[getLegacyVideoKey(missingTimestamp.videolink)]).toMatchObject({
       title: 'Video two',
       updatedAt: NOW
     });
-    expect(storage[getVideoKey(olderDuplicate.videolink)].timestamp).toBeUndefined();
+    expect(storage[getLegacyVideoKey(olderDuplicate.videolink)].timestamp).toBeUndefined();
 
     const setCallCount = __getExtensionStorageSetCalls().length;
     const removeCallCount = __getExtensionStorageRemoveCalls().length;
@@ -78,6 +79,24 @@ describe('versioned video storage', () => {
     expect(__getExtensionStorage()[getVideoKey(firstVideo.videolink)].updatedAt).toBe(NOW);
     expect(__getExtensionStorage()[getVideoKey(secondVideo.videolink)].updatedAt).toBe(NOW);
     expect(__getExtensionStorage().videos).toBeUndefined();
+  });
+
+  test('a delayed migration cannot overwrite canonical progress', async () => {
+    const link = 'https://www.youtube.com/watch?v=race';
+    const staleMigration = makeVideo('race', { time: 10, updatedAt: NOW - 1000 });
+    const savedProgress = makeVideo('race', { time: 500 });
+    __resetExtensionStorage({ [SCHEMA_VERSION_KEY]: SCHEMA_VERSION });
+    const store = createStore();
+
+    await store.saveVideo(savedProgress);
+    await new Promise(resolve => {
+      chrome.storage.local.set({ [getLegacyVideoKey(link)]: staleMigration }, resolve);
+    });
+
+    expect((await store.getVideo(link)).time).toBe(500);
+    expect(await store.getAllVideos()).toEqual([
+      expect.objectContaining({ time: 500, updatedAt: NOW })
+    ]);
   });
 
   test('expires records by last saved activity', async () => {

@@ -1,6 +1,6 @@
 Storage schema version: 1
 
-    Each video is stored under "video:<youtube-video-id>": {
+    Each current video is stored under "video:<youtube-video-id>": {
         videolink,
         time,
         duration,
@@ -12,6 +12,9 @@ Storage schema version: 1
     }
 
     videoStorageVersion: 1
+
+    Migrated records use "legacyVideo:<youtube-video-id>" until the
+    next playback write. Canonical "video:" records always take precedence.
 
     settings:{
         pauseResume: boolean,

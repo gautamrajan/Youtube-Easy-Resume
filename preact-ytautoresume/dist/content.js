@@ -1,36 +1,56 @@
+/* global chrome, YouTubeEasyResumeVideoStorage */
 // content.js
 
 const DEBUG = false;
 const CHANNEL_SELECTOR = "ytd-video-owner-renderer ytd-channel-name a";
 const PLAYER_ICON_ACTIVE = chrome.runtime.getURL("icons/playericon.svg");
 const PLAYER_ICON_INACTIVE = chrome.runtime.getURL("icons/playericon_inactive.svg");
+const PROGRESS_WRITE_INTERVAL_MS = 5000;
+const videoStorage = YouTubeEasyResumeVideoStorage.createVideoStorage(
+    chrome.storage.local,
+    () => chrome.runtime && chrome.runtime.lastError
+);
 
 let initialLinkIsVideo = false;
-let ytNavLoop = false;
 let userSettings = {};
 let blacklist = false;
 
 class YouTubeAutoResume {
     constructor() {
+        this.initialized = false;
+        this.activeVideo = null;
+        this.activeVideoLink = null;
+        this.activeVideoTitle = null;
+        this.activeVideoChannel = null;
+        this.activeVideoTime = 0;
+        this.activeVideoDuration = 0;
+        this.timeUpdateHandler = null;
+        this.pauseHandler = null;
+        this.endedHandler = null;
+        this.pageHideHandler = null;
+        this.lastProgressWriteAt = 0;
+        this.writeQueue = Promise.resolve();
         window.addEventListener('load', this.initialize.bind(this));
     }
 
     async initialize() {
+        if (this.initialized) {
+            return;
+        }
+        this.initialized = true;
         await this.initStorage();
         userSettings = await this.getUserSettings();
         DEBUG && this.logUserSettings();
+        this.setupEventListeners();
 
         if (!userSettings.pauseResume) {
-            ytNavLoop = false;
             initialLinkIsVideo = this.checkWatchable(window.location.href);
 
             if (initialLinkIsVideo) {
                 await this.injectPlayerButton();
             }
 
-            this.setupEventListeners();
-
-            if (initialLinkIsVideo && !ytNavLoop) {
+            if (initialLinkIsVideo) {
                 this.runMainVideoProcess();
             }
         } else {
@@ -46,28 +66,51 @@ class YouTubeAutoResume {
 
     setupEventListeners() {
         this.setupNavigationListener();
+        this.setupSettingsListener();
         window.addEventListener('yt-title-change', this.handleTitleChange.bind(this));
     }
 
     setupNavigationListener() {
         document.addEventListener('yt-navigate-finish', async () => {
             DEBUG && console.log("yt-navigate-finish EVENT DETECTED.");
-            if (initialLinkIsVideo) {
-                initialLinkIsVideo = false;
-                await this.resetButton();
-                this.runMainVideoProcess();
-            } else {
-                await this.resetButton();
-                this.runMainVideoProcess();
-                ytNavLoop = true;
+            await this.stopMonitoring({ flush: true });
+            if (userSettings.pauseResume) {
+                return;
             }
+            initialLinkIsVideo = false;
+            await this.resetButton();
+            await this.runMainVideoProcess();
         });
     }
 
     handleTitleChange(event) {
+        if (userSettings.pauseResume) {
+            return;
+        }
         const newTitle = event.detail.title;
         DEBUG && console.log("Title changed to: " + newTitle);
         this.runMainVideoProcess(newTitle);
+    }
+
+    setupSettingsListener() {
+        chrome.storage.onChanged.addListener(async (changes, areaName) => {
+            if (areaName !== "local" || !changes.settings || !changes.settings.newValue) {
+                return;
+            }
+
+            const wasPaused = userSettings.pauseResume;
+            userSettings = { ...userSettings, ...changes.settings.newValue };
+
+            if (!wasPaused && userSettings.pauseResume) {
+                await this.stopMonitoring({ flush: true });
+                return;
+            }
+
+            if (wasPaused && !userSettings.pauseResume && this.checkWatchable(window.location.href)) {
+                await this.resetButton();
+                await this.runMainVideoProcess();
+            }
+        });
     }
 
     dispatchTitleChangeEvent(newTitle) {
@@ -76,25 +119,28 @@ class YouTubeAutoResume {
     }
 
     async injectPlayerButton() {
-        let blacklisted = await this.checkBlacklist(window.location.href);
-        let imgSrc = blacklisted ? PLAYER_ICON_INACTIVE : PLAYER_ICON_ACTIVE;
-        let tooltip = blacklisted ? "Video will not auto-resume" : "Video will auto-resume";
-        let button = this.createPlayerButton(imgSrc, tooltip);
+        const blacklisted = await this.checkBlacklist(window.location.href);
+        const imgSrc = blacklisted ? PLAYER_ICON_INACTIVE : PLAYER_ICON_ACTIVE;
+        const tooltip = blacklisted ? "Video will not auto-resume" : "Video will auto-resume";
+        const button = this.createPlayerButton(imgSrc, tooltip, blacklisted);
         document.querySelector("div.ytp-right-controls")?.prepend(button);
     }
 
-    createPlayerButton(imgSrc, tooltip) {
-        let button = document.createElement("div");
+    createPlayerButton(imgSrc, tooltip, blacklisted) {
+        const button = document.createElement("button");
+        button.type = "button";
         button.classList.add("ytp-button", "YTAutoResume");
         button.id = "YTAutoResumePlayerSwitch";
         button.title = tooltip;
-        button.ariaLabel = tooltip;
+        button.setAttribute("aria-label", tooltip);
+        button.setAttribute("aria-pressed", String(blacklisted));
         button.style.verticalAlign = "top";
         button.onclick = this.onPlayerButtonClick.bind(this);
 
-        let imgElement = document.createElement("img");
+        const imgElement = document.createElement("img");
         imgElement.id = "YTAutoResumeSwitchIcon";
         imgElement.src = imgSrc;
+        imgElement.alt = "";
         imgElement.style.height = "90%";
         imgElement.style.display = "block";
         imgElement.style.margin = "auto";
@@ -104,45 +150,65 @@ class YouTubeAutoResume {
     }
 
     async onPlayerButtonClick() {
-        await this.grabTitle();
-        let video = document.querySelector("video");
-        let markPlayed = video.duration - video.currentTime < userSettings.markPlayedTime;
-        blacklist = document.querySelector("#YTAutoResumePlayerSwitch").checked;
+        const video = document.querySelector("video");
+        const switchButton = document.querySelector("#YTAutoResumePlayerSwitch");
+        const channel = document.querySelector(CHANNEL_SELECTOR);
 
-        this.togglePlayerButtonState(blacklist, markPlayed, video);
+        if (!video || !switchButton || !channel) {
+            return;
+        }
+
+        const title = await this.grabTitle();
+        const currentlyBlacklisted = switchButton.getAttribute("aria-pressed") === "true";
+        const nextBlacklisted = !currentlyBlacklisted;
+        const markPlayed = video.duration - video.currentTime < userSettings.markPlayedTime;
+
+        await this.togglePlayerButtonState(nextBlacklisted, markPlayed, video, {
+            title,
+            channel: channel.textContent
+        });
     }
 
-    async togglePlayerButtonState(blacklist, markPlayed, video) {
-        let switchIcon = document.querySelector("#YTAutoResumeSwitchIcon");
-        let switchButton = document.querySelector("#YTAutoResumePlayerSwitch");
+    updatePlayerButtonState(button, blacklisted) {
+        const switchIcon = button.querySelector("#YTAutoResumeSwitchIcon");
+        const tooltip = blacklisted ? "Video will not auto-resume" : "Video will auto-resume";
 
-        switchIcon.src = blacklist ? PLAYER_ICON_INACTIVE : PLAYER_ICON_ACTIVE;
-        switchButton.title = blacklist ? "Video will not auto-resume" : "Video will auto-resume";
-        switchButton.checked = !blacklist;
+        button.title = tooltip;
+        button.setAttribute("aria-label", tooltip);
+        button.setAttribute("aria-pressed", String(blacklisted));
+        if (switchIcon) {
+            switchIcon.src = blacklisted ? PLAYER_ICON_INACTIVE : PLAYER_ICON_ACTIVE;
+        }
+    }
 
-        await this.setTime({
+    async togglePlayerButtonState(blacklisted, markPlayed, video, metadata) {
+        const switchButton = document.querySelector("#YTAutoResumePlayerSwitch");
+        if (!switchButton) {
+            return;
+        }
+
+        blacklist = blacklisted;
+        this.updatePlayerButtonState(switchButton, blacklisted);
+
+        await this.queueVideoWrite({
             videolink: window.location.href,
             time: video.currentTime,
             duration: video.duration,
-            title: document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent,
-            channel: document.querySelector(CHANNEL_SELECTOR).textContent,
+            title: metadata.title,
+            channel: metadata.channel,
             complete: markPlayed,
-            doNotResume: blacklist
+            doNotResume: blacklisted
         });
         
-        DEBUG && console.log(`Video ${blacklist ? 'blacklisted' : 'removed from blacklist'} successfully`);
+        DEBUG && console.log(`Video ${blacklisted ? 'blacklisted' : 'removed from blacklist'} successfully`);
     }
 
     async resetButton() {
-        let button = document.querySelector("#YTAutoResumePlayerSwitch");
+        const button = document.querySelector("#YTAutoResumePlayerSwitch");
         if (button) {
-            let blacklisted = await this.checkBlacklist(window.location.href);
-            let imgSrc = blacklisted ? PLAYER_ICON_INACTIVE : PLAYER_ICON_ACTIVE;
-            let tooltip = blacklisted ? "Video will not auto-resume" : "Video will auto-resume";
-            button.title = tooltip;
-            button.ariaLabel = tooltip;
-            button.checked = !blacklisted;
-            document.querySelector("#YTAutoResumeSwitchIcon").src = imgSrc;
+            const blacklisted = await this.checkBlacklist(window.location.href);
+            blacklist = blacklisted;
+            this.updatePlayerButtonState(button, blacklisted);
         } else {
             await this.injectPlayerButton();
         }
@@ -157,19 +223,7 @@ class YouTubeAutoResume {
     }
 
     initStorage() {
-        return Promise.all([this.initDB(), this.initSettings()]);
-    }
-
-    initDB() {
-        return new Promise(resolve => {
-            chrome.storage.local.getBytesInUse("videos", bytes => {
-                if (bytes === 0 || bytes === undefined) {
-                    chrome.storage.local.set({ videos: [] }, resolve);
-                } else {
-                    resolve();
-                }
-            });
-        });
+        return Promise.all([videoStorage.initialize(), this.initSettings()]);
     }
 
     initSettings() {
@@ -192,14 +246,8 @@ class YouTubeAutoResume {
         });
     }
 
-    extractWatchID(link) {
-        let start = link.indexOf('v=') + 2;
-        let end = link.indexOf('&', start);
-        return end === -1 ? link.slice(start) : link.slice(start, end);
-    }
-
     grabTitle() {
-        return new Promise((resolve, reject) => {
+        return new Promise(resolve => {
             let videoTitle = document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer");
             if (videoTitle) {
                 resolve(videoTitle.textContent);
@@ -219,58 +267,51 @@ class YouTubeAutoResume {
         return link.includes("watch?") && !link.includes("?t=");
     }
 
-    checkBlacklist(link) {
-        return new Promise(resolve => {
-            chrome.storage.local.get("videos", data => {
-                let blacklisted = data.videos.some(video => this.extractWatchID(video.videolink) === this.extractWatchID(link) && video.doNotResume);
-                resolve(blacklisted);
-            });
-        });
+    async checkBlacklist(link) {
+        const video = await videoStorage.getVideo(link);
+        return Boolean(video && video.doNotResume);
     }
 
     setTime(video) {
-        return new Promise(resolve => {
-            chrome.storage.local.get("videos", data => {
-                let videos = data.videos.filter(v => this.extractWatchID(v.videolink) !== this.extractWatchID(video.videolink));
-                videos.push(video);
-                chrome.storage.local.set({ videos }, resolve);
-            });
-        });
+        return videoStorage.saveVideo(video);
+    }
+
+    queueVideoWrite(video) {
+        this.writeQueue = this.writeQueue
+            .catch(error => {
+                console.error("Unable to save video progress:", error);
+            })
+            .then(() => this.setTime(video));
+        return this.writeQueue;
     }
 
     async runMainVideoProcess(newTitle = null) {
         await this.mainVideoProcess(newTitle);
-        ytNavLoop = true;
     }
 
     async mainVideoProcess(newTitle = null) {
-        DEBUG && console.log("Starting mainVideoProcess")
-        return new Promise(async resolve => {
-            if (!this.checkWatchable(window.location.href) || !this.checkDuration()) {
-                DEBUG && console.log("Video not viewable or does not meet duration requirements")
-                resolve();
-                return;
-            }
+        DEBUG && console.log("Starting mainVideoProcess");
+        await this.stopMonitoring({ flush: true });
 
-            let videoTitle = newTitle || await this.grabTitle();
-            if (!initialLinkIsVideo && !ytNavLoop) {
-                DEBUG && console.log("Page has no video")
-                resolve();
-            }
+        if (!this.checkWatchable(window.location.href) || !this.checkDuration()) {
+            DEBUG && console.log("Video not viewable or does not meet duration requirements");
+            return;
+        }
 
-            try {
-                DEBUG && console.log("Attempting to set video time")
-                let storedVideo = await this.checkStoredLinks(window.location.href);
-                if (storedVideo.time > userSettings.minWatchTime && !storedVideo.complete && !storedVideo.doNotResume) {
-                    document.querySelector("video").currentTime = storedVideo.time;
-                }
-                blacklist = storedVideo.doNotResume;
-            } catch {
-                blacklist = false;
-            }
+        const videoTitle = newTitle || await this.grabTitle();
 
-            this.monitorVideoTime(resolve);
-        });
+        try {
+            DEBUG && console.log("Attempting to set video time");
+            const storedVideo = await this.checkStoredLinks(window.location.href);
+            if (storedVideo.time > userSettings.minWatchTime && !storedVideo.complete && !storedVideo.doNotResume) {
+                document.querySelector("video").currentTime = storedVideo.time;
+            }
+            blacklist = storedVideo.doNotResume;
+        } catch {
+            blacklist = false;
+        }
+
+        this.monitorVideoTime(videoTitle);
     }
 
     checkDuration() {
@@ -278,67 +319,125 @@ class YouTubeAutoResume {
         return video.duration >= userSettings.minVideoLength;
     }
 
-    checkStoredLinks(link) {
-        return new Promise((resolve, reject) => {
-            chrome.storage.local.get("videos", data => {
-                let videoFound = data.videos.find(video => this.extractWatchID(video.videolink) === this.extractWatchID(link));
-                if (videoFound) {
-                    if (this.daysSince(videoFound.timestamp) > userSettings.deleteAfter) {
-                        this.deleteVideo(videoFound).then(() => reject(-1));
-                    } else {
-                        resolve(videoFound);
-                    }
-                } else {
-                    reject(-1);
-                }
-            });
-        });
+    async checkStoredLinks(link) {
+        const video = await videoStorage.getVideo(link);
+        if (!video) {
+            throw new Error("Video not found");
+        }
+        if (videoStorage.isExpired(video, userSettings.deleteAfter)) {
+            await videoStorage.removeVideo(video);
+            throw new Error("Video expired");
+        }
+        return video;
     }
 
-    deleteVideo(video) {
-        return new Promise(resolve => {
-            chrome.storage.local.get("videos", data => {
-                let videos = data.videos.filter(v => this.extractWatchID(v.videolink) !== this.extractWatchID(video.videolink));
-                chrome.storage.local.set({ videos }, resolve);
-            });
-        });
-    }
+    monitorVideoTime(videoTitle) {
+        const video = document.querySelector("video");
+        const channel = document.querySelector(CHANNEL_SELECTOR);
+        if (!video || !channel) {
+            return;
+        }
 
-    daysSince(time1) {
-        let currentTime = new Date().getTime();
-        return Math.round((currentTime - time1) / 86400000);
-    }
-
-    monitorVideoTime(resolve) {
-        let video = document.querySelector("video");
-        let lastTitle = document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent;
+        this.activeVideo = video;
+        this.activeVideoLink = window.location.href;
+        this.activeVideoTitle = videoTitle;
+        this.activeVideoChannel = channel.textContent;
+        this.captureCurrentProgress();
+        this.lastProgressWriteAt = 0;
+        let lastTitle = videoTitle;
         DEBUG && console.log("Starting video time monitoring for " + lastTitle);
     
-        const timeUpdateHandler = () => {
-            let currentTitle = document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent;
+        this.timeUpdateHandler = () => {
+            this.captureCurrentProgress();
+            const titleElement = document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer");
+            const currentTitle = titleElement ? titleElement.textContent : lastTitle;
             DEBUG && console.log("Monitoring video time for " + currentTitle);
     
             if (currentTitle !== lastTitle) {
                 DEBUG && console.log("New title detected: " + currentTitle);
                 lastTitle = currentTitle;
                 this.dispatchTitleChangeEvent(currentTitle);
+                return;
             }
     
-            if (!blacklist) {
-                let markPlayed = video.duration - video.currentTime < userSettings.markPlayedTime;
-                this.setTime({
-                    videolink: window.location.href,
-                    time: video.currentTime,
-                    duration: video.duration,
-                    title: currentTitle,
-                    channel: document.querySelector(CHANNEL_SELECTOR).textContent,
-                    complete: markPlayed,
-                    doNotResume: false
-                });
-            }
+            this.persistCurrentVideo();
         };
-    
-        video.addEventListener('timeupdate', timeUpdateHandler);
+
+        this.pauseHandler = () => {
+            this.captureCurrentProgress();
+            this.persistCurrentVideo({ force: true });
+        };
+        this.endedHandler = () => {
+            this.captureCurrentProgress();
+            this.persistCurrentVideo({ force: true });
+        };
+        this.pageHideHandler = () => {
+            this.captureCurrentProgress();
+            this.persistCurrentVideo({ force: true });
+        };
+
+        video.addEventListener('timeupdate', this.timeUpdateHandler);
+        video.addEventListener('pause', this.pauseHandler);
+        video.addEventListener('ended', this.endedHandler);
+        window.addEventListener('pagehide', this.pageHideHandler);
+    }
+
+    captureCurrentProgress() {
+        if (!this.activeVideo) {
+            return;
+        }
+        this.activeVideoTime = this.activeVideo.currentTime;
+        this.activeVideoDuration = this.activeVideo.duration;
+    }
+
+    persistCurrentVideo({ force = false } = {}) {
+        if (!this.activeVideo || blacklist) {
+            return this.writeQueue;
+        }
+
+        const now = Date.now();
+        if (!force && this.lastProgressWriteAt !== 0 && now - this.lastProgressWriteAt < PROGRESS_WRITE_INTERVAL_MS) {
+            return this.writeQueue;
+        }
+        this.lastProgressWriteAt = now;
+
+        const markPlayed = this.activeVideoDuration - this.activeVideoTime < userSettings.markPlayedTime;
+        return this.queueVideoWrite({
+            videolink: this.activeVideoLink,
+            time: this.activeVideoTime,
+            duration: this.activeVideoDuration,
+            title: this.activeVideoTitle,
+            channel: this.activeVideoChannel,
+            complete: markPlayed,
+            doNotResume: false
+        });
+    }
+
+    async stopMonitoring({ flush = false } = {}) {
+        if (flush) {
+            await this.persistCurrentVideo({ force: true });
+        }
+
+        if (this.activeVideo) {
+            this.activeVideo.removeEventListener('timeupdate', this.timeUpdateHandler);
+            this.activeVideo.removeEventListener('pause', this.pauseHandler);
+            this.activeVideo.removeEventListener('ended', this.endedHandler);
+        }
+        if (this.pageHideHandler) {
+            window.removeEventListener('pagehide', this.pageHideHandler);
+        }
+
+        this.activeVideo = null;
+        this.activeVideoLink = null;
+        this.activeVideoTitle = null;
+        this.activeVideoChannel = null;
+        this.activeVideoTime = 0;
+        this.activeVideoDuration = 0;
+        this.timeUpdateHandler = null;
+        this.pauseHandler = null;
+        this.endedHandler = null;
+        this.pageHideHandler = null;
+        this.lastProgressWriteAt = 0;
     }
 }
 
