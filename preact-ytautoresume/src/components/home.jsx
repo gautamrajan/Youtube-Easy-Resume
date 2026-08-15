@@ -1,4 +1,3 @@
-/* global chrome */
 import { h, Component, Fragment } from 'preact';
 import Switch from 'preact-material-components/Switch';
 import './styles/materialswitch.css';
@@ -11,6 +10,7 @@ import { extractWatchID, getDisplayedVideos } from './utilities'
 import SearchBar from './SearchBar';
 import ButtonBar from './ButtonBar';
 import videoStorage from '../popupVideoStorage';
+import extensionApi from '../extensionApi';
 
 const DEBUG = false;
 const DEFAULT_SETTINGS = Object.freeze({
@@ -106,19 +106,13 @@ export default class Home extends Component{
             });
         }
     }
-    handlePause = (event)=>{
-        var newState;
-        {this.state.paused ? newState=false:newState=true}
-        chrome.storage.local.get("settings",(data)=>{
-            var tempSettings = data.settings;
-            tempSettings.pauseResume = newState;
-            chrome.storage.local.set({
-                settings:tempSettings
-            },()=>{
-                this.setState({paused:newState});
-                DEBUG && console.log("newState")
-            })
-        })
+    handlePause = async () => {
+        const newState = !this.state.paused;
+        const data = await extensionApi.storage.local.get("settings");
+        const settings = { ...data.settings, pauseResume: newState };
+        await extensionApi.storage.local.set({ settings });
+        this.setState({ paused: newState });
+        DEBUG && console.log("newState");
     }
     deleteSelected = async () => {
         let delete_counter = this.state.selectedVideos.length;
@@ -316,29 +310,11 @@ export default class Home extends Component{
 }
 
 function getLocalStorage(key) {
-    return new Promise((resolve, reject) => {
-        chrome.storage.local.get(key, data => {
-            const error = chrome.runtime && chrome.runtime.lastError;
-            if (error) {
-                reject(new Error(error.message));
-                return;
-            }
-            resolve(data);
-        });
-    });
+    return extensionApi.storage.local.get(key);
 }
 
 function setLocalStorage(values) {
-    return new Promise((resolve, reject) => {
-        chrome.storage.local.set(values, () => {
-            const error = chrome.runtime && chrome.runtime.lastError;
-            if (error) {
-                reject(new Error(error.message));
-                return;
-            }
-            resolve();
-        });
-    });
+    return extensionApi.storage.local.set(values);
 }
 
 async function initSettingsDB() {

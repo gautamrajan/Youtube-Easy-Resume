@@ -12,7 +12,6 @@ const NOW = 2_000_000_000_000;
 function createStore(now = NOW) {
   return createVideoStorage(
     chrome.storage.local,
-    () => chrome.runtime.lastError,
     () => now
   );
 }

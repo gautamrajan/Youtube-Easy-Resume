@@ -1,9 +1,6 @@
-/* global chrome, globalThis */
-import './videoStorage';
+import extensionApi from './extensionApi';
+import { createVideoStorage } from './videoStorage';
 
-const videoStorage = globalThis.YouTubeEasyResumeVideoStorage.createVideoStorage(
-    chrome.storage.local,
-    () => chrome.runtime && chrome.runtime.lastError
-);
+const videoStorage = createVideoStorage(extensionApi.storage.local);
 
 export default videoStorage;

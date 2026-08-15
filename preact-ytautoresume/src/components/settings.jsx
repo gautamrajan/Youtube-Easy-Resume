@@ -6,6 +6,7 @@ import Home from './home';
 import { secondsToMinutes, minutesToSeconds } from './utilities';
 import Switch from 'preact-material-components/Switch';
 import 'preact-material-components/Switch/style.css';
+import extensionApi from '../extensionApi';
 const DEBUG = false;
 //TODO: Input validation for settings
 export default class SettingsPage extends Component{
@@ -57,42 +58,35 @@ export default class SettingsPage extends Component{
         }
 
     }
-    saveSettings = () =>{
-        chrome.storage.local.set(
-            {
-                settings:this.state.newSettings
-            },()=>{
-                console.log("SETTINGS CHANGED IN STORAGE");
-                this.setState({
-                    settings: this.state.newSettings,
-                    settingsChanged:false,
-                },()=>{
-                    this.bar.MDComponent.show({
-                        message:"Settings saved successfully"
-                    })
-                })
-            }
-        )
+    saveSettings = async () =>{
+        await extensionApi.storage.local.set({ settings: this.state.newSettings });
+        console.log("SETTINGS CHANGED IN STORAGE");
+        this.setState({
+            settings: this.state.newSettings,
+            settingsChanged:false,
+        },()=>{
+            this.bar.MDComponent.show({
+                message:"Settings saved successfully"
+            })
+        })
     }
     
-    componentDidMount(){
-        chrome.storage.local.get("settings",(data)=>{
-            if(data.settings != undefined){
-                
-                this.setState({settings: data.settings, newSettings:data.settings, dataReady:true, paused: data.settings.pauseResume});
-            }
-            else{
-                chrome.storage.local.set({
-                    settings:{
-                        pauseResume:false,
-                        minWatchTime:60,
-                        minVideoLength:480,
-                        markPlayedTime: 60,
-                        deleteAfter:30
-                    }
-                },()=>{this.setState({settings: data.settings, newSettings:data.settings, dataReady:true});});
-            }
-        })
+    async componentDidMount(){
+        const data = await extensionApi.storage.local.get("settings");
+        if(data.settings != undefined){
+            this.setState({settings: data.settings, newSettings:data.settings, dataReady:true, paused: data.settings.pauseResume});
+            return;
+        }
+
+        const settings = {
+            pauseResume:false,
+            minWatchTime:60,
+            minVideoLength:480,
+            markPlayedTime: 60,
+            deleteAfter:30
+        };
+        await extensionApi.storage.local.set({ settings });
+        this.setState({settings, newSettings: settings, dataReady:true, paused:false});
     }
     goBack = ()=>{
         this.setState({

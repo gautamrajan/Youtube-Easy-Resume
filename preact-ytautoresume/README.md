@@ -1,6 +1,10 @@
-# preact-ytautoresume
+# YouTube Easy Resume extension
 
-## Requires node v.16.13.0 to build
+Chrome and Firefox use the same application source. `src/extensionApi.js` selects Firefox's `browser` namespace when available and otherwise uses Chrome's `chrome` namespace. All asynchronous extension storage calls use the shared Promise interface.
+
+The content script and popup are both Webpack entries, so they execute the same imported storage and API modules. Browser packaging metadata is kept separate from application behavior.
+
+## Requires Node 16.13.0 to build
 
 ## CLI Commands
 
@@ -14,11 +18,6 @@ npm run dev
 # build for production with minification
 npm run build
 
-# test the production build locally
-npm run serve
-
 # run tests with jest and enzyme
 npm run test
 ```
-
-For detailed explanation on how things work, checkout the [CLI Readme](https://github.com/developit/preact-cli/blob/master/README.md).
