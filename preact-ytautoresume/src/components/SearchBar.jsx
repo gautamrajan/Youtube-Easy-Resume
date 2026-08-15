@@ -1,4 +1,5 @@
 import { h, Component } from 'preact';
+import Icon from './Icon';
 
 class SearchBar extends Component {
     constructor(props) {
@@ -22,8 +23,8 @@ class SearchBar extends Component {
         return (
             <div className="search-bar-container">
                 <div className='button-wrapper search-back'>
-                    <button type="button" className="back-button top-bar-button" onClick={onBack}>
-                        <i class="fas fa-arrow-left"></i>
+                    <button type="button" className="back-button top-bar-button" onClick={onBack} aria-label="Close search">
+                        <Icon name="back" />
                     </button>
 
                 </div>

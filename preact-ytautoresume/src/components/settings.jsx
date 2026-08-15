@@ -7,6 +7,7 @@ import { secondsToMinutes, minutesToSeconds } from './utilities';
 import Switch from 'preact-material-components/Switch';
 import 'preact-material-components/Switch/style.css';
 import extensionApi from '../extensionApi';
+import Icon from './Icon';
 const DEBUG = false;
 //TODO: Input validation for settings
 export default class SettingsPage extends Component{
@@ -126,8 +127,8 @@ export default class SettingsPage extends Component{
                     <div className="header-bar">
                         <h1>Settings</h1>
                         <div className='button-wrapper'>
-                            <button id="backButton" className='top-bar-button' onClick={this.goBack}>
-                                <i class="fa fa-chevron-left"></i>
+                            <button id="backButton" className='top-bar-button' onClick={this.goBack} aria-label="Close settings">
+                                <Icon name="back" />
                             </button>
                         </div>
                     </div>

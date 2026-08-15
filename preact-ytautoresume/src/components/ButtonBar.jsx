@@ -1,6 +1,7 @@
 import { h } from 'preact';
 import Switch from 'preact-material-components/Switch';
 import SearchBar from './SearchBar';
+import Icon from './Icon';
 
 const ButtonBar = ({ 
     isSearching, 
@@ -28,13 +29,13 @@ const ButtonBar = ({
         return (
             <div className="button-container">
                 <div className="button-wrapper">
-                    <button type="button" id="SearchButton" className="top-bar-button" onClick={toggleSearch}>
-                        <i class="fas fa-search"></i>
+                    <button type="button" id="SearchButton" className="top-bar-button" onClick={toggleSearch} aria-label="Search videos">
+                        <Icon name="search" />
                     </button>
                 </div>  
                 <div className="button-wrapper">
-                    <button type="button" id="EditButton" className="top-bar-button" onClick={setEdit}>
-                        <i class="fas fa-trash-alt"></i>
+                    <button type="button" id="EditButton" className="top-bar-button" onClick={setEdit} aria-label="Delete videos">
+                        <Icon name="delete" />
                     </button>
                 </div>
                 {/* <div className={`AR SwitchContainer ${paused ? "Off" : "On"}`}>
@@ -44,8 +45,8 @@ const ButtonBar = ({
                     <Switch name="AutoResumeToggle" checked={!paused} onChange={handlePause}/>
                 </div> */}
                 <div className="button-wrapper">
-                    <button type="button" id="SettingsButton" className="top-bar-button" onClick={moveToSettingsPage}>
-                        <i class="fas fa-cog"></i>
+                    <button type="button" id="SettingsButton" className="top-bar-button" onClick={moveToSettingsPage} aria-label="Open settings">
+                        <Icon name="settings" />
                     </button>
                 </div>
                 <style jsx>{`
@@ -72,11 +73,11 @@ const ButtonBar = ({
     } else {
         return (
             <div className="button-container">
-                <button className="button editmode" type="button" id="ConfirmDeleteButton" onClick={deleteSelected}>
-                    <i class="fas fa-check"></i>
+                <button className="button editmode" type="button" id="ConfirmDeleteButton" onClick={deleteSelected} aria-label="Delete selected videos">
+                    <Icon name="check" />
                 </button>
-                <button className="button editmode" type="button" id="ExitEditButton" onClick={setEdit}>
-                    <i class="fa fa-times" aria-hidden="true"></i>
+                <button className="button editmode" type="button" id="ExitEditButton" onClick={setEdit} aria-label="Cancel deleting videos">
+                    <Icon name="close" />
                 </button>
             </div>
         );
