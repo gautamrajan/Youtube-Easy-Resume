@@ -4,8 +4,10 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "build": "rm -rf dist && webpack && npm run copy:dist",
-    "copy:dist": "cp -r ./src/popup.html manifest.json ./src/assets/icons ./dist",
+    "build": "npm run build:chrome",
+    "build:chrome": "rm -rf dist && webpack && npm run copy:dist",
+    "build:firefox": "npm run build:chrome && node scripts/build-firefox.js",
+    "copy:dist": "mkdir -p ./dist/icons && cp ./src/popup.html manifest.json ./dist && cp ./src/assets/icons/icon16.png ./src/assets/icons/icon48.png ./src/assets/icons/icon128.png ./src/assets/icons/*.svg ./dist/icons",
     "serve": "sirv build --port 8080 --cors --single",
     "dev": "preact watch",
     "lint": "eslint src",
