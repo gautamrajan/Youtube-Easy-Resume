@@ -62,6 +62,8 @@ exists. Never change the Firefox add-on ID after signing.
 The persisted settings types and supported ranges are documented in
 [`preact-ytautoresume/SETTINGS.md`](preact-ytautoresume/SETTINGS.md).
 User-visible release changes are recorded in [`CHANGELOG.md`](CHANGELOG.md).
+The maintained branch policy and post-release archive list are documented in
+the [branch lifecycle guide](docs/branches.md).
 
 ## Toolchain
 

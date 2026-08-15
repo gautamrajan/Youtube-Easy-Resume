@@ -2,7 +2,7 @@
 
 Video history uses schema version `1`, recorded in `videoStorageVersion`.
 
-Each current video is stored independently under `video:<youtube-video-id>`. This lets two tabs update different videos without reading and rewriting one shared array. A record contains the existing playback fields plus `updatedAt`, a numeric Unix timestamp in milliseconds.
+Each current video is stored independently under `video:<youtube-video-id>`. This lets two tabs update different videos without reading and rewriting one shared array. A record contains `videolink`, `time`, `duration`, `title`, `channel`, `complete`, `doNotResume`, and `updatedAt`. The `complete` and `doNotResume` fields are booleans; `updatedAt` is a numeric Unix timestamp in milliseconds.
 
 `updatedAt` means “last saved playback activity.” It is refreshed whenever progress or the resume toggle is saved, and automatic expiry is based on this value. A separate creation timestamp is intentionally not stored because it is not used by the extension.
 
