@@ -1,15 +1,14 @@
-/* global chrome, YouTubeEasyResumeVideoStorage */
 // content.js
+
+import extensionApi from './extensionApi';
+import { createVideoStorage } from './videoStorage';
 
 const DEBUG = false;
 const CHANNEL_SELECTOR = "ytd-video-owner-renderer ytd-channel-name a";
-const PLAYER_ICON_ACTIVE = chrome.runtime.getURL("icons/playericon.svg");
-const PLAYER_ICON_INACTIVE = chrome.runtime.getURL("icons/playericon_inactive.svg");
+const PLAYER_ICON_ACTIVE = extensionApi.runtime.getURL("icons/playericon.svg");
+const PLAYER_ICON_INACTIVE = extensionApi.runtime.getURL("icons/playericon_inactive.svg");
 const PROGRESS_WRITE_INTERVAL_MS = 5000;
-const videoStorage = YouTubeEasyResumeVideoStorage.createVideoStorage(
-    chrome.storage.local,
-    () => chrome.runtime && chrome.runtime.lastError
-);
+const videoStorage = createVideoStorage(extensionApi.storage.local);
 
 let initialLinkIsVideo = false;
 let userSettings = {};
@@ -93,7 +92,7 @@ class YouTubeAutoResume {
     }
 
     setupSettingsListener() {
-        chrome.storage.onChanged.addListener(async (changes, areaName) => {
+        extensionApi.storage.onChanged.addListener(async (changes, areaName) => {
             if (areaName !== "local" || !changes.settings || !changes.settings.newValue) {
                 return;
             }
@@ -214,36 +213,28 @@ class YouTubeAutoResume {
         }
     }
 
-    getUserSettings() {
-        return new Promise(resolve => {
-            chrome.storage.local.get("settings", data => {
-                resolve(data.settings);
-            });
-        });
+    async getUserSettings() {
+        const data = await extensionApi.storage.local.get("settings");
+        return data.settings;
     }
 
     initStorage() {
         return Promise.all([videoStorage.initialize(), this.initSettings()]);
     }
 
-    initSettings() {
-        return new Promise(resolve => {
-            chrome.storage.local.getBytesInUse("settings", bytes => {
-                if (bytes === 0 || bytes === undefined) {
-                    chrome.storage.local.set({
-                        settings: {
-                            pauseResume: false,
-                            minWatchTime: 60,
-                            minVideoLength: 480,
-                            markPlayedTime: 60,
-                            deleteAfter: 30
-                        }
-                    }, resolve);
-                } else {
-                    resolve();
+    async initSettings() {
+        const data = await extensionApi.storage.local.get("settings");
+        if (!data.settings) {
+            await extensionApi.storage.local.set({
+                settings: {
+                    pauseResume: false,
+                    minWatchTime: 60,
+                    minVideoLength: 480,
+                    markPlayedTime: 60,
+                    deleteAfter: 30
                 }
             });
-        });
+        }
     }
 
     grabTitle() {

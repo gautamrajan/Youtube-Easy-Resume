@@ -59,21 +59,42 @@ global.chrome = {
       addListener: listener => storageChangeListeners.push(listener)
     },
     local: {
-      get: (keys, callback) => callback(selectStorage(keys)),
-      set: (values, callback = () => {}) => {
+      get: (keys, callback) => {
+        const values = selectStorage(keys);
+        if (callback) {
+          callback(values);
+          return;
+        }
+        return storageError
+          ? Promise.reject(new Error(storageError.message))
+          : Promise.resolve(values);
+      },
+      set: (values, callback) => {
         storageSetCalls.push(values);
         if (!storageError) {
           storage = { ...storage, ...values };
         }
-        callback();
+        if (callback) {
+          callback();
+          return;
+        }
+        return storageError
+          ? Promise.reject(new Error(storageError.message))
+          : Promise.resolve();
       },
-      remove: (keys, callback = () => {}) => {
+      remove: (keys, callback) => {
         const keysToRemove = Array.isArray(keys) ? keys : [keys];
         storageRemoveCalls.push(keysToRemove);
         if (!storageError) {
           keysToRemove.forEach(key => delete storage[key]);
         }
-        callback();
+        if (callback) {
+          callback();
+          return;
+        }
+        return storageError
+          ? Promise.reject(new Error(storageError.message))
+          : Promise.resolve();
       },
       getBytesInUse: (keys, callback) => {
         const values = selectStorage(keys);

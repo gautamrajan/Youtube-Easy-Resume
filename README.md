@@ -1,3 +1,5 @@
-# Youtube Easy Resume
+# YouTube Easy Resume
 
-A chrome extension that adds auto-resume functionality to Youtube videos. Videos will automatically resume from where you left off last, and in-progress videos are displayed through a pop-up window. Includes configurable settings that allow the user to determine which videos automatically resume, and adds a toggle control to the Youtube player.
+A Chrome and Firefox extension that adds auto-resume functionality to YouTube videos. Videos automatically resume from where you left off, and in-progress videos are displayed in a popup. Configurable settings control which videos resume, and a toggle is added to the YouTube player.
+
+Both browsers use the same source and generated content/popup bundles. Browser-specific API namespace selection is isolated in `preact-ytautoresume/src/extensionApi.js`.
