@@ -1,3 +1,4 @@
+/* global chrome */
 // content.js
 
 const DEBUG = false;
@@ -76,25 +77,28 @@ class YouTubeAutoResume {
     }
 
     async injectPlayerButton() {
-        let blacklisted = await this.checkBlacklist(window.location.href);
-        let imgSrc = blacklisted ? PLAYER_ICON_INACTIVE : PLAYER_ICON_ACTIVE;
-        let tooltip = blacklisted ? "Video will not auto-resume" : "Video will auto-resume";
-        let button = this.createPlayerButton(imgSrc, tooltip);
+        const blacklisted = await this.checkBlacklist(window.location.href);
+        const imgSrc = blacklisted ? PLAYER_ICON_INACTIVE : PLAYER_ICON_ACTIVE;
+        const tooltip = blacklisted ? "Video will not auto-resume" : "Video will auto-resume";
+        const button = this.createPlayerButton(imgSrc, tooltip, blacklisted);
         document.querySelector("div.ytp-right-controls")?.prepend(button);
     }
 
-    createPlayerButton(imgSrc, tooltip) {
-        let button = document.createElement("div");
+    createPlayerButton(imgSrc, tooltip, blacklisted) {
+        const button = document.createElement("button");
+        button.type = "button";
         button.classList.add("ytp-button", "YTAutoResume");
         button.id = "YTAutoResumePlayerSwitch";
         button.title = tooltip;
-        button.ariaLabel = tooltip;
+        button.setAttribute("aria-label", tooltip);
+        button.setAttribute("aria-pressed", String(blacklisted));
         button.style.verticalAlign = "top";
         button.onclick = this.onPlayerButtonClick.bind(this);
 
-        let imgElement = document.createElement("img");
+        const imgElement = document.createElement("img");
         imgElement.id = "YTAutoResumeSwitchIcon";
         imgElement.src = imgSrc;
+        imgElement.alt = "";
         imgElement.style.height = "90%";
         imgElement.style.display = "block";
         imgElement.style.margin = "auto";
@@ -104,45 +108,65 @@ class YouTubeAutoResume {
     }
 
     async onPlayerButtonClick() {
-        await this.grabTitle();
-        let video = document.querySelector("video");
-        let markPlayed = video.duration - video.currentTime < userSettings.markPlayedTime;
-        blacklist = document.querySelector("#YTAutoResumePlayerSwitch").checked;
+        const video = document.querySelector("video");
+        const switchButton = document.querySelector("#YTAutoResumePlayerSwitch");
+        const channel = document.querySelector(CHANNEL_SELECTOR);
 
-        this.togglePlayerButtonState(blacklist, markPlayed, video);
+        if (!video || !switchButton || !channel) {
+            return;
+        }
+
+        const title = await this.grabTitle();
+        const currentlyBlacklisted = switchButton.getAttribute("aria-pressed") === "true";
+        const nextBlacklisted = !currentlyBlacklisted;
+        const markPlayed = video.duration - video.currentTime < userSettings.markPlayedTime;
+
+        await this.togglePlayerButtonState(nextBlacklisted, markPlayed, video, {
+            title,
+            channel: channel.textContent
+        });
     }
 
-    async togglePlayerButtonState(blacklist, markPlayed, video) {
-        let switchIcon = document.querySelector("#YTAutoResumeSwitchIcon");
-        let switchButton = document.querySelector("#YTAutoResumePlayerSwitch");
+    updatePlayerButtonState(button, blacklisted) {
+        const switchIcon = button.querySelector("#YTAutoResumeSwitchIcon");
+        const tooltip = blacklisted ? "Video will not auto-resume" : "Video will auto-resume";
 
-        switchIcon.src = blacklist ? PLAYER_ICON_INACTIVE : PLAYER_ICON_ACTIVE;
-        switchButton.title = blacklist ? "Video will not auto-resume" : "Video will auto-resume";
-        switchButton.checked = !blacklist;
+        button.title = tooltip;
+        button.setAttribute("aria-label", tooltip);
+        button.setAttribute("aria-pressed", String(blacklisted));
+        if (switchIcon) {
+            switchIcon.src = blacklisted ? PLAYER_ICON_INACTIVE : PLAYER_ICON_ACTIVE;
+        }
+    }
+
+    async togglePlayerButtonState(blacklisted, markPlayed, video, metadata) {
+        const switchButton = document.querySelector("#YTAutoResumePlayerSwitch");
+        if (!switchButton) {
+            return;
+        }
+
+        blacklist = blacklisted;
+        this.updatePlayerButtonState(switchButton, blacklisted);
 
         await this.setTime({
             videolink: window.location.href,
             time: video.currentTime,
             duration: video.duration,
-            title: document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent,
-            channel: document.querySelector(CHANNEL_SELECTOR).textContent,
+            title: metadata.title,
+            channel: metadata.channel,
             complete: markPlayed,
-            doNotResume: blacklist
+            doNotResume: blacklisted
         });
         
-        DEBUG && console.log(`Video ${blacklist ? 'blacklisted' : 'removed from blacklist'} successfully`);
+        DEBUG && console.log(`Video ${blacklisted ? 'blacklisted' : 'removed from blacklist'} successfully`);
     }
 
     async resetButton() {
-        let button = document.querySelector("#YTAutoResumePlayerSwitch");
+        const button = document.querySelector("#YTAutoResumePlayerSwitch");
         if (button) {
-            let blacklisted = await this.checkBlacklist(window.location.href);
-            let imgSrc = blacklisted ? PLAYER_ICON_INACTIVE : PLAYER_ICON_ACTIVE;
-            let tooltip = blacklisted ? "Video will not auto-resume" : "Video will auto-resume";
-            button.title = tooltip;
-            button.ariaLabel = tooltip;
-            button.checked = !blacklisted;
-            document.querySelector("#YTAutoResumeSwitchIcon").src = imgSrc;
+            const blacklisted = await this.checkBlacklist(window.location.href);
+            blacklist = blacklisted;
+            this.updatePlayerButtonState(button, blacklisted);
         } else {
             await this.injectPlayerButton();
         }
