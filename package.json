@@ -14,6 +14,9 @@
     "dev:firefox": "web-ext run --source-dir dist/firefox",
     "lint": "eslint .",
     "lint:firefox": "web-ext lint --source-dir dist/firefox",
+    "package": "npm run build && npm run package:chrome && npm run package:firefox",
+    "package:chrome": "web-ext build --source-dir dist/chrome --artifacts-dir build/artifacts/chrome --overwrite-dest",
+    "package:firefox": "web-ext build --source-dir dist/firefox --artifacts-dir build/artifacts/firefox --overwrite-dest",
     "test": "vitest run",
     "test:watch": "vitest"
   },

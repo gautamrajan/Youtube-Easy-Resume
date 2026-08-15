@@ -33,9 +33,23 @@ Firefox minimum is also enforced in its manifest.
 Use `npm run dev:firefox` after building to open the Firefox artifact as a
 temporary extension. For Chrome, load `dist/chrome` as an unpacked extension.
 
+To create local archives for both browsers:
+
+```bash
+npm run package
+```
+
+This builds both targets once, then writes separate ZIP files under
+`build/artifacts/chrome` and `build/artifacts/firefox`. Release signing,
+deterministic release archives, and store submission remain part of the release
+workflow rather than this development build.
+
 Firefox-specific signing and privacy fields live in
 `preact-ytautoresume/manifest.firefox.json`; the rest of the manifest is shared.
-Generated directories are intentionally not committed.
+Generated directories are intentionally not committed. Before the first signed
+Firefox release, the publishing-account owner must check AMO **Manage My
+Submissions** for an older private submission and use its assigned GUID if one
+exists. Never change the Firefox add-on ID after signing.
 
 ## Toolchain
 
