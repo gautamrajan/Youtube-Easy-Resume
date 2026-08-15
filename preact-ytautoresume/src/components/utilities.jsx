@@ -1,24 +1,9 @@
 
 import videoStorage from '../popupVideoStorage';
+import { getYouTubeVideoId } from '../youtubePage';
 
 export function extractWatchID(link) {
-    var start = 0;
-    var end = 0;
-    let result = ""
-    for(var i=0;i<link.length;i++){
-        if(link[i]== 'v' && link[i+1] == '='){
-            start = i+2;
-        }
-        else if(link[i] =='&'){
-            end = i;
-            break;
-        }
-        else if(i==link.length-1){
-            end=i+1;
-        }
-    }
-    result = link.slice(start,end);
-    return result;
+    return getYouTubeVideoId(link);
 }
 export function secondsToHMS(timeInSeconds){
     var inputSeconds = Math.floor(timeInSeconds);

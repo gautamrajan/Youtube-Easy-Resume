@@ -456,7 +456,8 @@ class YouTubeAutoResume {
     }
 
     persistCurrentVideo({ force = false } = {}) {
-        if (!this.activeVideo || blacklist) {
+        const videoRecord = this.getActiveVideoRecord();
+        if (!videoRecord) {
             return this.writeQueue;
         }
 
@@ -465,23 +466,27 @@ class YouTubeAutoResume {
             return this.writeQueue;
         }
         this.lastProgressWriteAt = now;
+        return this.queueVideoWrite(videoRecord);
+    }
 
-        const markPlayed = this.activeVideoDuration - this.activeVideoTime < userSettings.markPlayedTime;
-        return this.queueVideoWrite({
+    getActiveVideoRecord() {
+        if (!this.activeVideo || blacklist) {
+            return null;
+        }
+
+        return {
             videolink: this.activeVideoLink,
             time: this.activeVideoTime,
             duration: this.activeVideoDuration,
             title: this.activeVideoTitle,
             channel: this.activeVideoChannel,
-            complete: markPlayed,
+            complete: this.activeVideoDuration - this.activeVideoTime < userSettings.markPlayedTime,
             doNotResume: false
-        });
+        };
     }
 
     async stopMonitoring({ flush = false } = {}) {
-        if (flush) {
-            await this.persistCurrentVideo({ force: true });
-        }
+        const videoRecord = flush ? this.getActiveVideoRecord() : null;
 
         if (this.activeVideo) {
             this.activeVideo.removeEventListener('timeupdate', this.timeUpdateHandler);
@@ -503,6 +508,12 @@ class YouTubeAutoResume {
         this.endedHandler = null;
         this.pageHideHandler = null;
         this.lastProgressWriteAt = 0;
+
+        if (videoRecord) {
+            await this.queueVideoWrite(videoRecord);
+        } else {
+            await this.writeQueue;
+        }
     }
 }
 
