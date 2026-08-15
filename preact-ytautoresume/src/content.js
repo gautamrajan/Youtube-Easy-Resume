@@ -28,7 +28,7 @@ class YouTubeAutoResume {
                 await this.injectPlayerButton();
             }
 
-            this.setupNavigationListener();
+            this.setupEventListeners();
 
             if (initialLinkIsVideo && !ytNavLoop) {
                 this.runMainVideoProcess();
@@ -44,6 +44,11 @@ class YouTubeAutoResume {
         console.log("CHECK MIN VID LENGTH SETTING: " + userSettings.minVideoLength);
     }
 
+    setupEventListeners() {
+        this.setupNavigationListener();
+        window.addEventListener('yt-title-change', this.handleTitleChange.bind(this));
+    }
+
     setupNavigationListener() {
         document.addEventListener('yt-navigate-finish', async () => {
             DEBUG && console.log("yt-navigate-finish EVENT DETECTED.");
@@ -57,6 +62,17 @@ class YouTubeAutoResume {
                 ytNavLoop = true;
             }
         });
+    }
+
+    handleTitleChange(event) {
+        const newTitle = event.detail.title;
+        DEBUG && console.log("Title changed to: " + newTitle);
+        this.runMainVideoProcess(newTitle);
+    }
+
+    dispatchTitleChangeEvent(newTitle) {
+        const event = new CustomEvent('yt-title-change', { detail: { title: newTitle } });
+        window.dispatchEvent(event);
     }
 
     async injectPlayerButton() {
@@ -222,24 +238,28 @@ class YouTubeAutoResume {
         });
     }
 
-    async runMainVideoProcess() {
-        await this.mainVideoProcess();
+    async runMainVideoProcess(newTitle = null) {
+        await this.mainVideoProcess(newTitle);
         ytNavLoop = true;
     }
 
-    async mainVideoProcess() {
+    async mainVideoProcess(newTitle = null) {
+        DEBUG && console.log("Starting mainVideoProcess")
         return new Promise(async resolve => {
             if (!this.checkWatchable(window.location.href) || !this.checkDuration()) {
+                DEBUG && console.log("Video not viewable or does not meet duration requirements")
                 resolve();
                 return;
             }
 
-            let videoTitle = await this.grabTitle();
+            let videoTitle = newTitle || await this.grabTitle();
             if (!initialLinkIsVideo && !ytNavLoop) {
+                DEBUG && console.log("Page has no video")
                 resolve();
             }
 
             try {
+                DEBUG && console.log("Attempting to set video time")
                 let storedVideo = await this.checkStoredLinks(window.location.href);
                 if (storedVideo.time > userSettings.minWatchTime && !storedVideo.complete && !storedVideo.doNotResume) {
                     document.querySelector("video").currentTime = storedVideo.time;
@@ -292,14 +312,18 @@ class YouTubeAutoResume {
     monitorVideoTime(resolve) {
         let video = document.querySelector("video");
         let lastTitle = document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent;
-
-        video.ontimeupdate = () => {
+        DEBUG && console.log("Starting video time monitoring for " + lastTitle);
+    
+        const timeUpdateHandler = () => {
             let currentTitle = document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer").textContent;
+            DEBUG && console.log("Monitoring video time for " + currentTitle);
+    
             if (currentTitle !== lastTitle) {
-                resolve();
-                return;
+                DEBUG && console.log("New title detected: " + currentTitle);
+                lastTitle = currentTitle;
+                this.dispatchTitleChangeEvent(currentTitle);
             }
-
+    
             if (!blacklist) {
                 let markPlayed = video.duration - video.currentTime < userSettings.markPlayedTime;
                 this.setTime({
@@ -312,8 +336,9 @@ class YouTubeAutoResume {
                     doNotResume: false
                 });
             }
-            DEBUG && console.log(document.querySelector(CHANNEL_SELECTOR).textContent);
         };
+    
+        video.addEventListener('timeupdate', timeUpdateHandler);
     }
 }
 

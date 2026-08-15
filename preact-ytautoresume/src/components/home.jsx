@@ -6,8 +6,11 @@ import './styles/mainlist.css';
 import SettingsPage from "./settings"
 import Snackbar from 'preact-material-components/Snackbar';
 import generateList from './list';
-import {extractWatchID} from './utilities'
-const DEBUG = true;
+import { extractWatchID, getDisplayedVideos } from './utilities'
+import SearchBar from './SearchBar';
+import ButtonBar from './ButtonBar';
+
+const DEBUG = false;
 export default class Home extends Component{
     constructor(){
         super();
@@ -21,17 +24,34 @@ export default class Home extends Component{
             selectedVideos:[],
             settings: {},
             lastClickedIndex: -1,
+            isSearching: false,
+            searchQuery: ''
         }
         this.maxBarWidth = 226;
         this.marginRight = 0;
         this.titleWidth = 188;
+    }
+    toggleSearch = () => {
+        this.setState(prevState => ({ 
+            isSearching: !prevState.isSearching, 
+            searchQuery: '' 
+        }), () => {
+            if (!this.state.isSearching) {
+                // Reset the list when exiting search mode
+                this.setList();
+            }
+        });
+    }
+
+    handleSearchChange = (query) => {
+        this.setState({ searchQuery: query }, this.setList);
     }
     moveToSettingsPage = ()=>{
         this.setState({
             settingsPage:true
         });
     }
-    setedit = () => {
+    setEdit = () => {
         if (this.state.edit) {
             this.setState({
                 edit: !this.state.edit,
@@ -119,61 +139,6 @@ export default class Home extends Component{
             });
         }
     }
-    buttonBar = () => {
-        let paused = this.state.paused;
-        var pauseButtonText = "";
-        //DEBUG && console.log(paused);
-        if(paused){pauseButtonText = "Unpause"}else{pauseButtonText = "Pause"};
-        if (!this.state.edit) {
-            return(
-                <div className="button-container">
-                    <button type="button" id="EditButton" onClick={this.setedit}>
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                    <div className={`AR SwitchContainer ${this.state.paused ? "Off" : "On"}`}>
-                        <label for="AutoResumeToggle">
-                            <span className={`SwitchLabel ${this.state.paused ? "Off" : "On"}`} id="AutoRedSwitchLabel">{this.state.paused ? "OFF" : "ON"}</span>
-                            {/* Resume */}
-                        </label>
-                        <Switch name="AutoResumeToggle" checked={!paused} ref={pauseSwitch=>{this.switch=pauseSwitch;}}
-                                onChange={(event)=>{this.handlePause(event)}}/>
-                    </div>
-                    <button type="button" id="SettingsButton" onClick={this.moveToSettingsPage}>
-                        <i class="fas fa-cog"></i>
-                    </button>
-                    <style jsx>{`
-                        .SwitchLabel{
-                            font-weight:600;
-                        }
-                        .SwitchLabel.On{
-                            color:red;
-                            padding-right:4px;
-                        }
-                        .SwitchLabel.Off{
-                            color:white;
-                            opacity: 0.4;
-                        }    
-                        .SwitchContainer.On{
-                            margin-left:6px;
-                        }
-                    `}
-                    </style>
-                </div>
-            )
-        }
-        else{
-            return (
-                <div className="button-container">
-                    <button className = "button editmode" type="button" id="ConfirmDeleteButton" onClick={this.deleteSelected}>
-                        <i class="fas fa-check"></i>
-                    </button>
-                    <button className = "button editmode" type="button" id="ExitEditButton" onClick={this.setedit}>
-                        <i class="fa fa-times" aria-hidden="true"></i>
-                    </button>
-                </div>
-            )
-        }
-    }
     render(){
         let paused = this.state.paused;
         let settingsPage = this.state.settingsPage;
@@ -185,12 +150,23 @@ export default class Home extends Component{
                 return(<SettingsPage/>)
             }
             else {
-                let buttonBar = this.buttonBar();
+                //let buttonBar = this.buttonBar();
                 return(
                     <div className="HomeContainer">
                         <div className="header-bar">
-                            <h1>Currently watching</h1>
-                            {buttonBar}
+                            {!this.state.isSearching && <h1>Currently watching</h1>}
+                            <ButtonBar 
+                                isSearching={this.state.isSearching}
+                                paused={this.state.paused}
+                                edit={this.state.edit}
+                                toggleSearch={this.toggleSearch}
+                                handleSearchChange={this.handleSearchChange}
+                                searchQuery={this.state.searchQuery}
+                                setEdit={this.setEdit}
+                                handlePause={this.handlePause}
+                                moveToSettingsPage={this.moveToSettingsPage}
+                                deleteSelected={this.deleteSelected}
+                            />
                         </div>
                         <div className="main-list" id="main-list">
                             {this.state.listReady ? this.getList() : null}
@@ -200,6 +176,7 @@ export default class Home extends Component{
                                 .main-list-element{
                                     margin-right:${this.props.marginRight}
                                 }  
+
                                 h2 {
                                     margin-top: 42vh;
                                     text-align: center;
@@ -227,6 +204,7 @@ export default class Home extends Component{
             marginRight: this.marginRight,
             maxBarWidth: this.maxBarWidth,
             settings: this.state.settings,
+            searchQuery: this.state.searchQuery,
             eClickHandler: (video, index, event) => this.editVideoClick(video, index, event)
         }
         generateList(props).then((elementList) => {
@@ -249,44 +227,79 @@ export default class Home extends Component{
     editVideoClick = (video, index, event) => {
         if (this.state.edit) {
             let newSelectedVideos = [...this.state.selectedVideos];
+            const totalVideos = this.state.listElements.length;
+    
+            // Use displayed index directly
+            const displayedIndex = index;
+    
+            DEBUG && console.log(`Clicked index: ${displayedIndex}`);
+            DEBUG && console.log(`Last clicked index: ${this.state.lastClickedIndex}`);
+    
             const videoIndex = newSelectedVideos.findIndex(v => extractWatchID(v.videolink) === extractWatchID(video.videolink));
-
+    
             if (event.shiftKey && this.state.lastClickedIndex !== -1) {
-                this.handleShiftClick(index, newSelectedVideos);
+                DEBUG && console.log(`Shift-click detected. Handling range from ${this.state.lastClickedIndex} to ${displayedIndex}`);
+                this.handleShiftClick(this.state.lastClickedIndex, displayedIndex, newSelectedVideos);
             } else {
                 if (videoIndex === -1) {
                     newSelectedVideos.push(video);
+                    DEBUG && console.log(`Selected video: ${video.videolink}`);
                 } else {
                     newSelectedVideos.splice(videoIndex, 1);
+                    DEBUG && console.log(`Unselected video: ${video.videolink}`);
                 }
+                // Update lastClickedIndex to the current displayed index
+                this.setState({
+                    selectedVideos: newSelectedVideos,
+                    lastClickedIndex: displayedIndex
+                }, () => {
+                    this.setList();
+                    DEBUG && console.log(`Updated selected videos: ${JSON.stringify(newSelectedVideos.map(v => v.title))}`);
+                });
             }
-
-            this.setState({
-                selectedVideos: newSelectedVideos,
-                lastClickedIndex: index
-            }, () => {
-                this.setList();
-                DEBUG && console.log(`${videoIndex === -1 ? 'Selected' : 'Unselected'} video: ${video.videolink}`);
-            });
         } else {
-            DEBUG && console.log("false alarm");
+            DEBUG && console.log("Edit mode is not active.");
         }
     }
-    handleShiftClick = (currentIndex, selectedVideos) => {
-        const start = Math.min(this.state.lastClickedIndex, currentIndex);
-        const end = Math.max(this.state.lastClickedIndex, currentIndex);
-
-        chrome.storage.local.get("videos", (data) => {
-            const videos = data.videos;
+    //TODO: Currentl implmentation grabs videos straight from DB without
+    //checking if they're blacklisted or completed. Causing issues
+    handleShiftClick = async (lastClickedDisplayedIndex, currentDisplayedIndex, selectedVideos) => {
+        const start = Math.min(lastClickedDisplayedIndex, currentDisplayedIndex);
+        const end = Math.max(lastClickedDisplayedIndex, currentDisplayedIndex);
+    
+        DEBUG && console.log(`Handling shift click from ${lastClickedDisplayedIndex} to ${currentDisplayedIndex} (start: ${start}, end: ${end})`);
+    
+        try {
+            const displayedVideos = await getDisplayedVideos(this.state.settings, this.state.searchQuery);
+            DEBUG && console.log("Displayed videos:", displayedVideos);
+            let newSelectedVideos = [...selectedVideos]; // Clone to avoid direct mutation
+    
             for (let i = start; i <= end; i++) {
-                const video = videos[i];
-                const videoIndex = selectedVideos.findIndex(v => extractWatchID(v.videolink) === extractWatchID(video.videolink));
-                if (videoIndex === -1) {
-                    selectedVideos.push(video);
+                const video = displayedVideos[i];
+                DEBUG && console.log("Shift-selected video " + i + ": " + video.title)
+                if (video) {
+                    const videoExists = newSelectedVideos.some(v => extractWatchID(v.videolink) === extractWatchID(video.videolink));
+                    if (!videoExists) {
+                        newSelectedVideos.push(video);
+                        DEBUG && console.log(`Selected video during shift-click: ${video.title}`);
+                    }
                 }
             }
-        });
+    
+            this.setState({
+                selectedVideos: newSelectedVideos,
+                lastClickedIndex: currentDisplayedIndex // Update to current clicked index
+            }, () => {
+                this.setList();
+                DEBUG && console.log(`Updated selected videos after shift-click: ${JSON.stringify(newSelectedVideos.map(v => v.title))}`);
+            });
+        } catch (error) {
+            console.error("Error in handleShiftClick:", error);
+        }
     }
+    
+    
+    
     getSettings = () => {
         return new Promise((resolve) => {
             chrome.storage.local.get("settings", (data) => {
