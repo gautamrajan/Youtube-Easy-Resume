@@ -11,7 +11,7 @@
     "build": "node scripts/build.mjs",
     "build:chrome": "node scripts/build.mjs chrome",
     "build:firefox": "node scripts/build.mjs firefox",
-    "check": "npm test && npm run lint && npm run package && npm run lint:firefox && npm run verify:artifacts && npm run verify:reproducible",
+    "check": "npm run verify:repository && npm test && npm run lint && npm run package && npm run lint:firefox && npm run verify:artifacts && npm run verify:reproducible",
     "dev:firefox": "web-ext run --source-dir dist/firefox",
     "lint": "eslint .",
     "lint:firefox": "web-ext lint --source-dir dist/firefox",
@@ -21,6 +21,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "verify:artifacts": "node scripts/verify-artifacts.mjs",
+    "verify:repository": "node scripts/verify-repository.mjs",
     "verify:release-tag": "node scripts/verify-release-tag.mjs",
     "verify:reproducible": "node scripts/verify-reproducibility.mjs"
   },
