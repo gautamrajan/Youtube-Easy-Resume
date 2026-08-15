@@ -9,7 +9,7 @@ describe('YouTube player blacklist control', () => {
         markPlayedTime: 60,
         deleteAfter: 30
       },
-      videos: []
+      videoStorageVersion: 1
     });
     document.body.innerHTML = `
       <div class="ytp-right-controls"></div>
@@ -38,7 +38,7 @@ describe('YouTube player blacklist control', () => {
     expect(button.getAttribute('aria-pressed')).toBe('true');
     expect(button.getAttribute('aria-label')).toBe('Video will not auto-resume');
     expect(document.querySelector('#YTAutoResumeSwitchIcon').src).toContain('playericon_inactive.svg');
-    expect(__getExtensionStorage().videos[0].doNotResume).toBe(true);
+    expect(__getStoredVideos()[0].doNotResume).toBe(true);
 
     document.dispatchEvent(new CustomEvent('yt-navigate-finish'));
     await flushPromises();
@@ -49,6 +49,6 @@ describe('YouTube player blacklist control', () => {
     expect(button.getAttribute('aria-pressed')).toBe('false');
     expect(button.getAttribute('aria-label')).toBe('Video will auto-resume');
     expect(document.querySelector('#YTAutoResumeSwitchIcon').src).toContain('playericon.svg');
-    expect(__getExtensionStorage().videos[0].doNotResume).toBe(false);
+    expect(__getStoredVideos()[0].doNotResume).toBe(false);
   });
 });

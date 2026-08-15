@@ -9,7 +9,7 @@ describe('content-script video lifecycle', () => {
         markPlayedTime: 60,
         deleteAfter: 30
       },
-      videos: []
+      videoStorageVersion: 1
     });
     document.body.innerHTML = `
       <div class="ytp-right-controls"></div>
@@ -61,7 +61,7 @@ describe('content-script video lifecycle', () => {
     await flushPromises();
     expect(removeSpy.mock.calls.some(([type]) => type === 'timeupdate')).toBe(true);
     expect(addSpy.mock.calls.filter(([type]) => type === 'timeupdate')).toHaveLength(2);
-    expect(__getExtensionStorage().videos[0].time).toBe(120);
+    expect(__getStoredVideos()[0].time).toBe(120);
 
     nowSpy.mockRestore();
   });

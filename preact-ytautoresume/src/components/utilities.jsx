@@ -1,4 +1,6 @@
 
+import videoStorage from '../popupVideoStorage';
+
 export function extractWatchID(link) {
     var start = 0;
     var end = 0;
@@ -70,36 +72,22 @@ export function checkCriteria(video, settings) {
     else if (video.duration < settings.minVideoLength) {
         return false;
     }
-    else if (video.hasOwnProperty('timestamp') &&
-        settings.hasOwnProperty('deleteAfter') &&
-        daysSince(video.timestamp) > settings.deleteAfter) {
+    else if (videoStorage.isExpired(video, settings.deleteAfter)) {
         return false;
     }
     else {
         return true;
     }
-}export function daysSince(time1) {
-    let current_time = new Date().getTime();
-    let time_since_ms = current_time - time1;
-    return Math.round(time_since_ms / 86400000);
 }
 
-export function getDisplayedVideos(settings, searchQuery = '') {
-    return new Promise((resolve) => {
-      chrome.storage.local.get("videos", (data) => {
-        if (data.videos && data.videos.length > 0) {
-          const filteredVideos = data.videos.filter(video => 
-            checkCriteria(video, settings) &&
-            (searchQuery ? 
-              (video.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              video.channel.toLowerCase().includes(searchQuery.toLowerCase()))
-              : true
-            )
-          );
-          resolve(filteredVideos);
-        } else {
-          resolve([]);
-        }
-      });
-    });
-  }
+export async function getDisplayedVideos(settings, searchQuery = '') {
+    const videos = await videoStorage.getAllVideos();
+    return videos.filter(video =>
+        checkCriteria(video, settings) &&
+        (searchQuery ?
+            (video.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            video.channel.toLowerCase().includes(searchQuery.toLowerCase()))
+            : true
+        )
+    );
+}

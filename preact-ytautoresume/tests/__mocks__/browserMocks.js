@@ -2,6 +2,7 @@ const initialStorage = {};
 let storage = { ...initialStorage };
 let storageError = null;
 let storageSetCalls = [];
+let storageRemoveCalls = [];
 let storageChangeListeners = [];
 
 function selectStorage(keys) {
@@ -24,11 +25,16 @@ global.__resetExtensionStorage = values => {
   storage = { ...values };
   storageError = null;
   storageSetCalls = [];
+  storageRemoveCalls = [];
   storageChangeListeners = [];
 };
 
 global.__getExtensionStorage = () => storage;
 global.__getExtensionStorageSetCalls = () => [...storageSetCalls];
+global.__getExtensionStorageRemoveCalls = () => [...storageRemoveCalls];
+global.__getStoredVideos = () => Object.entries(storage)
+  .filter(([key]) => key.startsWith('video:'))
+  .map(([, video]) => video);
 global.__setExtensionStorageError = message => {
   storageError = message ? { message } : null;
 };
@@ -58,6 +64,14 @@ global.chrome = {
         storageSetCalls.push(values);
         if (!storageError) {
           storage = { ...storage, ...values };
+        }
+        callback();
+      },
+      remove: (keys, callback = () => {}) => {
+        const keysToRemove = Array.isArray(keys) ? keys : [keys];
+        storageRemoveCalls.push(keysToRemove);
+        if (!storageError) {
+          keysToRemove.forEach(key => delete storage[key]);
         }
         callback();
       },

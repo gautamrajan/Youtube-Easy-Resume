@@ -10,6 +10,7 @@ import generateList from './list';
 import { extractWatchID, getDisplayedVideos } from './utilities'
 import SearchBar from './SearchBar';
 import ButtonBar from './ButtonBar';
+import videoStorage from '../popupVideoStorage';
 
 const DEBUG = false;
 const DEFAULT_SETTINGS = Object.freeze({
@@ -19,7 +20,6 @@ const DEFAULT_SETTINGS = Object.freeze({
     markPlayedTime: 60,
     deleteAfter: 30
 });
-
 export default class Home extends Component{
     constructor(){
         super();
@@ -82,8 +82,8 @@ export default class Home extends Component{
     }
     async componentDidMount() {
         try {
+            await videoStorage.initialize();
             const settings = await initSettingsDB();
-            await initVideosDB();
             await this.cleanDB(settings);
             // Async initialization completes after the first render by design.
             // eslint-disable-next-line react/no-did-mount-set-state
@@ -120,38 +120,21 @@ export default class Home extends Component{
             })
         })
     }
-    deleteSelected = () => {
+    deleteSelected = async () => {
         let delete_counter = this.state.selectedVideos.length;
         if (this.state.selectedVideos.length > 0) {
-            chrome.storage.local.get("videos", (data) => {
-                let newList = data;
-                DEBUG && console.log("HERE");
-                for (let x = 0; x < this.state.selectedVideos.length;x++) {
-                    DEBUG && console.log("LOOKING FOR " + this.state.selectedVideos[x].videolink);
-                    for (let i = 0; i < newList.videos.length; i++){
-                        if (newList.videos[i].videolink == this.state.selectedVideos[x].videolink) {
-                            DEBUG && console.log("FOUND ELEMENT TO DELETE: " + this.state.selectedVideos[x].videolink);
-                            newList.videos.splice(i, 1);
-                        }
-                    }
-                }
-                DEBUG && console.log("STATE OF DB AFTER DELETIONS: ");
-                DEBUG && console.log(newList.videos);
-                chrome.storage.local.set(newList, () => {
-
-                    this.setState({
-                        edit: !this.state.edit,
-                        listReady:false,
-                        selectedVideos: []
-                    }, () => {
-                        this.setList();
-                        this.bar.MDComponent.show({
-                            message:`${delete_counter} ${delete_counter > 1 ? "videos":"video"} removed`
-                        })
-                        DEBUG && console.log("Edit mode: " + (this.state.edit ? "on" : "off"));
-                    });
+            await videoStorage.removeVideos(this.state.selectedVideos);
+            this.setState({
+                edit: !this.state.edit,
+                listReady:false,
+                selectedVideos: []
+            }, () => {
+                this.setList();
+                this.bar.MDComponent.show({
+                    message:`${delete_counter} ${delete_counter > 1 ? "videos":"video"} removed`
                 })
-            })
+                DEBUG && console.log("Edit mode: " + (this.state.edit ? "on" : "off"));
+            });
         }
         else {
             this.setState({
@@ -328,19 +311,7 @@ export default class Home extends Component{
         }
     }
     cleanDB = async (settings = this.state.settings) => {
-        const data = await getLocalStorage("videos");
-        const videos = Array.isArray(data.videos) ? data.videos : [];
-        const activeVideos = videos.filter(video => {
-            const expired = checkExpired(video, settings);
-            DEBUG && expired && console.log("CLEANING EXPIRED LINK");
-            return !expired;
-        });
-
-        if (!Array.isArray(data.videos) || activeVideos.length !== videos.length) {
-            await setLocalStorage({ videos: activeVideos });
-        }
-
-        return activeVideos;
+        return videoStorage.deleteExpired(settings.deleteAfter);
     }
 }
 
@@ -386,31 +357,6 @@ async function initSettingsDB() {
     return settings;
 }
 
-async function initVideosDB() {
-    const data = await getLocalStorage("videos");
-    if (!Array.isArray(data.videos)) {
-        await setLocalStorage({ videos: [] });
-        return [];
-    }
-    return data.videos;
-}
-
-function checkExpired(video,settings) {
-    if (!video || typeof video !== "object") {
-        return true;
-    }
-    if (Object.prototype.hasOwnProperty.call(video, 'timestamp')) {
-        DEBUG && console.log(video.title + " Timestamp: " + video.timestamp);
-        let current_time = new Date().getTime();
-        let time_since_ms = current_time - video.timestamp;
-        let diff = Math.round(time_since_ms/86400000);
-        if (diff > settings.deleteAfter) {
-            return true;
-        }
-    }
-    return false;
-   
-}
 function checkWatchable(link){
     if(link.indexOf("watch?") > -1 && link.indexOf("?t=")>-1){
         DEBUG && console.log("IGNORING TIMESTAMPED LINK");

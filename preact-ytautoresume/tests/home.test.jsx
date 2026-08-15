@@ -22,7 +22,8 @@ describe('popup initialization', () => {
 
     await home.componentDidMount();
 
-    expect(__getExtensionStorage().videos).toEqual([]);
+    expect(__getExtensionStorage().videos).toBeUndefined();
+    expect(__getExtensionStorage().videoStorageVersion).toBe(1);
     expect(__getExtensionStorage().settings).toEqual({
       pauseResume: false,
       minWatchTime: 60,
@@ -67,7 +68,8 @@ describe('popup initialization', () => {
       markPlayedTime: 60,
       deleteAfter: 30
     });
-    expect(__getExtensionStorage().videos).toEqual([]);
+    expect(__getExtensionStorage().videos).toBeUndefined();
+    expect(__getExtensionStorage().videoStorageVersion).toBe(1);
     expect(home.state.storageError).toBe(false);
   });
 

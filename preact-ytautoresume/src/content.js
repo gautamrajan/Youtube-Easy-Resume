@@ -1,4 +1,4 @@
-/* global chrome */
+/* global chrome, YouTubeEasyResumeVideoStorage */
 // content.js
 
 const DEBUG = false;
@@ -6,6 +6,10 @@ const CHANNEL_SELECTOR = "ytd-video-owner-renderer ytd-channel-name a";
 const PLAYER_ICON_ACTIVE = chrome.runtime.getURL("icons/playericon.svg");
 const PLAYER_ICON_INACTIVE = chrome.runtime.getURL("icons/playericon_inactive.svg");
 const PROGRESS_WRITE_INTERVAL_MS = 5000;
+const videoStorage = YouTubeEasyResumeVideoStorage.createVideoStorage(
+    chrome.storage.local,
+    () => chrome.runtime && chrome.runtime.lastError
+);
 
 let initialLinkIsVideo = false;
 let userSettings = {};
@@ -219,19 +223,7 @@ class YouTubeAutoResume {
     }
 
     initStorage() {
-        return Promise.all([this.initDB(), this.initSettings()]);
-    }
-
-    initDB() {
-        return new Promise(resolve => {
-            chrome.storage.local.getBytesInUse("videos", bytes => {
-                if (bytes === 0 || bytes === undefined) {
-                    chrome.storage.local.set({ videos: [] }, resolve);
-                } else {
-                    resolve();
-                }
-            });
-        });
+        return Promise.all([videoStorage.initialize(), this.initSettings()]);
     }
 
     initSettings() {
@@ -254,14 +246,8 @@ class YouTubeAutoResume {
         });
     }
 
-    extractWatchID(link) {
-        let start = link.indexOf('v=') + 2;
-        let end = link.indexOf('&', start);
-        return end === -1 ? link.slice(start) : link.slice(start, end);
-    }
-
     grabTitle() {
-        return new Promise((resolve, reject) => {
+        return new Promise(resolve => {
             let videoTitle = document.querySelector("h1.title.style-scope.ytd-video-primary-info-renderer");
             if (videoTitle) {
                 resolve(videoTitle.textContent);
@@ -281,23 +267,13 @@ class YouTubeAutoResume {
         return link.includes("watch?") && !link.includes("?t=");
     }
 
-    checkBlacklist(link) {
-        return new Promise(resolve => {
-            chrome.storage.local.get("videos", data => {
-                let blacklisted = data.videos.some(video => this.extractWatchID(video.videolink) === this.extractWatchID(link) && video.doNotResume);
-                resolve(blacklisted);
-            });
-        });
+    async checkBlacklist(link) {
+        const video = await videoStorage.getVideo(link);
+        return Boolean(video && video.doNotResume);
     }
 
     setTime(video) {
-        return new Promise(resolve => {
-            chrome.storage.local.get("videos", data => {
-                let videos = data.videos.filter(v => this.extractWatchID(v.videolink) !== this.extractWatchID(video.videolink));
-                videos.push(video);
-                chrome.storage.local.set({ videos }, resolve);
-            });
-        });
+        return videoStorage.saveVideo(video);
     }
 
     queueVideoWrite(video) {
@@ -343,35 +319,16 @@ class YouTubeAutoResume {
         return video.duration >= userSettings.minVideoLength;
     }
 
-    checkStoredLinks(link) {
-        return new Promise((resolve, reject) => {
-            chrome.storage.local.get("videos", data => {
-                let videoFound = data.videos.find(video => this.extractWatchID(video.videolink) === this.extractWatchID(link));
-                if (videoFound) {
-                    if (this.daysSince(videoFound.timestamp) > userSettings.deleteAfter) {
-                        this.deleteVideo(videoFound).then(() => reject(-1));
-                    } else {
-                        resolve(videoFound);
-                    }
-                } else {
-                    reject(-1);
-                }
-            });
-        });
-    }
-
-    deleteVideo(video) {
-        return new Promise(resolve => {
-            chrome.storage.local.get("videos", data => {
-                let videos = data.videos.filter(v => this.extractWatchID(v.videolink) !== this.extractWatchID(video.videolink));
-                chrome.storage.local.set({ videos }, resolve);
-            });
-        });
-    }
-
-    daysSince(time1) {
-        let currentTime = new Date().getTime();
-        return Math.round((currentTime - time1) / 86400000);
+    async checkStoredLinks(link) {
+        const video = await videoStorage.getVideo(link);
+        if (!video) {
+            throw new Error("Video not found");
+        }
+        if (videoStorage.isExpired(video, userSettings.deleteAfter)) {
+            await videoStorage.removeVideo(video);
+            throw new Error("Video expired");
+        }
+        return video;
     }
 
     monitorVideoTime(videoTitle) {

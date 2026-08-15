@@ -9,7 +9,7 @@ describe('live content-script settings', () => {
         markPlayedTime: 60,
         deleteAfter: 30
       },
-      videos: []
+      videoStorageVersion: 1
     });
     document.body.innerHTML = `
       <div class="ytp-right-controls"></div>
@@ -60,7 +60,7 @@ describe('live content-script settings', () => {
     video.currentTime = 550;
     video.dispatchEvent(new Event('timeupdate'));
     await flushPromises();
-    expect(__getExtensionStorage().videos[0].complete).toBe(true);
+    expect(__getStoredVideos()[0].complete).toBe(true);
 
     const pausedSettings = { ...thresholdUpdate, pauseResume: true };
     __emitExtensionStorageChange({
