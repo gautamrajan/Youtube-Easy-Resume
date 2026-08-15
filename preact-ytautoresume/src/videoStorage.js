@@ -11,7 +11,7 @@ function getVideoId(link) {
 
     try {
         return new URL(link).searchParams.get("v");
-    } catch (error) {
+    } catch {
         const match = link.match(/[?&]v=([^&]+)/);
         return match ? match[1] : null;
     }

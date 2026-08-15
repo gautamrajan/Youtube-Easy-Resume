@@ -1,6 +1,6 @@
 describe('YouTube player blacklist control', () => {
   beforeEach(() => {
-    jest.resetModules();
+    vi.resetModules();
     __resetExtensionStorage({
       settings: {
         pauseResume: false,
@@ -23,7 +23,7 @@ describe('YouTube player blacklist control', () => {
   });
 
   test('the first click blacklists and the second click restores auto-resume', async () => {
-    require('../src/content');
+    await import('../src/content');
     window.dispatchEvent(new Event('load'));
     await flushPromises();
     await flushPromises();

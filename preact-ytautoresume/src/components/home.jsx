@@ -1,5 +1,4 @@
 import { h, Component, Fragment } from 'preact';
-import Switch from 'preact-material-components/Switch';
 import './styles/materialswitch.css';
 import './styles/home.css';
 import './styles/mainlist.css';
@@ -7,7 +6,6 @@ import SettingsPage from "./settings"
 import Snackbar from 'preact-material-components/Snackbar';
 import generateList from './list';
 import { extractWatchID, getDisplayedVideos } from './utilities'
-import SearchBar from './SearchBar';
 import ButtonBar from './ButtonBar';
 import videoStorage from '../popupVideoStorage';
 import extensionApi from '../extensionApi';
@@ -85,8 +83,6 @@ export default class Home extends Component{
             await videoStorage.initialize();
             const settings = await initSettingsDB();
             await this.cleanDB(settings);
-            // Async initialization completes after the first render by design.
-            // eslint-disable-next-line react/no-did-mount-set-state
             this.setState({
                 settings,
                 newSettings: { ...settings },
@@ -96,8 +92,6 @@ export default class Home extends Component{
             }, this.setList);
         } catch (error) {
             console.error("Unable to initialize extension storage:", error);
-            // Render a recoverable state when extension storage is unavailable.
-            // eslint-disable-next-line react/no-did-mount-set-state
             this.setState({
                 dataReady: true,
                 listReady: false,
@@ -105,14 +99,6 @@ export default class Home extends Component{
                 storageError: true
             });
         }
-    }
-    handlePause = async () => {
-        const newState = !this.state.paused;
-        const data = await extensionApi.storage.local.get("settings");
-        const settings = { ...data.settings, pauseResume: newState };
-        await extensionApi.storage.local.set({ settings });
-        this.setState({ paused: newState });
-        DEBUG && console.log("newState");
     }
     deleteSelected = async () => {
         let delete_counter = this.state.selectedVideos.length;
@@ -145,11 +131,7 @@ export default class Home extends Component{
         }
     }
     render(){
-        let paused = this.state.paused;
         let settingsPage = this.state.settingsPage;
-        var pauseButtonText = "";
-        //DEBUG && console.log(paused);
-        if(paused){pauseButtonText = "Unpause"}else{pauseButtonText = "Pause"};
         if(this.state.dataReady){
             if(settingsPage){
                 return(<SettingsPage/>)
@@ -162,13 +144,11 @@ export default class Home extends Component{
                             {!this.state.isSearching && <h1>Currently watching</h1>}
                             <ButtonBar 
                                 isSearching={this.state.isSearching}
-                                paused={this.state.paused}
                                 edit={this.state.edit}
                                 toggleSearch={this.toggleSearch}
                                 handleSearchChange={this.handleSearchChange}
                                 searchQuery={this.state.searchQuery}
                                 setEdit={this.setEdit}
-                                handlePause={this.handlePause}
                                 moveToSettingsPage={this.moveToSettingsPage}
                                 deleteSelected={this.deleteSelected}
                             />
@@ -234,8 +214,6 @@ export default class Home extends Component{
     editVideoClick = (video, index, event) => {
         if (this.state.edit) {
             let newSelectedVideos = [...this.state.selectedVideos];
-            const totalVideos = this.state.listElements.length;
-    
             // Use displayed index directly
             const displayedIndex = index;
     
@@ -331,19 +309,4 @@ async function initSettingsDB() {
     }
 
     return settings;
-}
-
-function checkWatchable(link){
-    if(link.indexOf("watch?") > -1 && link.indexOf("?t=")>-1){
-        DEBUG && console.log("IGNORING TIMESTAMPED LINK");
-        return false;
-    }
-    
-    else if (link.indexOf("watch?") > -1) {
-        return true;
-    }
-    else{
-        DEBUG && console.log("NOT A WATCHABLE LINK");
-        return false;
-    }
 }

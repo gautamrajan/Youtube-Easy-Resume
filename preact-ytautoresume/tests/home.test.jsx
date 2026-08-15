@@ -8,7 +8,7 @@ function makeSynchronous(component) {
       callback();
     }
   };
-  component.setList = jest.fn();
+  component.setList = vi.fn();
   return component;
 }
 
@@ -76,7 +76,7 @@ describe('popup initialization', () => {
   test('renders a recoverable error state when storage fails', async () => {
     __setExtensionStorageError('Storage unavailable');
     const home = makeSynchronous(new Home());
-    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     await home.componentDidMount();
 

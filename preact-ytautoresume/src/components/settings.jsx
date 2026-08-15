@@ -94,7 +94,7 @@ export default class SettingsPage extends Component{
             goBack:true
         })
     }
-    handlePause = (event) => {
+    handlePause = () => {
         
         let newSettings = {...this.state.newSettings};
         newSettings.pauseResume = !newSettings.pauseResume;

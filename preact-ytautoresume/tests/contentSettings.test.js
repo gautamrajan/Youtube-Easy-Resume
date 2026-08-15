@@ -1,6 +1,6 @@
 describe('live content-script settings', () => {
   beforeEach(() => {
-    jest.resetModules();
+    vi.resetModules();
     __resetExtensionStorage({
       settings: {
         pauseResume: true,
@@ -24,10 +24,10 @@ describe('live content-script settings', () => {
 
   test('unpauses, applies changes without duplication, and pauses an open tab', async () => {
     const video = document.querySelector('video');
-    const addSpy = jest.spyOn(video, 'addEventListener');
-    const removeSpy = jest.spyOn(video, 'removeEventListener');
+    const addSpy = vi.spyOn(video, 'addEventListener');
+    const removeSpy = vi.spyOn(video, 'removeEventListener');
 
-    require('../src/content');
+    await import('../src/content');
     window.dispatchEvent(new Event('load'));
     await flushPromises();
     await flushPromises();
