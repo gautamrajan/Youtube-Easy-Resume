@@ -1,3 +1,6 @@
+
+import videoStorage from '../popupVideoStorage';
+
 export function extractWatchID(link) {
     var start = 0;
     var end = 0;
@@ -55,4 +58,36 @@ export function minutesToSeconds(minutes){
     else{
         return minutes*60;
     }
+}
+export function checkCriteria(video, settings) {
+    if (video.doNotResume) {
+        return false;
+    }
+    else if (video.complete) {
+        return false;
+    }
+    else if (video.time < settings.minWatchTime) {
+        return false;
+    }
+    else if (video.duration < settings.minVideoLength) {
+        return false;
+    }
+    else if (videoStorage.isExpired(video, settings.deleteAfter)) {
+        return false;
+    }
+    else {
+        return true;
+    }
+}
+
+export async function getDisplayedVideos(settings, searchQuery = '') {
+    const videos = await videoStorage.getAllVideos();
+    return videos.filter(video =>
+        checkCriteria(video, settings) &&
+        (searchQuery ?
+            (video.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            video.channel.toLowerCase().includes(searchQuery.toLowerCase()))
+            : true
+        )
+    );
 }

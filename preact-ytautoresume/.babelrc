@@ -2,13 +2,16 @@
   "env": {
     "test": {
       "presets": [
-        ["preact-cli/babel", { "modules": "commonjs" }]
+        ["@babel/preset-env", { "modules": "commonjs" }]
       ]
     }
   },
 
   "plugins": [
-    ["@babel/plugin-transform-react-jsx", { "pragma":"h" }]
+    ["@babel/plugin-transform-react-jsx", { "pragma":"h" }],
+    ["@babel/plugin-transform-runtime", {
+      "regenerator": true
+    }]
   ]
 
 }

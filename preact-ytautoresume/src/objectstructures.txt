@@ -1,6 +1,6 @@
-Object Structures: 
+Storage schema version: 1
 
-    video:{
+    Each current video is stored under "video:<youtube-video-id>": {
         videolink,
         time,
         duration,
@@ -8,8 +8,13 @@ Object Structures:
         channel,
         complete:boolean,
         doNotResume:boolean,
-        timestamp: string timestamp,
+        updatedAt: Unix timestamp in milliseconds,
     }
+
+    videoStorageVersion: 1
+
+    Migrated records use "legacyVideo:<youtube-video-id>" until the
+    next playback write. Canonical "video:" records always take precedence.
 
     settings:{
         pauseResume: boolean,
@@ -18,3 +23,5 @@ Object Structures:
         markPlayedTime: value in seconds,
         deleteAfter: days
     }
+
+See ../STORAGE.md for migration and expiry semantics.
