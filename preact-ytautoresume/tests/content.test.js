@@ -1,3 +1,5 @@
+import { installYouTubeWatchPage } from './fixtures/youtubeWatchPage';
+
 describe('YouTube player blacklist control', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -11,15 +13,7 @@ describe('YouTube player blacklist control', () => {
       },
       videoStorageVersion: 1
     });
-    document.body.innerHTML = `
-      <div class="ytp-right-controls"></div>
-      <h1 class="title style-scope ytd-video-primary-info-renderer">Test video</h1>
-      <ytd-video-owner-renderer><ytd-channel-name><a>Test channel</a></ytd-channel-name></ytd-video-owner-renderer>
-      <video></video>
-    `;
-    const video = document.querySelector('video');
-    Object.defineProperty(video, 'duration', { configurable: true, value: 600 });
-    Object.defineProperty(video, 'currentTime', { configurable: true, writable: true, value: 120 });
+    installYouTubeWatchPage();
   });
 
   test('the first click blacklists and the second click restores auto-resume', async () => {

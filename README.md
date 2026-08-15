@@ -32,6 +32,8 @@ Firefox minimum is also enforced in its manifest.
 
 Use `npm run dev:firefox` after building to open the Firefox artifact as a
 temporary extension. For Chrome, load `dist/chrome` as an unpacked extension.
+Before a store release, run the [manual live-site smoke test](docs/manual-smoke-test.md)
+in both browsers.
 
 To create local archives for both browsers:
 

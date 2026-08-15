@@ -85,4 +85,20 @@ describe('popup initialization', () => {
     expect(home.setList).not.toHaveBeenCalled();
     errorSpy.mockRestore();
   });
+
+  test('treats supported URL variants as the same selected video', () => {
+    const home = makeSynchronous(new Home());
+    const selectedVideo = {
+      videolink: 'https://www.youtube.com/watch?list=queue&v=shared-id&index=2'
+    };
+    home.state = {
+      ...home.state,
+      edit: true,
+      selectedVideos: [selectedVideo]
+    };
+
+    home.editVideoClick({ videolink: 'https://youtu.be/shared-id' }, 0, { shiftKey: false });
+
+    expect(home.state.selectedVideos).toEqual([]);
+  });
 });

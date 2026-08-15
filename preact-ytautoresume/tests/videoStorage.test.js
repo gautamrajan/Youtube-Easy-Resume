@@ -30,6 +30,16 @@ function makeVideo(id, values = {}) {
 }
 
 describe('versioned video storage', () => {
+  test('uses one storage identity for supported YouTube URL forms', () => {
+    const links = [
+      'https://www.youtube.com/watch?list=queue&v=shared-id',
+      'https://youtu.be/shared-id',
+      'https://www.youtube.com/embed/shared-id',
+      'https://www.youtube.com/shorts/shared-id'
+    ];
+    expect(new Set(links.map(getVideoKey))).toEqual(new Set(['video:shared-id']));
+  });
+
   test('migrates a realistic legacy array once without losing valid history', async () => {
     const olderDuplicate = makeVideo('one', { title: 'Old title', timestamp: NOW - 1000 });
     const newerDuplicate = makeVideo('one', { title: 'New title', timestamp: NOW - 500 });

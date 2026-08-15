@@ -1,29 +1,18 @@
+import { getYouTubeVideoId } from './youtubePage';
+
 export const SCHEMA_VERSION = 1;
 export const SCHEMA_VERSION_KEY = "videoStorageVersion";
 export const VIDEO_KEY_PREFIX = "video:";
 export const LEGACY_VIDEO_KEY_PREFIX = "legacyVideo:";
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
-function getVideoId(link) {
-    if (typeof link !== "string") {
-        return null;
-    }
-
-    try {
-        return new URL(link).searchParams.get("v");
-    } catch {
-        const match = link.match(/[?&]v=([^&]+)/);
-        return match ? match[1] : null;
-    }
-}
-
 export function getVideoKey(link) {
-    const videoId = getVideoId(link);
+    const videoId = getYouTubeVideoId(link);
     return videoId ? VIDEO_KEY_PREFIX + encodeURIComponent(videoId) : null;
 }
 
 export function getLegacyVideoKey(link) {
-    const videoId = getVideoId(link);
+    const videoId = getYouTubeVideoId(link);
     return videoId ? LEGACY_VIDEO_KEY_PREFIX + encodeURIComponent(videoId) : null;
 }
 
@@ -99,7 +88,7 @@ export function createVideoStorage(storageArea, now = Date.now) {
         const savedAt = currentTime();
         const normalized = normalizeVideo(video, savedAt);
         if (!normalized) {
-            throw new Error("Cannot save a video without a valid YouTube watch URL");
+            throw new Error("Cannot save a video without a valid YouTube video URL");
         }
 
         normalized.updatedAt = savedAt;
@@ -129,9 +118,9 @@ export function createVideoStorage(storageArea, now = Date.now) {
             Object.keys(data)
                 .filter(key => key.startsWith(prefix))
                 .map(key => data[key])
-                .filter(video => hasValidUpdatedAt(video) && getVideoId(video.videolink))
+                .filter(video => hasValidUpdatedAt(video) && getYouTubeVideoId(video.videolink))
                 .forEach(video => {
-                    videosById[getVideoId(video.videolink)] = video;
+                    videosById[getYouTubeVideoId(video.videolink)] = video;
                 });
         };
 
