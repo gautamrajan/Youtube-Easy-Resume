@@ -32,11 +32,6 @@ jobs:
       - name: Test, lint, and package both browsers
         run: npm run check
 
-      - name: Verify package archives
-        run: |
-          unzip -t build/artifacts/chrome/*.zip
-          unzip -t build/artifacts/firefox/*.zip
-
       - name: Upload Chrome package
         uses: actions/upload-artifact@v7
         with:

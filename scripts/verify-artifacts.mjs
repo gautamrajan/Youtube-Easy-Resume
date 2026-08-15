@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import JSZip from 'jszip';
 
 const rootDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const distDir = path.join(rootDir, 'dist');
@@ -43,6 +44,32 @@ async function verifyPackage(target, version) {
   );
   const archive = path.join(artifactsDir, target, matchingArchives[0]);
   assert.ok((await stat(archive)).size > 0, `${target} archive is empty`);
+
+  const zip = await JSZip.loadAsync(await readFile(archive));
+  const packagedPaths = Object.values(zip.files)
+    .filter(entry => !entry.dir)
+    .map(entry => entry.name)
+    .sort();
+  assert.deepEqual(
+    packagedPaths,
+    [...requiredFiles].sort(),
+    `${target} archive has an unexpected file set`
+  );
+
+  const packagedFiles = {};
+  for (const relativePath of requiredFiles) {
+    const packagedFile = zip.file(relativePath);
+    assert.ok(packagedFile, `${target} archive is missing ${relativePath}`);
+    const packagedBytes = Buffer.from(await packagedFile.async('uint8array'));
+    const distBytes = await readFile(path.join(distDir, target, relativePath));
+    assert.ok(packagedBytes.length > 0, `${target}/${relativePath} is empty in the archive`);
+    assert.ok(
+      packagedBytes.equals(distBytes),
+      `${target}/${relativePath} differs between dist and the archive`
+    );
+    packagedFiles[relativePath] = packagedBytes;
+  }
+  return packagedFiles;
 }
 
 await Promise.all(targets.map(verifyRequiredFiles));
@@ -67,5 +94,13 @@ for (const relativePath of sharedFiles) {
   );
 }
 
-await Promise.all(targets.map(target => verifyPackage(target, chromeManifest.version)));
+const [chromePackage, firefoxPackage] = await Promise.all(
+  targets.map(target => verifyPackage(target, chromeManifest.version))
+);
+for (const relativePath of sharedFiles) {
+  assert.ok(
+    chromePackage[relativePath].equals(firefoxPackage[relativePath]),
+    `${relativePath} differs between browser archives`
+  );
+}
 console.log(`Verified Chrome and Firefox ${chromeManifest.version} artifacts.`);
