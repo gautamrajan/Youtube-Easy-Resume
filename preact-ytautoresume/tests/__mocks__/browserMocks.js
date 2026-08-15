@@ -1,6 +1,7 @@
 const initialStorage = {};
 let storage = { ...initialStorage };
 let storageError = null;
+let storageSetCalls = [];
 
 function selectStorage(keys) {
   if (keys == null) {
@@ -21,9 +22,11 @@ function selectStorage(keys) {
 global.__resetExtensionStorage = values => {
   storage = { ...values };
   storageError = null;
+  storageSetCalls = [];
 };
 
 global.__getExtensionStorage = () => storage;
+global.__getExtensionStorageSetCalls = () => [...storageSetCalls];
 global.__setExtensionStorageError = message => {
   storageError = message ? { message } : null;
 };
@@ -39,6 +42,7 @@ global.chrome = {
     local: {
       get: (keys, callback) => callback(selectStorage(keys)),
       set: (values, callback = () => {}) => {
+        storageSetCalls.push(values);
         if (!storageError) {
           storage = { ...storage, ...values };
         }
