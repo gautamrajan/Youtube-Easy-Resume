@@ -1,6 +1,6 @@
 describe('content-script video lifecycle', () => {
   beforeEach(() => {
-    jest.resetModules();
+    vi.resetModules();
     __resetExtensionStorage({
       settings: {
         pauseResume: false,
@@ -24,12 +24,12 @@ describe('content-script video lifecycle', () => {
 
   test('uses one listener, throttles writes, flushes, and removes the old listener', async () => {
     let now = 10000;
-    const nowSpy = jest.spyOn(Date, 'now').mockImplementation(() => now);
+    const nowSpy = vi.spyOn(Date, 'now').mockImplementation(() => now);
     const video = document.querySelector('video');
-    const addSpy = jest.spyOn(video, 'addEventListener');
-    const removeSpy = jest.spyOn(video, 'removeEventListener');
+    const addSpy = vi.spyOn(video, 'addEventListener');
+    const removeSpy = vi.spyOn(video, 'removeEventListener');
 
-    require('../src/content');
+    await import('../src/content');
     window.dispatchEvent(new Event('load'));
     await flushPromises();
     await flushPromises();

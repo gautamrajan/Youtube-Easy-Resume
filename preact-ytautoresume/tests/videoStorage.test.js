@@ -1,10 +1,10 @@
-const {
+import {
   createVideoStorage,
   getVideoKey,
   getLegacyVideoKey,
   SCHEMA_VERSION,
   SCHEMA_VERSION_KEY
-} = require('../src/videoStorage');
+} from '../src/videoStorage';
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const NOW = 2_000_000_000_000;

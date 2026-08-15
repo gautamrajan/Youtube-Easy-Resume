@@ -1,17 +1,14 @@
 import { h } from 'preact';
-import Switch from 'preact-material-components/Switch';
 import SearchBar from './SearchBar';
 import Icon from './Icon';
 
 const ButtonBar = ({ 
     isSearching, 
-    paused, 
     edit, 
     toggleSearch, 
     handleSearchChange, 
     searchQuery, 
     setEdit, 
-    handlePause, 
     moveToSettingsPage, 
     deleteSelected 
 }) => {
@@ -38,12 +35,6 @@ const ButtonBar = ({
                         <Icon name="delete" />
                     </button>
                 </div>
-                {/* <div className={`AR SwitchContainer ${paused ? "Off" : "On"}`}>
-                    <label for="AutoResumeToggle">
-                        <span className={`SwitchLabel ${paused ? "Off" : "On"}`} id="AutoRedSwitchLabel">{paused ? "OFF" : "ON"}</span>
-                    </label>
-                    <Switch name="AutoResumeToggle" checked={!paused} onChange={handlePause}/>
-                </div> */}
                 <div className="button-wrapper">
                     <button type="button" id="SettingsButton" className="top-bar-button" onClick={moveToSettingsPage} aria-label="Open settings">
                         <Icon name="settings" />
@@ -52,20 +43,6 @@ const ButtonBar = ({
                 <style jsx>{`
                     .button-container{
                         margin-bottom:2px;
-                    }
-                    .SwitchLabel{
-                        font-weight:600;
-                    }
-                    .SwitchLabel.On{
-                        color:red;
-                        padding-right:4px;
-                    }
-                    .SwitchLabel.Off{
-                        color:white;
-                        opacity: 0.4;
-                    }    
-                    .SwitchContainer.On{
-                        margin-left:6px;
                     }
                 `}</style>
             </div>
