@@ -29,7 +29,10 @@ export default function ListElement(props) {
             </div>
         </Fragment>
     );
-    const style = { marginRight: `${props.marginRight}px` };
+    const style = {
+        marginRight: `${props.marginRight}px`,
+        width: `calc(100% - ${props.marginRight + 2}px)`
+    };
 
     if (props.edit) {
         return (

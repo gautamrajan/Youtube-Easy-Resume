@@ -23,7 +23,7 @@ describe('popup keyboard controls', () => {
         index={0}
         edit
         selectedVideos={[video]}
-        marginRight={0}
+        marginRight={7}
         maxBarWidth={226}
         eClickHandler={onSelect}
       />,
@@ -34,6 +34,8 @@ describe('popup keyboard controls', () => {
     expect(button.type).toBe('button');
     expect(button.getAttribute('aria-pressed')).toBe('true');
     expect(button.getAttribute('aria-label')).toBe('Deselect Accessible video');
+    expect(button.style.marginRight).toBe('7px');
+    expect(button.style.width).toBe('calc(100% - 9px)');
     button.click();
     expect(onSelect).toHaveBeenCalledTimes(1);
   });
