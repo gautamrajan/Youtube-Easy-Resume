@@ -71,4 +71,39 @@ describe('live content-script settings', () => {
     await flushPromises();
     expect(addSpy.mock.calls.filter(([type]) => type === 'timeupdate')).toHaveLength(2);
   });
+
+  test('normalizes and repairs malformed settings received while the tab is open', async () => {
+    await import('../src/content');
+    window.dispatchEvent(new Event('load'));
+    await flushPromises();
+    await flushPromises();
+
+    const malformedSettings = {
+      pauseResume: true,
+      minWatchTime: '45',
+      minVideoLength: -1,
+      markPlayedTime: '30',
+      deleteAfter: '0',
+      extra: true
+    };
+    __emitExtensionStorageChange({
+      settings: {
+        oldValue: __getExtensionStorage().settings,
+        newValue: malformedSettings
+      }
+    });
+    await flushPromises();
+
+    const normalizedSettings = {
+      pauseResume: true,
+      minWatchTime: 45,
+      minVideoLength: 480,
+      markPlayedTime: 30,
+      deleteAfter: 0
+    };
+    expect(__getExtensionStorage().settings).toEqual(normalizedSettings);
+    expect(__getExtensionStorageSetCalls()).toContainEqual({
+      settings: normalizedSettings
+    });
+  });
 });

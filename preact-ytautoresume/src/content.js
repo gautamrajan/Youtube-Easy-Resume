@@ -97,8 +97,13 @@ class YouTubeAutoResume {
                 return;
             }
 
+            const incomingSettings = changes.settings.newValue;
             const wasPaused = userSettings.pauseResume;
-            userSettings = { ...userSettings, ...changes.settings.newValue };
+            userSettings = normalizeSettings(incomingSettings);
+
+            if (!settingsEqual(incomingSettings, userSettings)) {
+                await extensionApi.storage.local.set({ settings: userSettings });
+            }
 
             if (!wasPaused && userSettings.pauseResume) {
                 this.cancelPageRun();
