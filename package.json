@@ -11,16 +11,18 @@
     "build": "node scripts/build.mjs",
     "build:chrome": "node scripts/build.mjs chrome",
     "build:firefox": "node scripts/build.mjs firefox",
-    "check": "npm test && npm run lint && npm run package && npm run lint:firefox && npm run verify:artifacts",
+    "check": "npm test && npm run lint && npm run package && npm run lint:firefox && npm run verify:artifacts && npm run verify:reproducible",
     "dev:firefox": "web-ext run --source-dir dist/firefox",
     "lint": "eslint .",
     "lint:firefox": "web-ext lint --source-dir dist/firefox",
-    "package": "npm run build && npm run package:chrome && npm run package:firefox",
-    "package:chrome": "web-ext build --source-dir dist/chrome --artifacts-dir build/artifacts/chrome --overwrite-dest",
-    "package:firefox": "web-ext build --source-dir dist/firefox --artifacts-dir build/artifacts/firefox --overwrite-dest",
+    "package": "npm run build && node scripts/package.mjs",
+    "package:chrome": "node scripts/package.mjs chrome",
+    "package:firefox": "node scripts/package.mjs firefox",
     "test": "vitest run",
     "test:watch": "vitest",
-    "verify:artifacts": "node scripts/verify-artifacts.mjs"
+    "verify:artifacts": "node scripts/verify-artifacts.mjs",
+    "verify:release-tag": "node scripts/verify-release-tag.mjs",
+    "verify:reproducible": "node scripts/verify-reproducibility.mjs"
   },
   "dependencies": {
     "preact": "10.29.8",

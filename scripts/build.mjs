@@ -18,6 +18,7 @@ if (targets.some(target => !['chrome', 'firefox'].includes(target))) {
 const readJson = async filename => JSON.parse(await readFile(filename, 'utf8'));
 const baseManifest = await readJson(path.join(extensionDir, 'manifest.json'));
 const firefoxManifest = await readJson(path.join(extensionDir, 'manifest.firefox.json'));
+const packageJson = await readJson(path.join(rootDir, 'package.json'));
 
 await rm(bundleDir, { recursive: true, force: true });
 await rm(distDir, { recursive: true, force: true });
@@ -43,9 +44,11 @@ await build({
 
 for (const target of targets) {
   const targetDir = path.join(distDir, target);
-  const manifest = target === 'firefox'
-    ? { ...baseManifest, ...firefoxManifest }
-    : baseManifest;
+  const manifest = {
+    ...baseManifest,
+    version: packageJson.version,
+    ...(target === 'firefox' ? firefoxManifest : {})
+  };
 
   await mkdir(targetDir, { recursive: true });
   await cp(bundleDir, targetDir, { recursive: true });

@@ -20,9 +20,9 @@ npm run check
 ```
 
 `npm run check` runs the same deterministic test, lint, dual-browser package,
-Firefox package-lint, and artifact inspection gate used by CI. Pull requests
-must pass that gate; the resulting Chrome and Firefox ZIPs are retained as CI
-artifacts for inspection.
+Firefox package-lint, artifact inspection, and rebuild comparison gate used by
+CI. Pull requests must pass that gate; the resulting Chrome and Firefox ZIPs
+are retained as CI artifacts for inspection.
 
 `npm run build` creates both unpacked extensions from the same source commit:
 
@@ -47,8 +47,10 @@ npm run package
 
 This builds both targets once, then writes separate ZIP files under
 `build/artifacts/chrome` and `build/artifacts/firefox`. Release signing,
-deterministic release archives, and store submission remain part of the release
-workflow rather than this development build.
+tagging, store submission, and rollback are documented in the
+[release guide](docs/release.md). A `v<package version>` tag runs the same gate
+and attaches both uniquely named store packages plus the AMO source archive to
+a GitHub release.
 
 Firefox-specific signing and privacy fields live in
 `preact-ytautoresume/manifest.firefox.json`; the rest of the manifest is shared.
@@ -59,6 +61,7 @@ exists. Never change the Firefox add-on ID after signing.
 
 The persisted settings types and supported ranges are documented in
 [`preact-ytautoresume/SETTINGS.md`](preact-ytautoresume/SETTINGS.md).
+User-visible release changes are recorded in [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Toolchain
 
