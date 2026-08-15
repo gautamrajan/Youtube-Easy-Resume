@@ -53,6 +53,9 @@ Firefox release, the publishing-account owner must check AMO **Manage My
 Submissions** for an older private submission and use its assigned GUID if one
 exists. Never change the Firefox add-on ID after signing.
 
+The persisted settings types and supported ranges are documented in
+[`preact-ytautoresume/SETTINGS.md`](preact-ytautoresume/SETTINGS.md).
+
 ## Toolchain
 
 The extension uses esbuild for two standalone browser bundles and Vitest for the

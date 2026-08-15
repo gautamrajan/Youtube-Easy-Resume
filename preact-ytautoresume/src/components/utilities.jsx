@@ -28,22 +28,6 @@ export function secondsToHMS(timeInSeconds){
 
 }
 
-export function secondsToMinutes(seconds){
-    if(seconds<60){
-        return seconds;
-    }
-    else{
-        return Math.round(seconds/60);
-    }
-}
-export function minutesToSeconds(minutes){
-    if(minutes == 0){
-        return 0;
-    }
-    else{
-        return minutes*60;
-    }
-}
 export function checkCriteria(video, settings) {
     if (video.doNotResume) {
         return false;

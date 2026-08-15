@@ -9,15 +9,9 @@ import { extractWatchID, getDisplayedVideos } from './utilities'
 import ButtonBar from './ButtonBar';
 import videoStorage from '../popupVideoStorage';
 import extensionApi from '../extensionApi';
+import { normalizeSettings, settingsEqual } from '../settings';
 
 const DEBUG = false;
-const DEFAULT_SETTINGS = Object.freeze({
-    pauseResume: false,
-    minWatchTime: 60,
-    minVideoLength: 480,
-    markPlayedTime: 60,
-    deleteAfter: 30
-});
 export default class Home extends Component{
     constructor(){
         super();
@@ -156,22 +150,9 @@ export default class Home extends Component{
                         <div className="main-list" id="main-list">
                             {this.state.listReady ? this.getList() : null}
                             {this.state.storageError ?
-                            <h2>Could not load saved videos</h2> : null}
+                            <h2 className="EmptyState">Could not load saved videos</h2> : null}
                             {!this.state.storageError && !this.state.listReady && this.state.listElements.length==0 ?
-                            <h2>No videos</h2> : null}
-                            <style jsx>{`
-                                .main-list-element{
-                                    margin-right:${this.props.marginRight}
-                                }  
-
-                                h2 {
-                                    margin-top: 42vh;
-                                    text-align: center;
-                                    color: #ffffff;
-                                    font-size: 1.8em;
-                                }
-                            `}
-                            </style>
+                            <h2 className="EmptyState">No videos</h2> : null}
                         </div>
                         <Snackbar ref={bar=>{this.bar=bar;}}/>
                     </div>
@@ -297,14 +278,8 @@ function setLocalStorage(values) {
 
 async function initSettingsDB() {
     const data = await getLocalStorage("settings");
-    const storedSettings = data.settings &&
-        typeof data.settings === "object" &&
-        !Array.isArray(data.settings) ? data.settings : {};
-    const settings = { ...DEFAULT_SETTINGS, ...storedSettings };
-    const missingSetting = Object.keys(DEFAULT_SETTINGS)
-        .some(key => !Object.prototype.hasOwnProperty.call(storedSettings, key));
-
-    if (!data.settings || missingSetting) {
+    const settings = normalizeSettings(data.settings);
+    if (!settingsEqual(data.settings, settings)) {
         await setLocalStorage({ settings });
     }
 

@@ -1,5 +1,6 @@
 import extensionApi from './extensionApi';
 import { createVideoStorage } from './videoStorage';
+import { normalizeSettings, settingsEqual } from './settings';
 import {
     getYouTubeVideoId,
     isExpectedPageWaitError,
@@ -96,8 +97,13 @@ class YouTubeAutoResume {
                 return;
             }
 
+            const incomingSettings = changes.settings.newValue;
             const wasPaused = userSettings.pauseResume;
-            userSettings = { ...userSettings, ...changes.settings.newValue };
+            userSettings = normalizeSettings(incomingSettings);
+
+            if (!settingsEqual(incomingSettings, userSettings)) {
+                await extensionApi.storage.local.set({ settings: userSettings });
+            }
 
             if (!wasPaused && userSettings.pauseResume) {
                 this.cancelPageRun();
@@ -244,16 +250,9 @@ class YouTubeAutoResume {
 
     async initSettings() {
         const data = await extensionApi.storage.local.get("settings");
-        if (!data.settings) {
-            await extensionApi.storage.local.set({
-                settings: {
-                    pauseResume: false,
-                    minWatchTime: 60,
-                    minVideoLength: 480,
-                    markPlayedTime: 60,
-                    deleteAfter: 30
-                }
-            });
+        const settings = normalizeSettings(data.settings);
+        if (!settingsEqual(data.settings, settings)) {
+            await extensionApi.storage.local.set({ settings });
         }
     }
 

@@ -1,5 +1,6 @@
 import { h, Component } from 'preact';
 import Icon from './Icon';
+import './styles/searchbar.css';
 
 class SearchBar extends Component {
     constructor(props) {
@@ -18,6 +19,12 @@ class SearchBar extends Component {
         this.props.onSearchChange(value);
     }
 
+    handleKeyDown = event => {
+        if (event.key === 'Escape') {
+            this.props.onBack();
+        }
+    }
+
     render() {
         const { onBack, value } = this.props;
         return (
@@ -31,38 +38,12 @@ class SearchBar extends Component {
                 <input
                     ref={(input) => { this.inputRef = input; }}
                     type="text"
+                    aria-label="Search saved videos"
                     placeholder="Search videos..."
                     value={value}
                     onInput={this.handleInputChange}
+                    onKeyDown={this.handleKeyDown}
                 />
-                <style jsx>{`
-                    .search-bar-container {
-                        display: flex;
-                        align-items: center;
-                        width: 100%;
-                        padding-top: 4px;
-                        padding-bottom:2px;
-
-                    }
-                
-                    input {
-                        flex-grow: 1;
-                        padding: 4px 12px;
-                        font-size: 1em;
-                        border: none;
-                        border-radius: 15px;
-                        background-color: #3a3a3a;
-                        color: #ffffff;
-                        margin-bottom: 3px;
-                    }
-                    input::placeholder {
-                        color: #999999;
-                    }
-                    input:focus {
-                        outline: none;
-                    }
-                    
-                `}</style>
             </div>
         );
     }
