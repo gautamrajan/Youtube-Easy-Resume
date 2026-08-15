@@ -45,7 +45,7 @@ async function verifyPackage(target, version) {
   const archive = path.join(artifactsDir, target, matchingArchives[0]);
   assert.ok((await stat(archive)).size > 0, `${target} archive is empty`);
 
-  const zip = await JSZip.loadAsync(await readFile(archive));
+  const zip = await JSZip.loadAsync(await readFile(archive), { checkCRC32: true });
   const packagedPaths = Object.values(zip.files)
     .filter(entry => !entry.dir)
     .map(entry => entry.name)
