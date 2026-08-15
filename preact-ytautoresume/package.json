@@ -47,7 +47,14 @@
     "preact-router": "^3.2.1"
   },
   "jest": {
-    "preset": "jest-preset-preact",
+    "testURL": "https://www.youtube.com/watch?v=test-video",
+    "transform": {
+      "^.+\\.[jt]sx?$": "babel-jest"
+    },
+    "moduleNameMapper": {
+      "\\.css$": "<rootDir>/tests/__mocks__/styleMock.js",
+      "^preact-material-components/.+$": "<rootDir>/tests/__mocks__/componentMock.js"
+    },
     "setupFiles": [
       "<rootDir>/tests/__mocks__/browserMocks.js",
       "<rootDir>/tests/__mocks__/setupTests.js"
