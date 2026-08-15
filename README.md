@@ -16,10 +16,13 @@ Run commands from the repository root:
 ```bash
 nvm use
 npm ci
-npm test
-npm run lint
-npm run build
+npm run check
 ```
+
+`npm run check` runs the same deterministic test, lint, dual-browser package,
+Firefox package-lint, and artifact inspection gate used by CI. Pull requests
+must pass that gate; the resulting Chrome and Firefox ZIPs are retained as CI
+artifacts for inspection.
 
 `npm run build` creates both unpacked extensions from the same source commit:
 
@@ -33,7 +36,8 @@ Firefox minimum is also enforced in its manifest.
 Use `npm run dev:firefox` after building to open the Firefox artifact as a
 temporary extension. For Chrome, load `dist/chrome` as an unpacked extension.
 Before a store release, run the [manual live-site smoke test](docs/manual-smoke-test.md)
-in both browsers.
+in both browsers. Live YouTube checks intentionally remain separate from the
+deterministic CI gate so a site or network outage cannot hide a source regression.
 
 To create local archives for both browsers:
 

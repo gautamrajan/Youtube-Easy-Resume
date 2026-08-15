@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test, lint, and package both browsers
+        run: npm run check
+
+      - name: Upload Chrome package
+        uses: actions/upload-artifact@v7
+        with:
+          name: chrome-extension
+          path: build/artifacts/chrome/*.zip
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Firefox package
+        uses: actions/upload-artifact@v7
+        with:
+          name: firefox-extension
+          path: build/artifacts/firefox/*.zip
+          if-no-files-found: error
+          retention-days: 14

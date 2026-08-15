@@ -1,4 +1,5 @@
 import Home from '../src/components/home';
+import { getVideoKey, SCHEMA_VERSION, SCHEMA_VERSION_KEY } from '../src/videoStorage';
 
 function makeSynchronous(component) {
   component.setState = (update, callback) => {
@@ -100,5 +101,36 @@ describe('popup initialization', () => {
     home.editVideoClick({ videolink: 'https://youtu.be/shared-id' }, 0, { shiftKey: false });
 
     expect(home.state.selectedVideos).toEqual([]);
+  });
+
+  test('deletes only selected videos and exits edit mode', async () => {
+    const selectedVideo = {
+      videolink: 'https://www.youtube.com/watch?v=selected',
+      updatedAt: Date.now()
+    };
+    const remainingVideo = {
+      videolink: 'https://www.youtube.com/watch?v=remaining',
+      updatedAt: Date.now()
+    };
+    __resetExtensionStorage({
+      [SCHEMA_VERSION_KEY]: SCHEMA_VERSION,
+      [getVideoKey(selectedVideo.videolink)]: selectedVideo,
+      [getVideoKey(remainingVideo.videolink)]: remainingVideo
+    });
+    const home = makeSynchronous(new Home());
+    home.state = {
+      ...home.state,
+      edit: true,
+      selectedVideos: [selectedVideo]
+    };
+    home.bar = { MDComponent: { show: vi.fn() } };
+
+    await home.deleteSelected();
+
+    expect(__getExtensionStorage()[getVideoKey(selectedVideo.videolink)]).toBeUndefined();
+    expect(__getExtensionStorage()[getVideoKey(remainingVideo.videolink)]).toEqual(remainingVideo);
+    expect(home.state.edit).toBe(false);
+    expect(home.state.selectedVideos).toEqual([]);
+    expect(home.bar.MDComponent.show).toHaveBeenCalledWith({ message: '1 video removed' });
   });
 });
