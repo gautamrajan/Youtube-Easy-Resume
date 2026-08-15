@@ -43,8 +43,11 @@ git push origin v0.0.1.7
 ```
 
 Use the current version in place of `0.0.1.7`. The tag workflow rejects a tag
-that does not match `package.json` or is not contained in `main`. It runs the
-full protected gate and creates one GitHub release with:
+that does not match `package.json` or is not contained in `main`. The active
+**Protect release tags** repository ruleset restricts creation, updates, and
+deletion of matching `v*` tags to repository administrators. Do not disable or
+bypass that rule for routine releases. The workflow runs the full protected
+gate and creates one GitHub release with:
 
 - `youtube-easy-resume-<version>-chrome.zip`
 - `youtube-easy-resume-<version>-firefox.zip`
