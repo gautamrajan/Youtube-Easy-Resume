@@ -1,3 +1,8 @@
+import {
+  installYouTubeWatchPage,
+  navigateYouTubeWatchPage
+} from './fixtures/youtubeWatchPage';
+
 describe('content-script video lifecycle', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -11,15 +16,7 @@ describe('content-script video lifecycle', () => {
       },
       videoStorageVersion: 1
     });
-    document.body.innerHTML = `
-      <div class="ytp-right-controls"></div>
-      <h1 class="title style-scope ytd-video-primary-info-renderer">Test video</h1>
-      <ytd-video-owner-renderer><ytd-channel-name><a>Test channel</a></ytd-channel-name></ytd-video-owner-renderer>
-      <video></video>
-    `;
-    const video = document.querySelector('video');
-    Object.defineProperty(video, 'duration', { configurable: true, value: 600 });
-    Object.defineProperty(video, 'currentTime', { configurable: true, writable: true, value: 120 });
+    installYouTubeWatchPage();
   });
 
   test('uses one listener, throttles writes, flushes, and removes the old listener', async () => {
@@ -55,8 +52,12 @@ describe('content-script video lifecycle', () => {
     await flushPromises();
     expect(__getExtensionStorageSetCalls()).toHaveLength(3);
 
-    video.currentTime = 1;
-    document.dispatchEvent(new CustomEvent('yt-navigate-finish'));
+    navigateYouTubeWatchPage({
+      videoId: 'next-video',
+      title: 'Next video',
+      channel: 'Next channel',
+      currentTime: 1
+    });
     await flushPromises();
     await flushPromises();
     expect(removeSpy.mock.calls.some(([type]) => type === 'timeupdate')).toBe(true);
