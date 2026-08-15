@@ -1,3 +1,4 @@
+/* global chrome */
 import { h, Component, Fragment } from 'preact';
 import Switch from 'preact-material-components/Switch';
 import './styles/materialswitch.css';
@@ -11,6 +12,14 @@ import SearchBar from './SearchBar';
 import ButtonBar from './ButtonBar';
 
 const DEBUG = false;
+const DEFAULT_SETTINGS = Object.freeze({
+    pauseResume: false,
+    minWatchTime: 60,
+    minVideoLength: 480,
+    markPlayedTime: 60,
+    deleteAfter: 30
+});
+
 export default class Home extends Component{
     constructor(){
         super();
@@ -25,7 +34,8 @@ export default class Home extends Component{
             settings: {},
             lastClickedIndex: -1,
             isSearching: false,
-            searchQuery: ''
+            searchQuery: '',
+            storageError: false
         }
         this.maxBarWidth = 226;
         this.marginRight = 0;
@@ -70,13 +80,31 @@ export default class Home extends Component{
             });
         }
     }
-    componentDidMount() {
-        //cleanDB();
-        initSettingsDB().then(this.cleanDB()).then(() => {
-            this.getSettings().then(
-                this.setList
-            );
-        })
+    async componentDidMount() {
+        try {
+            const settings = await initSettingsDB();
+            await initVideosDB();
+            await this.cleanDB(settings);
+            // Async initialization completes after the first render by design.
+            // eslint-disable-next-line react/no-did-mount-set-state
+            this.setState({
+                settings,
+                newSettings: { ...settings },
+                dataReady: true,
+                paused: settings.pauseResume,
+                storageError: false
+            }, this.setList);
+        } catch (error) {
+            console.error("Unable to initialize extension storage:", error);
+            // Render a recoverable state when extension storage is unavailable.
+            // eslint-disable-next-line react/no-did-mount-set-state
+            this.setState({
+                dataReady: true,
+                listReady: false,
+                listElements: [],
+                storageError: true
+            });
+        }
     }
     handlePause = (event)=>{
         var newState;
@@ -170,7 +198,9 @@ export default class Home extends Component{
                         </div>
                         <div className="main-list" id="main-list">
                             {this.state.listReady ? this.getList() : null}
-                            {!this.state.listReady && this.state.listElements.length==0 ?
+                            {this.state.storageError ?
+                            <h2>Could not load saved videos</h2> : null}
+                            {!this.state.storageError && !this.state.listReady && this.state.listElements.length==0 ?
                             <h2>No videos</h2> : null}
                             <style jsx>{`
                                 .main-list-element{
@@ -297,95 +327,79 @@ export default class Home extends Component{
             console.error("Error in handleShiftClick:", error);
         }
     }
-    
-    
-    
-    getSettings = () => {
-        return new Promise((resolve) => {
-            chrome.storage.local.get("settings", (data) => {
-                if (data.settings != undefined) {
-                    this.setState({ settings: data.settings, newSettings: data.settings, dataReady: true, paused: data.settings.pauseResume},
-                        () => { resolve(); });
-                }
-                else {
-                    chrome.storage.local.set({
-                        settings: {
-                            pauseResume: false,
-                            minWatchTime: 60,
-                            minVideoLength: 480,
-                            markPlayedTime: 60,
-                        }
-                    }, () => {
-                        this.setState({ settings: data.settings, newSettings: data.settings, dataReady: true },
-                            () => { resolve(); });
-                    });
-                }
-            });
+    cleanDB = async (settings = this.state.settings) => {
+        const data = await getLocalStorage("videos");
+        const videos = Array.isArray(data.videos) ? data.videos : [];
+        const activeVideos = videos.filter(video => {
+            const expired = checkExpired(video, settings);
+            DEBUG && expired && console.log("CLEANING EXPIRED LINK");
+            return !expired;
         });
-    }
-    cleanDB = ()=>{
-        return new Promise((resolve) => {
-            chrome.storage.local.get("videos", (data) => {
-                let fixedDB = data;
-                for (let i = fixedDB.videos.length - 1; i >= 0; i--){
-                    if (checkExpired(fixedDB.videos[i], this.state.settings)) {
-                        DEBUG && console.log("CLEANING EXPIRED LINK");
-                        fixedDB.videos.splice(i, 1);
-                    }
-                }
-                chrome.storage.local.set(fixedDB,()=>{resolve()});
-            })
-        })
-    }
-}
-function initSettingsDB(){
-    return new Promise((resolve)=>{
-        chrome.storage.local.getBytesInUse("settings",(bytes)=>{
-            DEBUG && console.log("INIT SETTINGS DB");
-            if(bytes == undefined || bytes == 0){
-                DEBUG && console.log("BYTES==0 OR UNDEFINED");
-                chrome.storage.local.set(
-                {
-                    settings:{
-                        pauseResume: false,
-                        minVideoLength: 600,
-                        minWatchTime: 60,
-                        markPlayedTime: 60,
-                        deleteAfter:30
-                    }
-                },()=>{resolve();})
-            }
-            else {
-                DEBUG && console.log("BYTES!=0");
-                chrome.storage.local.get("settings", (data) => {
-                    DEBUG && console.log(data.settings);
-                    let current_settings = data.settings;
-                    if (!current_settings.hasOwnProperty('deleteAfter')) {
-                        DEBUG && console.log("here");
 
-                        chrome.storage.local.set(
-                            {
-                                settings:{
-                                    pauseResume: current_settings.pauseResume,
-                                    minVideoLength: current_settings.minVideoLength,
-                                    minWatchTime: current_settings.minWatchTime,
-                                    markPlayedTime: current_settings.markPlayedTime,
-                                    deleteAfter:30
-                                }
-                            },()=>{resolve();})
-                    }
-                })
-               resolve(); 
-            }
-            
-        })
-    })
-    
+        if (!Array.isArray(data.videos) || activeVideos.length !== videos.length) {
+            await setLocalStorage({ videos: activeVideos });
+        }
+
+        return activeVideos;
+    }
 }
-//TEMP FIX
+
+function getLocalStorage(key) {
+    return new Promise((resolve, reject) => {
+        chrome.storage.local.get(key, data => {
+            const error = chrome.runtime && chrome.runtime.lastError;
+            if (error) {
+                reject(new Error(error.message));
+                return;
+            }
+            resolve(data);
+        });
+    });
+}
+
+function setLocalStorage(values) {
+    return new Promise((resolve, reject) => {
+        chrome.storage.local.set(values, () => {
+            const error = chrome.runtime && chrome.runtime.lastError;
+            if (error) {
+                reject(new Error(error.message));
+                return;
+            }
+            resolve();
+        });
+    });
+}
+
+async function initSettingsDB() {
+    const data = await getLocalStorage("settings");
+    const storedSettings = data.settings &&
+        typeof data.settings === "object" &&
+        !Array.isArray(data.settings) ? data.settings : {};
+    const settings = { ...DEFAULT_SETTINGS, ...storedSettings };
+    const missingSetting = Object.keys(DEFAULT_SETTINGS)
+        .some(key => !Object.prototype.hasOwnProperty.call(storedSettings, key));
+
+    if (!data.settings || missingSetting) {
+        await setLocalStorage({ settings });
+    }
+
+    return settings;
+}
+
+async function initVideosDB() {
+    const data = await getLocalStorage("videos");
+    if (!Array.isArray(data.videos)) {
+        await setLocalStorage({ videos: [] });
+        return [];
+    }
+    return data.videos;
+}
 
 function checkExpired(video,settings) {
-    if (video.hasOwnProperty('timestamp')) {
+    if (!video || typeof video !== "object") {
+        return true;
+    }
+    if (Object.prototype.hasOwnProperty.call(video, 'timestamp')) {
         DEBUG && console.log(video.title + " Timestamp: " + video.timestamp);
         let current_time = new Date().getTime();
         let time_since_ms = current_time - video.timestamp;
