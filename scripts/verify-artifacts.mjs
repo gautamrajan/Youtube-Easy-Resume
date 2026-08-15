@@ -36,7 +36,8 @@ async function verifyRequiredFiles(target) {
 
 async function verifyPackage(target, version) {
   const files = await readdir(path.join(artifactsDir, target));
-  const matchingArchives = files.filter(file => file.endsWith(`-${version}.zip`));
+  const expectedArchive = `youtube-easy-resume-${version}-${target}.zip`;
+  const matchingArchives = files.filter(file => file === expectedArchive);
   assert.equal(
     matchingArchives.length,
     1,
