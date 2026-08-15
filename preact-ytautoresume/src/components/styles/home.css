@@ -144,6 +144,10 @@ h1{
     color: #d8d6d6;
 
 }
+.button-icon {
+    width: 18px;
+    height: 18px;
+}
 .top-bar-button:hover,
 .button-wrapper:hover .top-bar-button {
     color: #ffffff;
@@ -159,4 +163,4 @@ h1{
     line-height:51%;
     font-size:22px;
   
-} 
+}

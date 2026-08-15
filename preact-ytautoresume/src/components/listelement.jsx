@@ -28,7 +28,7 @@ export default function ListElement(props) {
         <div className={`list-element-container`} onClick={handleClick}>
             <a className={`main-list-element${selectorName}`} {...opts} target="_blank" title={video.title}
                 style={`margin-right: ${props.marginRight}px;`}>
-                <img src={`https://img.youtube.com/vi/${extractWatchID(video.videolink)}/default.jpg`} width="120" height="90"/>
+                <img src="icons/icon128.png" width="120" height="90" alt=""/>
                 <div className={`element-body`}>
                     <info>
                         <videoTitle>

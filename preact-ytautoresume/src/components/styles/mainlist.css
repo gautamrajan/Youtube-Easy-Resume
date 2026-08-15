@@ -42,6 +42,7 @@
 
 .main-list-element img{
     line-height:3px;
+    object-fit: contain;
 }
 
 .main-list-element div.element-body{
@@ -138,4 +139,3 @@
     max-width:226px;
 
 }
-
