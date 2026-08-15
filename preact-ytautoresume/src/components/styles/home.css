@@ -1,166 +1,90 @@
-div.header-bar{
+.HomeContainer {
+    width: 350px;
+    min-height: 435px;
+}
+
+.HomeContainer > .header-bar {
     display: flex;
-    flex-direction: row;
     align-items: flex-end;
-    flex-wrap: nowrap;
     justify-content: space-between;
+    flex-flow: row nowrap;
     font-size: 1.1em;
 }
 
-div.header-bar /* #ClearListButton */button{
-    margin-bottom:5px;
-    border: none;
-    background-color: rgba(99, 99, 99, 0.781);
+.HomeContainer h1 {
+    margin: 5px 0;
+    padding-bottom: 2px;
     color: #ffffff;
-    flex-grow:0;
+    font-size: 1.4em;
 }
+
 .button-container {
-    /* background-color:green; */
-    align-self:flex-end;
-    display:flex;
-    flex-direction: row;
+    display: flex;
+    align-items: flex-end;
     justify-content: flex-end;
-    align-items:flex-end;
-    margin-top: 4px;
-}
-/* div.header-bar Switch+button{
-    margin-left: 5px;
-} */
-/* #SettingsButton{
-    margin-bottom:2px;
-    margin-left:5px;
-    flex-grow:0;
-    display:flex;
-    flex-direction:row;
-    justify-content: center;
-    align-items: center;
-    text-align:center;
-    vertical-align:center;
-    line-height:51%;
-    font-size:22px;
-    width:32px;
-    height:32px;
-    background:none;
-    border-radius:50%;
-    outline:none;
-    color: #d8d6d6;
-} */
-.button.editmode {
-    margin-bottom:2px; 
-    margin-left:5px;
-    flex-grow:0;
-    display:flex;
-    flex-direction:row;
-    justify-content: center;
-    align-items: center;
-    text-align:center;
-    vertical-align:center;
-    line-height:51%;
-    font-size:22px;
-    width:32px;
-    height:32px;
-    background:none;
-    border-radius:50%;
-    outline:none;
-    color: #d8d6d6;
-}
-/* div.header-bar button:active{
-    background-color: rgba(158, 158, 158, 0.781);
-}  */
-/* #SettingsButton:hover{
-    color: #ffffff;
-}
-
-#SettingsButton:active{
-    transition-duration: 0.2s;
-    background-color:#ffffff46;
-    color: #ffffff;
-} */
-.SwitchContainer{
-    margin-right:4px;
-    margin-bottom:9px;
-    margin-left:5px;
-    /* background-color:blue; */
-    display:flex;
     flex-direction: row;
-    color:white;
-    justify-content:flex-end;
-    align-items:center;
-    padding-bottom:2px;
-    /* background-color:red; */
+    align-self: flex-end;
+    margin: 4px 0 2px;
 }
-.SwitchContainer label{
-    /* margin-right:4px; */
-    display:flex;
-    flex-direction:column;
-    line-height:95%;
-    margin-right:5px;
-}
-.mdc-switch{
-    margin-left:4px;
-}
-
-
-h1{
-    font-size:1.4em;
-    margin-top:5px;
-    margin-bottom: 5px;
-    color: #ffffff;
-    padding-bottom:2px;
-    /* border: 1px solid black; */
-}
-
-/* #SearchButton{
-    flex-grow:0;
-    display:flex;
-    flex-direction:row;
-    justify-content: center;
-    align-items: center;
-    text-align:center;
-    vertical-align:text-bottom;
-    line-height:40%;
-    font-size:20px;
-    width:32px;
-    height:32px;
-    border-radius:50%;
-    color: #d8d6d6;
-
-} */
 
 .button-wrapper {
     display: flex;
-    padding-bottom:2px;
-    height:30px;
-    width:30px;
+    width: 30px;
+    height: 30px;
+    padding-bottom: 2px;
 }
 
-.top-bar-button {
+.top-bar-button,
+.button.editmode {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
     height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-radius:100%;
+    border: 0;
+    border-radius: 50%;
+    background-color: rgba(99, 99, 99, 0.78);
     color: #d8d6d6;
+}
 
+.button.editmode {
+    width: 32px;
+    height: 32px;
+    margin: 0 0 2px 5px;
+    background: transparent;
+    font-size: 22px;
 }
-.button-icon {
-    width: 18px;
-    height: 18px;
-}
+
 .top-bar-button:hover,
-.button-wrapper:hover .top-bar-button {
+.button.editmode:hover {
     color: #ffffff;
 }
 
 .top-bar-button:active,
-.button-wrapper:active .top-bar-button {
-    transition-duration: 0.2s;
-    background-color: #ffffff46 ;
+.button.editmode:active {
+    background-color: rgba(255, 255, 255, 0.27);
     color: #ffffff;
 }
-#SettingsButton{
-    line-height:51%;
-    font-size:22px;
-  
+
+.top-bar-button:focus-visible,
+.button.editmode:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}
+
+.button-icon {
+    width: 18px;
+    height: 18px;
+}
+
+#SettingsButton {
+    font-size: 22px;
+    line-height: 0.51;
+}
+
+.EmptyState {
+    margin-top: 42vh;
+    color: #ffffff;
+    text-align: center;
+    font-size: 1.8em;
 }

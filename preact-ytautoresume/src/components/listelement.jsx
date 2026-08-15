@@ -1,82 +1,62 @@
-import { h } from 'preact';
+import { h, Fragment } from 'preact';
 import { extractWatchID, secondsToHMS } from './utilities';
-const DEBUG = false;
 
 export default function ListElement(props) {
-    //props -> video, index, edit, selectedVideos, marginRight, maxBarWidth, eClickHandler
-    let video = props.video;
-    let opts = {};
-    let selectorName = ""; 
-    if (props.edit) {
-        if (props.selectedVideos.some(vid => extractWatchID(video.videolink) === extractWatchID(vid.videolink))) {
-            DEBUG && console.log("VIDEO SELECTED!");
-            selectorName = selectorName + " selected";
-        }
-        else {
-            selectorName = selectorName + " unselected"
-        }
-    }
-    if (!props.edit) { opts["href"] = video.videolink;}
+    const video = props.video;
+    const selected = props.edit && props.selectedVideos.some(candidate => {
+        return extractWatchID(video.videolink) === extractWatchID(candidate.videolink);
+    });
+    const selectionClass = props.edit ? (selected ? " selected" : " unselected") : "";
+    const progress = video.duration > 0
+        ? Math.round((video.time / video.duration) * props.maxBarWidth)
+        : 0;
+    const progressWidth = Math.max(0, Math.min(props.maxBarWidth, progress));
+    const content = (
+        <Fragment>
+            <img src="icons/icon128.png" width="120" height="90" alt="" />
+            <div className="element-body">
+                <div className="video-info">
+                    <span className="video-title">{video.title}</span>
+                    <span className="video-channel">{video.channel}</span>
+                </div>
+                <div className="time-display">
+                    <div className="time-info">
+                        <span>{secondsToHMS(Math.max(0, video.time))}</span>
+                        <span>{secondsToHMS(video.duration)}</span>
+                    </div>
+                    <span className="progress-bar" style={{ width: `${progressWidth}px` }} aria-hidden="true" />
+                </div>
+            </div>
+        </Fragment>
+    );
+    const style = { marginRight: `${props.marginRight}px` };
 
-    const handleClick = (event) => {
-        if (props.edit) {
-            props.eClickHandler(video, props.index, event);
-        }
-    };
+    if (props.edit) {
+        return (
+            <button
+                type="button"
+                className={`main-list-element${selectionClass}`}
+                style={style}
+                aria-pressed={selected}
+                aria-label={`${selected ? "Deselect" : "Select"} ${video.title}`}
+                onClick={event => props.eClickHandler(video, props.index, event)}
+            >
+                {content}
+            </button>
+        );
+    }
 
     return (
-        <div className={`list-element-container`} onClick={handleClick}>
-            <a className={`main-list-element${selectorName}`} {...opts} target="_blank" title={video.title}
-                style={`margin-right: ${props.marginRight}px;`}>
-                <img src="icons/icon128.png" width="120" height="90" alt=""/>
-                <div className={`element-body`}>
-                    <info>
-                        <videoTitle>
-                            {video.title}
-                        </videoTitle>
-                        <subtext>
-                            {video.channel}
-                        </subtext>
-                    </info>
-                    <div className="time-display">
-                        <timeInfo>
-                            {video.time<0 ? <currentTime>0:00</currentTime>:<currentTime>{secondsToHMS(video.time)}</currentTime>}
-                            <duration>{secondsToHMS(video.duration)}</duration>
-                        </timeInfo>
-                        <bar style={`width:${Math.round((video.time/video.duration)*props.maxBarWidth)}px`}></bar>
-                    </div>
-                </div>
-            </a>
-            <style jsx>{`   
-                .unselected {   
-                    opacity: 0.4;
-                }
-                info {
-                    cursor: pointer;
-                }
-                timeInfo {
-                    cursor: pointer;
-                }
-                    .list-element-container {
-                    user-select: none;
-                    -webkit-user-select: none;
-                    -moz-user-select: none;
-                    -ms-user-select: none;
-                }
-                .unselected {   
-                    opacity: 0.4;
-                }
-                info {
-                    cursor: pointer;
-                }
-                timeInfo {
-                    cursor: pointer;
-                }
-                img, videoTitle, subtext, currentTime, duration {
-                    pointer-events: none;
-                }
-            `}
-            </style>
-        </div>  
-    )
+        <a
+            className="main-list-element"
+            href={video.videolink}
+            target="_blank"
+            rel="noreferrer"
+            title={video.title}
+            aria-label={`Open ${video.title}`}
+            style={style}
+        >
+            {content}
+        </a>
+    );
 }

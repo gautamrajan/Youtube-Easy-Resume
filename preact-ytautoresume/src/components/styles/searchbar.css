@@ -1,0 +1,27 @@
+.search-bar-container {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 4px 0 2px;
+}
+
+.search-bar-container input {
+    flex: 1;
+    margin-bottom: 3px;
+    padding: 4px 12px;
+    border: 1px solid transparent;
+    border-radius: 15px;
+    background-color: #3a3a3a;
+    color: #ffffff;
+    font-size: 1em;
+}
+
+.search-bar-container input::placeholder {
+    color: #b3b3b3;
+}
+
+.search-bar-container input:focus-visible {
+    border-color: #ffffff;
+    outline: 2px solid #ffffff;
+    outline-offset: 1px;
+}

@@ -1,147 +1,211 @@
-.fa-chevron-left{
-    color:#ffffff;
-    
+.SettingsContainer {
+    display: flex;
+    flex-direction: column;
+    width: 350px;
+    min-height: 435px;
 }
-.SettingsContainer{
-    display:flex;
-    flex-direction:column;
-    max-width:350px;
-    min-height:435px;
-    
-}
-div.header-bar{
+
+.SettingsHeader {
     display: flex;
     flex-direction: row;
     align-items: flex-end;
-    flex-wrap: nowrap;
     justify-content: space-between;
-    border-bottom: 1px solid #aaaaaa;  
-    vertical-align: middle;
-    text-align: center;
+    margin-top: 4px;
+    border-bottom: 1px solid #aaaaaa;
 }
-div.header-bar button{
-    font-size:20px;
-    border: none;
-    color: #d8d6d6;
-    background-color: transparent;
-    text-align: center;
-    vertical-align: middle;
-    display:flex;
-    flex-direction: column;
-    justify-content:center;
-}
-div.header-bar button:active{
-    background-color: rgba(158, 158, 158, 0.781);
-}
-h1{
-    margin-top:5px;
+
+.SettingsContainer h1 {
+    margin: 5px 0;
+    padding-bottom: 2px;
     color: #ffffff;
+    font-size: 1.4em;
 }
-#MainPanel{
-    max-height:100%;
-    display:flex;
-    flex-grow:1;
-    flex-direction:column;
-    justify-content:space-between;
-}
-.SettingsPanel{
-    max-height:100%;
-}
-.Setting {
-    margin-top:8px;
+
+.SettingsContainer .button-wrapper {
     display: flex;
-    flex-direction:column;
-    justify-content:start;
-    align-items:start;
-    color: #ffffff
-}
-.SettingLabel{
-    font-weight:bold;
-    font-size:17px;
-}
-.InputContainer{
-    display:inline-flex;
-    justify-content:flex-start;
-    align-items:start;
-    flex-direction:row;
-    max-width:50%;
-    border-radius:5px;
-    margin-top:8px;
-    font-size:15px;
-}
-.ConsiderComplete.InputContainer{
-    max-width:80%;
-}
-.ConsiderComplete .NumInput{
-    max-width:54px;
-}
-.ConsiderComplete select{
-    margin-top:3px;
-    margin-right:4px;
-    border:none;
-    border-radius:10px;
-    background:rgba(255, 255, 255, 0.568);
-    outline:none;
-
-}
-.NumInput{
-    width:30%;
-    height:50%;
-    margin-right:3px;
-    border:none;
-    background-color:rgba(255, 255, 255, 0.123);
-    color:#ffffff;
-    text-align:center;
-    font-weight:bold;
-    outline:none;
-    border-bottom:1px solid #ffffff;
-    -webkit-appearance: textfield;
-    -moz-appearance: textfield;
-    appearance: textfield;
-}
-.NumInput::-webkit-inner-spin-button, 
-.NumInput::-webkit-outer-spin-button { 
--webkit-appearance: none;
+    width: 30px;
+    height: 30px;
+    padding-bottom: 2px;
 }
 
-#SaveButton{
-    border-top-left-radius: 22px;
-    border-top-right-radius: 22px;
-    border:none;
-    font-weight:600;
-    font-size:17px;
-    color:#ffffff;
-    width:110%;
-    height:40px;
-    align-self:center;
-    background-color:red;
-}
-#SaveButton:active{
-    background-color:#c20000;
-}
-
-
-.button-wrapper {
+.SettingsContainer .top-bar-button {
     display: flex;
-    padding-bottom:2px;
-    height:30px;
-    width:30px;
-}
-
-.top-bar-button {
+    align-items: center;
+    justify-content: center;
     width: 100%;
     height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-radius:100%;
+    margin-bottom: 5px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #d8d6d6;
+    font-size: 20px;
 }
 
-h1{
-    font-size:1.4em;
-    margin-top:5px;
-    margin-bottom: 5px;
+.SettingsContainer .top-bar-button:hover {
     color: #ffffff;
-    padding-bottom:2px;
-    /* border: 1px solid black; */
+}
+
+.SettingsContainer .top-bar-button:active {
+    background-color: rgba(158, 158, 158, 0.78);
+}
+
+#MainPanel {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: space-between;
+    max-height: 100%;
+}
+
+.SettingsPanel {
+    max-height: 100%;
+}
+
+.Setting {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex-direction: column;
+    margin-top: 8px;
+    color: #ffffff;
+}
+
+.SettingLabel {
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.InputContainer {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 3px;
+    margin-top: 8px;
+    border-radius: 5px;
+    font-size: 15px;
+}
+
+.NumInput {
+    width: 64px;
+    min-height: 28px;
+    border: 1px solid transparent;
+    border-bottom-color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    text-align: center;
+    font-weight: 700;
+    appearance: textfield;
+}
+
+.NumInput::-webkit-inner-spin-button,
+.NumInput::-webkit-outer-spin-button {
+    appearance: none;
+}
+
+.NumInput[aria-invalid="true"] {
+    border-color: #ff8a80;
+}
+
+.SettingError {
+    margin-top: 4px;
+    color: #ffb4ab;
+    font-size: 13px;
+    line-height: 1.2;
+}
+
+.SwitchContainer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-direction: row;
+    margin: 10px 4px 2px 5px;
+    padding-bottom: 2px;
+    color: #ffffff;
+}
+
+.SwitchContainer.On {
+    margin-left: 6px;
+}
+
+.SwitchLabel {
+    margin-right: 5px;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 0.95;
+}
+
+.SwitchLabel.On {
+    padding-right: 4px;
+    color: #ff5252;
+}
+
+.SwitchLabel.Off {
+    color: #ffffff;
+    opacity: 0.65;
+}
+
+.SettingsContainer .mdc-switch {
+    margin-left: 4px;
+}
+
+.Message {
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-start;
+    flex-direction: row;
+    margin-top: 10px;
+    padding: 0 2px;
+    color: #ffffff;
+    font-size: 15px;
+}
+
+.Message a {
+    margin-left: 5px;
+    color: #ff5252;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.Message a:hover {
+    color: #ff8a80;
+    text-decoration: underline;
+}
+
+.Message a:active {
+    color: #ff1744;
+}
+
+#SaveButton {
+    align-self: center;
+    width: 100%;
+    height: 40px;
+    margin-top: 10px;
+    border: 0;
+    border-radius: 22px 22px 0 0;
+    background-color: #e60000;
+    color: #ffffff;
+    font-size: 17px;
+    font-weight: 600;
+}
+
+#SaveButton:hover:not(:disabled) {
+    background-color: #ff1a1a;
+}
+
+#SaveButton:active:not(:disabled) {
+    background-color: #c20000;
+}
+
+#SaveButton:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.SettingsContainer button:focus-visible,
+.SettingsContainer input:focus-visible,
+.SettingsContainer a:focus-visible,
+.SettingsContainer .mdc-switch:focus-within {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
 }

@@ -40,11 +40,6 @@ const ButtonBar = ({
                         <Icon name="settings" />
                     </button>
                 </div>
-                <style jsx>{`
-                    .button-container{
-                        margin-bottom:2px;
-                    }
-                `}</style>
             </div>
         );
     } else {
