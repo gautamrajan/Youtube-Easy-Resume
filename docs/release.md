@@ -37,12 +37,12 @@ After the release change is merged and the protected `main` check is green:
 ```bash
 git switch main
 git pull --ff-only
-npm run verify:release-tag -- v0.0.1.7
-git tag -a v0.0.1.7 -m "YouTube Easy Resume 0.0.1.7"
-git push origin v0.0.1.7
+npm run verify:release-tag -- v0.0.1.8
+git tag -a v0.0.1.8 -m "YouTube Easy Resume 0.0.1.8"
+git push origin v0.0.1.8
 ```
 
-Use the current version in place of `0.0.1.7`. The tag workflow rejects a tag
+Use the current version in place of `0.0.1.8`. The tag workflow rejects a tag
 that does not match `package.json` or is not contained in `main`. The active
 **Protect release tags** repository ruleset restricts creation, updates, and
 deletion of matching `v*` tags to repository administrators. Do not disable or

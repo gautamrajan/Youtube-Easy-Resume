@@ -19,6 +19,11 @@ const readJson = async filename => JSON.parse(await readFile(filename, 'utf8'));
 const baseManifest = await readJson(path.join(extensionDir, 'manifest.json'));
 const firefoxManifest = await readJson(path.join(extensionDir, 'manifest.firefox.json'));
 const packageJson = await readJson(path.join(rootDir, 'package.json'));
+const popupTemplate = await readFile(path.join(sourceDir, 'popup.html'), 'utf8');
+
+if (!popupTemplate.includes('{{EXTENSION_NAME}}')) {
+  throw new Error('popup.html must contain the extension name placeholder.');
+}
 
 await rm(bundleDir, { recursive: true, force: true });
 await rm(distDir, { recursive: true, force: true });
@@ -44,15 +49,21 @@ await build({
 
 for (const target of targets) {
   const targetDir = path.join(distDir, target);
+  const targetOverrides = target === 'firefox' ? firefoxManifest : {};
   const manifest = {
     ...baseManifest,
     version: packageJson.version,
-    ...(target === 'firefox' ? firefoxManifest : {})
+    ...targetOverrides,
+    action: {
+      ...baseManifest.action,
+      ...targetOverrides.action
+    }
   };
+  const popupHtml = popupTemplate.replace('{{EXTENSION_NAME}}', manifest.name);
 
   await mkdir(targetDir, { recursive: true });
   await cp(bundleDir, targetDir, { recursive: true });
-  await cp(path.join(sourceDir, 'popup.html'), path.join(targetDir, 'popup.html'));
+  await writeFile(path.join(targetDir, 'popup.html'), popupHtml);
   await cp(path.join(sourceDir, 'assets', 'icons'), path.join(targetDir, 'icons'), {
     recursive: true,
     filter: source => path.basename(source) !== '.DS_Store'

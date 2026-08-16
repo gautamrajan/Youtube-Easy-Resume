@@ -1,4 +1,10 @@
 {
+  "name": "Easy Resume for YouTube",
+  "description": "Private, local YouTube watch history with automatic resume—even while YouTube Watch History is turned off.",
+  "short_name": "Easy Resume",
+  "action": {
+    "default_title": "Easy Resume for YouTube"
+  },
   "browser_specific_settings": {
     "gecko": {
       "id": "youtube-easy-resume@annenbergmedia.com",
