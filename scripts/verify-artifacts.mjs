@@ -80,11 +80,30 @@ const firefoxManifest = await readManifest('firefox');
 assert.equal(chromeManifest.manifest_version, 3);
 assert.equal(firefoxManifest.manifest_version, 3);
 assert.equal(firefoxManifest.version, chromeManifest.version);
+assert.equal(chromeManifest.name, 'YouTube Easy Resume');
+assert.equal(chromeManifest.short_name, 'YT Easy Resume');
+assert.equal(chromeManifest.description,
+  'An extension that provides auto-resume functionality and an easy to access watchlist for YouTube');
+assert.equal(chromeManifest.action.default_title, 'YouTube Easy Resume');
+assert.equal(firefoxManifest.name, 'Easy Resume for YouTube');
+assert.equal(firefoxManifest.short_name, 'Easy Resume');
+assert.equal(firefoxManifest.description,
+  'Private, local YouTube watch history with automatic resume—even while YouTube Watch History is turned off.');
+assert.equal(firefoxManifest.action.default_title, 'Easy Resume for YouTube');
+assert.equal(firefoxManifest.action.default_popup, chromeManifest.action.default_popup);
+assert.deepEqual(firefoxManifest.action.default_icon, chromeManifest.action.default_icon);
 assert.equal(firefoxManifest.browser_specific_settings.gecko.id,
   'youtube-easy-resume@annenbergmedia.com');
 assert.equal(chromeManifest.browser_specific_settings, undefined);
 
-const sharedFiles = requiredFiles.filter(file => file !== 'manifest.json');
+const popupPages = await Promise.all(targets.map(target => {
+  return readFile(path.join(distDir, target, 'popup.html'), 'utf8');
+}));
+assert.match(popupPages[0], /<title>YouTube Easy Resume<\/title>/);
+assert.match(popupPages[1], /<title>Easy Resume for YouTube<\/title>/);
+assert.ok(popupPages.every(page => !page.includes('{{EXTENSION_NAME}}')));
+
+const sharedFiles = requiredFiles.filter(file => !['manifest.json', 'popup.html'].includes(file));
 for (const relativePath of sharedFiles) {
   const [chromeFile, firefoxFile] = await Promise.all(targets.map(target => {
     return readFile(path.join(distDir, target, relativePath));

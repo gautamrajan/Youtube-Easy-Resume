@@ -5,6 +5,7 @@ import { DEFAULT_SETTINGS } from '../src/settings';
 describe('settings form', () => {
   beforeEach(() => {
     __resetExtensionStorage({ settings: { ...DEFAULT_SETTINGS } });
+    __setExtensionManifest({ name: 'YouTube Easy Resume' });
     document.body.innerHTML = '';
   });
 
@@ -59,5 +60,20 @@ describe('settings form', () => {
     });
     expect(typeof __getExtensionStorage().settings.minWatchTime).toBe('number');
     expect(document.querySelector('#SaveButton')).toBeNull();
+  });
+
+  test('keeps Annenberg attribution in Chrome and hides it in Firefox', async () => {
+    render(<SettingsPage />, document.body);
+    await flushPromises();
+    expect(document.querySelector('.MadeBy').textContent).toContain('Annenberg Media');
+
+    render(null, document.body);
+    __setExtensionManifest({
+      name: 'Easy Resume for YouTube',
+      browser_specific_settings: { gecko: { id: 'test@example.com' } }
+    });
+    render(<SettingsPage />, document.body);
+    await flushPromises();
+    expect(document.querySelector('.MadeBy')).toBeNull();
   });
 });

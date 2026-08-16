@@ -16,6 +16,10 @@ import Icon from './Icon';
 
 const TIME_SETTING_KEYS = new Set(["minVideoLength", "minWatchTime", "markPlayedTime"]);
 
+export function showAnnenbergAttribution(api = extensionApi) {
+    return !api.runtime.getManifest().browser_specific_settings?.gecko;
+}
+
 export default class SettingsPage extends Component {
     constructor() {
         super();
@@ -202,10 +206,12 @@ export default class SettingsPage extends Component {
                             suffix: "day(s)",
                             className: "DeleteAfter"
                         })}
-                        <div className="MadeBy Message">
-                            Made with ❤️ at
-                            <a href="https://www.youtube.com/c/AnnenbergMedia" target="_blank" rel="noreferrer">Annenberg Media</a>
-                        </div>
+                        {showAnnenbergAttribution()
+                            ? <div className="MadeBy Message">
+                                Made with ❤️ at
+                                <a href="https://www.youtube.com/c/AnnenbergMedia" target="_blank" rel="noreferrer">Annenberg Media</a>
+                            </div>
+                            : null}
                     </div>
                     {this.state.settingsChanged
                         ? <button type="submit" id="SaveButton" disabled={hasErrors}>Save Settings</button>

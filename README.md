@@ -2,7 +2,16 @@
 
 A Chrome and Firefox extension that adds auto-resume functionality to YouTube videos. Videos automatically resume from where you left off, and in-progress videos are displayed in a popup. Configurable settings control which videos resume, and a toggle is added to the YouTube player.
 
-Both browsers use the same source and generated content/popup bundles. Browser-specific API namespace selection is isolated in `preact-ytautoresume/src/extensionApi.js`.
+Both browsers use the same application source and generated content/popup
+JavaScript. Browser-specific manifest branding and popup titles are applied by
+the build, while API namespace selection is isolated in
+`preact-ytautoresume/src/extensionApi.js`.
+
+Chrome retains the original **YouTube Easy Resume** name and Annenberg Media
+attribution from its development there. Firefox is presented independently as
+**Easy Resume for YouTube** and omits that attribution. The Firefox UUID still
+contains the historical Annenberg domain because signed extension identities
+must remain stable; it is technical metadata, not current product branding.
 
 ## Requirements
 

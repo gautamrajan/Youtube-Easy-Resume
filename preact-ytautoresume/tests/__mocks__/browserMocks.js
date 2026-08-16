@@ -4,6 +4,7 @@ let storageError = null;
 let storageSetCalls = [];
 let storageRemoveCalls = [];
 let storageChangeListeners = [];
+let extensionManifest = { name: 'YouTube Easy Resume' };
 
 function selectStorage(keys) {
   if (keys == null) {
@@ -35,6 +36,9 @@ global.__getExtensionStorageRemoveCalls = () => [...storageRemoveCalls];
 global.__getStoredVideos = () => Object.entries(storage)
   .filter(([key]) => key.startsWith('video:'))
   .map(([, video]) => video);
+global.__setExtensionManifest = manifest => {
+  extensionManifest = manifest;
+};
 global.__setExtensionStorageError = message => {
   storageError = message ? { message } : null;
 };
@@ -49,6 +53,7 @@ global.__emitExtensionStorageChange = (changes, areaName = 'local') => {
 
 global.chrome = {
   runtime: {
+    getManifest: () => extensionManifest,
     getURL: path => `chrome-extension://test/${path}`,
     get lastError() {
       return storageError;
